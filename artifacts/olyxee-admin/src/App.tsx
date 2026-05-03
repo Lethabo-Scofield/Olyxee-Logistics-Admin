@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/reac
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppLayout } from "@/components/layout";
+import { ThemeProvider } from "@/contexts/theme-context";
 
 import DashboardPage from "@/pages/dashboard";
 import CustomersPage from "@/pages/customers";
@@ -14,6 +15,7 @@ import CustomerDetailPage from "@/pages/customer-detail";
 import OrdersPage from "@/pages/orders";
 import OrderDetailPage from "@/pages/order-detail";
 import AuditLogsPage from "@/pages/audit-logs";
+import SettingsPage from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 
 const clerkPubKey = publishableKeyFromHost(
@@ -36,26 +38,22 @@ if (!clerkPubKey) {
 const clerkAppearance = {
   theme: shadcn,
   cssLayerName: "clerk",
-  options: {
-    logoPlacement: "inside" as const,
-    logoLinkUrl: basePath || "/",
-    logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
-  },
   variables: {
-    colorPrimary: "hsl(221, 83%, 53%)",
-    colorBackground: "hsl(0, 0%, 100%)",
+    colorPrimary: "#2563eb",
+    colorBackground: "#ffffff",
+    borderRadius: "0px",
   },
   elements: {
     rootBox: "w-full flex justify-center",
-    cardBox: "bg-white rounded-2xl w-[440px] max-w-full overflow-hidden shadow-xl border border-gray-100",
-    card: "!shadow-none !border-0 !bg-transparent !rounded-none",
-    footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
+    cardBox: "bg-white w-[420px] max-w-full overflow-hidden border border-gray-200",
+    card: "!shadow-none !border-0 !bg-transparent",
+    footer: "!shadow-none !border-0 !bg-transparent",
   },
 };
 
 function SignInPage() {
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-gray-50 px-4">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-muted/40 px-4">
       <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
     </div>
   );
@@ -63,7 +61,7 @@ function SignInPage() {
 
 function SignUpPage() {
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-gray-50 px-4">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-muted/40 px-4">
       <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
     </div>
   );
@@ -76,15 +74,31 @@ function HomeRedirect() {
         <Redirect to="/dashboard" />
       </Show>
       <Show when="signed-out">
-        <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-slate-900 text-white p-6 text-center">
-          <img src={`${basePath}/logo.svg`} alt="Olyxee" className="h-16 mb-8" />
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">Command Center for Logistics</h1>
-          <p className="text-lg md:text-xl text-slate-300 max-w-2xl mb-8">
-            Precise, serious, and built for professionals who live in it all day. Manage shipments, customers, and operations with confidence.
+        <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-sidebar text-sidebar-foreground p-6 text-center">
+          <div className="mb-10 flex flex-col items-center gap-3">
+            <div className="h-10 w-10 bg-primary flex items-center justify-center">
+              <span className="text-white font-bold text-lg">O</span>
+            </div>
+            <div>
+              <p className="text-xs tracking-[0.25em] uppercase text-sidebar-foreground/40 mb-1">Olyxee Enterprise</p>
+              <h2 className="text-xl font-bold">Logistics Console</h2>
+            </div>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 max-w-xl">
+            Command Center for Logistics
+          </h1>
+          <p className="text-base text-sidebar-foreground/50 max-w-lg mb-10">
+            Precise, professional, and built for teams who manage shipments, customers, and operations at scale.
           </p>
-          <a href={`${basePath}/sign-in`} className="inline-flex h-12 items-center justify-center rounded-md bg-blue-600 px-8 text-sm font-medium text-white shadow transition-colors hover:bg-blue-700">
+          <a
+            href={`${basePath}/sign-in`}
+            className="inline-flex h-11 items-center justify-center bg-primary px-8 text-sm font-medium text-white transition-opacity hover:opacity-90"
+          >
             Sign In to Console
           </a>
+          <p className="mt-12 text-[11px] text-sidebar-foreground/25 tracking-widest uppercase">
+            Powered by Olyxee
+          </p>
         </div>
       </Show>
     </>
@@ -114,10 +128,7 @@ function ClerkQueryClientCacheInvalidator() {
   useEffect(() => {
     const unsubscribe = addListener(({ user }) => {
       const userId = user?.id ?? null;
-      if (
-        prevUserIdRef.current !== undefined &&
-        prevUserIdRef.current !== userId
-      ) {
+      if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== userId) {
         queryClient.clear();
       }
       prevUserIdRef.current = userId;
@@ -130,10 +141,7 @@ function ClerkQueryClientCacheInvalidator() {
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
+    queries: { retry: 1, refetchOnWindowFocus: false },
   },
 });
 
@@ -162,6 +170,7 @@ function ClerkProviderWithRoutes() {
           <Route path="/orders" component={() => <ProtectedRoute component={OrdersPage} />} />
           <Route path="/orders/:id" component={() => <ProtectedRoute component={OrderDetailPage} />} />
           <Route path="/audit-logs" component={() => <ProtectedRoute component={AuditLogsPage} />} />
+          <Route path="/settings" component={() => <ProtectedRoute component={SettingsPage} />} />
           <Route component={NotFound} />
         </Switch>
       </QueryClientProvider>
@@ -171,12 +180,14 @@ function ClerkProviderWithRoutes() {
 
 function App() {
   return (
-    <WouterRouter base={basePath}>
-      <TooltipProvider>
-        <ClerkProviderWithRoutes />
-        <Toaster />
-      </TooltipProvider>
-    </WouterRouter>
+    <ThemeProvider>
+      <WouterRouter base={basePath}>
+        <TooltipProvider>
+          <ClerkProviderWithRoutes />
+          <Toaster />
+        </TooltipProvider>
+      </WouterRouter>
+    </ThemeProvider>
   );
 }
 
