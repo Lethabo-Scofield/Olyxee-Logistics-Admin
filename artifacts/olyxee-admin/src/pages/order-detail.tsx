@@ -12,11 +12,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { ArrowLeft, Copy, Check, Mail, RefreshCw, MapPin, Clock, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-
-const ORDER_STATUSES = [
-  "Order received", "Processing", "Driver assigned", "In transit",
-  "Delayed", "Out for delivery", "Delivered", "Failed delivery", "Cancelled",
-];
+import { nextStatuses, isTerminal } from "@/lib/order-statuses";
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -160,19 +156,25 @@ export default function OrderDetailPage() {
               <form onSubmit={handleStatusUpdate} className="space-y-4">
                 <div className="space-y-2">
                   <Label>New Status <span className="text-destructive">*</span></Label>
-                  <Select
-                    value={statusForm.status}
-                    onValueChange={v => setStatusForm(f => ({ ...f, status: v }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose a status to move this order to..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ORDER_STATUSES.filter(s => s !== order.currentStatus).map(s => (
-                        <SelectItem key={s} value={s}>{s}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {isTerminal(order.currentStatus) ? (
+                    <p className="text-sm text-muted-foreground border px-3 py-2 bg-muted/40">
+                      This order is <span className="font-semibold">{order.currentStatus}</span> — no further status changes are possible.
+                    </p>
+                  ) : (
+                    <Select
+                      value={statusForm.status}
+                      onValueChange={v => setStatusForm(f => ({ ...f, status: v }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose next status..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {nextStatuses(order.currentStatus).map(s => (
+                          <SelectItem key={s} value={s}>{s}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
 
                 <div className="grid sm:grid-cols-2 gap-4">

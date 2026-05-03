@@ -14,11 +14,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { Plus, Search, ArrowRight, Package, Pencil, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-
-const ORDER_STATUSES = [
-  "Order received", "Processing", "Driver assigned", "In transit",
-  "Delayed", "Out for delivery", "Delivered", "Failed delivery", "Cancelled",
-];
+import { ORDER_STATUSES, nextStatuses, isTerminal } from "@/lib/order-statuses";
 
 function CreateOrderSheet({ onSuccess }: { onSuccess: () => void }) {
   const [open, setOpen] = useState(false);
@@ -143,14 +139,20 @@ function QuickUpdateSheet({ order, onSuccess }: QuickUpdateSheetProps) {
         <form onSubmit={handleSubmit} className="mt-6 space-y-5">
           <div className="space-y-2">
             <Label>New Status *</Label>
-            <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))}>
-              <SelectTrigger><SelectValue placeholder="Select new status..." /></SelectTrigger>
-              <SelectContent>
-                {ORDER_STATUSES.filter(s => s !== order.currentStatus).map(s => (
-                  <SelectItem key={s} value={s}>{s}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {isTerminal(order.currentStatus) ? (
+              <p className="text-sm text-muted-foreground border px-3 py-2 bg-muted/40">
+                This order is <span className="font-semibold">{order.currentStatus}</span> — no further updates possible.
+              </p>
+            ) : (
+              <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))}>
+                <SelectTrigger><SelectValue placeholder="Select next status..." /></SelectTrigger>
+                <SelectContent>
+                  {nextStatuses(order.currentStatus).map(s => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           <div className="space-y-2">
