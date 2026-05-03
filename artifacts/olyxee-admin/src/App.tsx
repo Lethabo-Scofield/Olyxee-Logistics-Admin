@@ -48,10 +48,9 @@ const clerkAppearance = {
     rootBox: "w-full",
     cardBox: "w-full !shadow-none !border-0 !bg-transparent",
     card: "!shadow-none !border-0 !bg-transparent !p-0",
-    footer: "!shadow-none !border-0 !bg-transparent",
-    // Hide Clerk dev mode badge
-    badge: "!hidden",
-    developerMode: "!hidden",
+    // Hide the entire Clerk footer — it contains the dev mode badge and a
+    // duplicate sign-up link. We render our own link outside the card.
+    footer: "!hidden",
   },
 };
 
