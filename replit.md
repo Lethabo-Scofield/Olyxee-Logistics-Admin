@@ -4,6 +4,11 @@
 
 pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
 
+## Database
+
+- **Development (Replit preview)**: uses the auto-provisioned Replit Postgres via `DATABASE_URL` secret. Schema applied via `pnpm --filter @workspace/db run push`. Seeded with one `businesses` row (slug `olyxee`).
+- **Production (Vercel + Supabase)**: schema has been pushed to the user's Supabase project (`SUPABASE_DATABASE_URL` secret in Replit, **must use the Transaction pooler URL** — host `aws-*.pooler.supabase.com:6543`, not the IPv6-only direct connection on `db.*.supabase.co:5432`). Same `businesses` seed row already inserted. For Vercel, set `DATABASE_URL` env var = the Supabase pooler URL (URL-encode any `@` in the password as `%40`).
+
 ## Authentication
 
 Clerk Auth (Replit-managed) wired into `artifacts/olyxee-admin` (web) and `artifacts/api-server`.
