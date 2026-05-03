@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,7 +17,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { ORDER_STATUSES, nextStatuses, isTerminal } from "@/lib/order-statuses";
 
-function CreateOrderSheet({ onSuccess }: { onSuccess: () => void }) {
+function CreateOrderDialog({ onSuccess }: { onSuccess: () => void }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ customerId: "", orderReference: "", description: "", estimatedDeliveryDate: "" });
   const createMutation = useCreateOrder();
@@ -39,13 +40,15 @@ function CreateOrderSheet({ onSuccess }: { onSuccess: () => void }) {
   };
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
         <Button className="gap-2"><Plus className="h-4 w-4" /> New Order</Button>
-      </SheetTrigger>
-      <SheetContent className="w-[420px]">
-        <SheetHeader><SheetTitle>New Order</SheetTitle></SheetHeader>
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[480px]">
+        <DialogHeader>
+          <DialogTitle>New Order</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="mt-2 space-y-4">
           <div className="space-y-2">
             <Label>Customer *</Label>
             <Select value={form.customerId} onValueChange={v => setForm(f => ({ ...f, customerId: v }))}>
@@ -57,25 +60,27 @@ function CreateOrderSheet({ onSuccess }: { onSuccess: () => void }) {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label>Order Reference</Label>
-            <Input value={form.orderReference} onChange={e => setForm(f => ({ ...f, orderReference: e.target.value }))} placeholder="e.g. REF-001" />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Order Reference</Label>
+              <Input value={form.orderReference} onChange={e => setForm(f => ({ ...f, orderReference: e.target.value }))} placeholder="e.g. REF-001" />
+            </div>
+            <div className="space-y-2">
+              <Label>Est. Delivery Date</Label>
+              <Input type="date" value={form.estimatedDeliveryDate} onChange={e => setForm(f => ({ ...f, estimatedDeliveryDate: e.target.value }))} />
+            </div>
           </div>
           <div className="space-y-2">
             <Label>Description</Label>
             <Input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="What's in the shipment?" />
-          </div>
-          <div className="space-y-2">
-            <Label>Est. Delivery Date</Label>
-            <Input type="date" value={form.estimatedDeliveryDate} onChange={e => setForm(f => ({ ...f, estimatedDeliveryDate: e.target.value }))} />
           </div>
           <p className="text-xs text-muted-foreground">A unique tracking ID will be auto-generated for this order.</p>
           <Button type="submit" className="w-full" disabled={createMutation.isPending || !form.customerId}>
             {createMutation.isPending ? "Creating..." : "Create Order"}
           </Button>
         </form>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -223,7 +228,7 @@ export default function OrdersPage() {
           <h1 className="text-2xl font-bold tracking-tight">Orders</h1>
           <p className="text-muted-foreground text-sm mt-0.5">{data?.total ?? 0} total orders</p>
         </div>
-        <CreateOrderSheet onSuccess={() => refetch()} />
+        <CreateOrderDialog onSuccess={() => refetch()} />
       </div>
 
       <Card>
