@@ -145,36 +145,10 @@ function BrandMark() {
   );
 }
 
-// ─── Tab switcher ─────────────────────────────────────────────────────────────
-function AuthTabs({ active }: { active: "sign-in" | "sign-up" }) {
-  return (
-    <div className="flex border-b border-gray-200 mb-6">
-      <a
-        href={`${basePath}/sign-in`}
-        className={`flex-1 py-3 text-sm font-medium text-center transition-colors border-b-2 -mb-px ${
-          active === "sign-in"
-            ? "border-gray-900 text-gray-900"
-            : "border-transparent text-gray-400 hover:text-gray-600"
-        }`}
-      >
-        Sign In
-      </a>
-      <a
-        href={`${basePath}/sign-up`}
-        className={`flex-1 py-3 text-sm font-medium text-center transition-colors border-b-2 -mb-px ${
-          active === "sign-up"
-            ? "border-gray-900 text-gray-900"
-            : "border-transparent text-gray-400 hover:text-gray-600"
-        }`}
-      >
-        Create Account
-      </a>
-    </div>
-  );
-}
-
 // ─── Auth card shell ──────────────────────────────────────────────────────────
 function AuthCard({ mode }: { mode: "sign-in" | "sign-up" }) {
+  const isSignIn = mode === "sign-in";
+
   return (
     <div className="min-h-[100dvh] bg-gray-50 flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-[420px]">
@@ -185,11 +159,21 @@ function AuthCard({ mode }: { mode: "sign-in" | "sign-up" }) {
           <LogoUploadCompact />
         </div>
 
-        {/* Card */}
-        <div className="bg-white border border-gray-200 p-8">
-          <AuthTabs active={mode} />
+        {/* Heading */}
+        <div className="mb-6">
+          <h1 className="text-xl font-semibold text-gray-900">
+            {isSignIn ? "Sign in to your account" : "Create your account"}
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            {isSignIn
+              ? "Enter your credentials to access the console."
+              : "Get started — it only takes a moment."}
+          </p>
+        </div>
 
-          {mode === "sign-in" ? (
+        {/* Clerk form */}
+        <div className="bg-white border border-gray-200 p-8">
+          {isSignIn ? (
             <SignIn
               routing="path"
               path={`${basePath}/sign-in`}
@@ -206,8 +190,27 @@ function AuthCard({ mode }: { mode: "sign-in" | "sign-up" }) {
           )}
         </div>
 
+        {/* Switch link */}
+        <p className="mt-5 text-center text-sm text-gray-500">
+          {isSignIn ? (
+            <>
+              Don't have an account?{" "}
+              <a href={`${basePath}/sign-up`} className="font-medium text-gray-900 hover:underline underline-offset-2">
+                Create one
+              </a>
+            </>
+          ) : (
+            <>
+              Already have an account?{" "}
+              <a href={`${basePath}/sign-in`} className="font-medium text-gray-900 hover:underline underline-offset-2">
+                Sign in
+              </a>
+            </>
+          )}
+        </p>
+
         {/* Footer */}
-        <p className="mt-6 text-center text-[10px] text-gray-300 tracking-widest uppercase">
+        <p className="mt-8 text-center text-[10px] text-gray-300 tracking-widest uppercase">
           Powered by Olyxee
         </p>
       </div>
