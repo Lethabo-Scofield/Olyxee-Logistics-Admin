@@ -1,0 +1,106 @@
+Define and implement the completion checklist for this logistics admin project.
+
+The project is complete only when all items below work end-to-end.
+
+Core completion requirements:
+
+1. Admin authentication works
+- Admin can sign up with business email
+- Admin belongs to one business workspace
+- Admin can log in and log out
+- Admin only sees their own business data
+
+2. Customer management works
+- Admin can create customer
+- Admin can edit customer
+- Admin can view customer list
+- Admin can search customers
+
+3. Order management works
+- Admin can create order for a customer
+- System auto-generates unique tracking ID
+- Order belongs to the correct business_id
+- Admin can view order list
+- Admin can open order detail page
+
+4. Status update works
+- Admin can change order status
+- Admin can add optional status message
+- New status is saved in tracking_events
+- orders.current_status is updated
+- updated_at changes automatically
+
+5. Email is sent automatically on status change
+When admin updates status:
+- Generate tracking link
+- Send email to customer
+- Email includes:
+  - customer name
+  - tracking ID
+  - new status
+  - status message
+  - tracking link
+  - business name
+- Save email result in email_notifications
+- If email fails, show clear error and save failed status
+
+6. Tracking link is prepared
+Even though /track is not built yet, every email must include:
+
+{business.websiteUrl}/track?code={trackingId}
+
+Example:
+https://freightshiftlogistics.co.za/track?code=FSH-2026-000001
+
+7. Audit logging works
+Every important admin action creates audit log:
+- customer created
+- order created
+- status updated
+- email sent
+- email failed
+
+8. Multi-tenant security works
+Test with two businesses:
+- Business A cannot see Business B customers
+- Business A cannot see Business B orders
+- Business A cannot update Business B orders
+- All queries must filter by businessId
+
+9. UI works
+Admin panel must include:
+- dashboard
+- customers page
+- orders page
+- order detail page
+- status update form
+- email history
+- tracking timeline
+- clear success/error notifications
+
+10. Final test flow
+Create a test script or manual test steps proving:
+
+- Create business
+- Create admin
+- Create customer
+- Create order
+- Tracking ID generated
+- Update status to “In transit”
+- Customer receives email
+- Tracking event saved
+- Email notification saved
+- Audit log saved
+- Order timeline displays update
+
+Acceptance criteria:
+The project is not complete until changing an order status successfully sends an email to the customer and records the event in the database.
+
+At the end, print:
+- what works
+- what is still missing
+- test admin account
+- sample customer
+- sample order
+- sample tracking ID
+- how to test email sending
