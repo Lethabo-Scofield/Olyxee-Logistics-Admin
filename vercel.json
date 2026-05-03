@@ -1,0 +1,20 @@
+{
+  "buildCommand": "pnpm run build:vercel",
+  "outputDirectory": "artifacts/olyxee-admin/dist/public",
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api/handler" }
+  ],
+  "functions": {
+    "api/handler.mjs": {
+      "maxDuration": 30
+    }
+  },
+  "headers": [
+    {
+      "source": "/assets/:path*",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    }
+  ]
+}
