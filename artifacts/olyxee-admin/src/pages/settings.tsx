@@ -73,7 +73,7 @@ export default function SettingsPage() {
                 id="businessName"
                 value={form.businessName}
                 onChange={e => setForm(f => ({ ...f, businessName: e.target.value }))}
-                placeholder="Olyxee Logistics"
+                placeholder="Your business name"
               />
             </div>
             <div className="space-y-2">
@@ -266,10 +266,9 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Olyxee footer note */}
       <div className="border-t pt-6 pb-2">
         <p className="text-xs text-muted-foreground">
-          <span className="font-semibold text-foreground">Olyxee Enterprise</span> — This platform is white-labelled and operated by Olyxee. Branding changes apply to this workspace only.
+          Branding changes apply to this workspace only.
         </p>
       </div>
 

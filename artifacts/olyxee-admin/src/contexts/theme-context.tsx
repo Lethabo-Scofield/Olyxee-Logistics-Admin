@@ -23,8 +23,8 @@ const DEFAULTS: ThemeSettings = {
   isDark: false,
   primaryColor: "#2b2b2b",
   logoUrl: "",
-  businessName: "Olyxee Logistics",
-  businessTagline: "Enterprise Logistics",
+  businessName: "",
+  businessTagline: "",
 };
 
 function hexToHsl(hex: string): { h: number; s: number; l: number } | null {

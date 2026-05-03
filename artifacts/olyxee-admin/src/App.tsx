@@ -132,15 +132,15 @@ function BrandMark() {
     <div className="flex items-center gap-3">
       <div className="h-8 w-8 bg-gray-900 flex items-center justify-center flex-shrink-0">
         <span className="text-white font-bold text-sm">
-          {businessName?.[0]?.toUpperCase() ?? "O"}
+          {businessName?.[0]?.toUpperCase() ?? "·"}
         </span>
       </div>
-      <div>
-        <p className="text-xs font-semibold text-gray-900 leading-tight">
-          {businessName || "Olyxee Logistics"}
-        </p>
-        <p className="text-[10px] text-gray-400 uppercase tracking-widest">Enterprise Console</p>
-      </div>
+      {businessName && (
+        <div>
+          <p className="text-xs font-semibold text-gray-900 leading-tight">{businessName}</p>
+          <p className="text-[10px] text-gray-400 uppercase tracking-widest">Enterprise Console</p>
+        </div>
+      )}
     </div>
   );
 }
