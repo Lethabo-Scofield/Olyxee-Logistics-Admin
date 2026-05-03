@@ -1,0 +1,223 @@
+Paste this into Replit:
+
+```text
+Build a production-ready multi-tenant logistics admin panel for Olyxee Enterprise Logistics.
+
+Goal:
+Create the admin side only. Later we will add the public business website tracking page at /track.
+
+Core feature:
+When an admin updates an order status, the system must automatically email the customer with the new status, tracking ID, and tracking link.
+
+Tech stack:
+- Next.js
+- TypeScript
+- Tailwind CSS
+- Supabase or PostgreSQL
+- Prisma ORM
+- Resend for email sending
+- NextAuth or simple secure auth
+- Clean Apple/Stripe-style UI
+
+Main entities:
+1. Business
+2. Admin User
+3. Customer
+4. Order
+5. Tracking Event
+6. Email Notification
+7. Audit Log
+
+Database tables:
+
+businesses:
+- id
+- name
+- slug
+- website_url
+- support_email
+- created_at
+
+users:
+- id
+- business_id
+- name
+- email
+- role: owner | admin | staff
+- created_at
+
+customers:
+- id
+- business_id
+- full_name
+- email
+- phone
+- company_name
+- address
+- created_at
+
+orders:
+- id
+- business_id
+- customer_id
+- tracking_id
+- order_reference
+- description
+- current_status
+- estimated_delivery_date
+- created_at
+- updated_at
+
+tracking_events:
+- id
+- order_id
+- status
+- message
+- location
+- created_by
+- created_at
+
+email_notifications:
+- id
+- order_id
+- customer_email
+- subject
+- body
+- status: sent | failed | pending
+- provider_message_id
+- created_at
+
+audit_logs:
+- id
+- business_id
+- user_id
+- action
+- entity_type
+- entity_id
+- metadata
+- created_at
+
+Delivery statuses:
+- Order received
+- Processing
+- Driver assigned
+- In transit
+- Delayed
+- Out for delivery
+- Delivered
+- Failed delivery
+- Cancelled
+
+Admin pages:
+1. Login
+2. Dashboard
+   - total orders
+   - active deliveries
+   - delayed orders
+   - delivered orders
+   - recent updates
+
+3. Customers
+   - create customer
+   - edit customer
+   - search customers
+   - view customer orders
+
+4. Orders
+   - create order
+   - assign customer
+   - auto-generate tracking ID
+   - update status
+   - add status message
+   - view timeline
+   - view email history
+
+5. Order detail page
+   - customer info
+   - current status
+   - tracking ID
+   - tracking link
+   - delivery timeline
+   - status update form
+   - manual resend email button
+   - audit history
+
+Tracking ID rules:
+- Generate unique tracking IDs
+- Format example:
+  FSH-2026-000491
+- Prefix should come from business slug or initials
+
+Tracking link:
+Use the business website URL:
+{business.website_url}/track?code={tracking_id}
+
+Example:
+https://freightshiftlogistics.co.za/track?code=FSH-2026-000491
+
+Email behavior:
+When order status changes:
+1. Save new tracking_event
+2. Update orders.current_status
+3. Generate tracking link
+4. Send email to customer
+5. Save email notification result
+6. Save audit log
+
+Email template:
+Subject:
+Update on your order: {tracking_id}
+
+Body:
+Hi {customer_name},
+
+Your order status has been updated.
+
+Tracking ID: {tracking_id}
+Current status: {status}
+
+Message:
+{status_message}
+
+Track your order here:
+{tracking_link}
+
+Kind regards,
+{business_name}
+
+Security:
+- Admin users can only see data for their own business_id
+- Public tracking link should not expose private customer data
+- Validate all inputs
+- Log all status updates
+- Do not allow duplicate tracking IDs
+
+UI requirements:
+- Clean admin dashboard
+- Sidebar navigation
+- Tables with search and filters
+- Status badges
+- Timeline component for tracking events
+- Modal or form for updating status
+- Toast notifications after actions
+- Loading and error states
+- Responsive layout
+
+Build the app with:
+- Clear folder structure
+- Reusable components
+- Server actions or API routes
+- Seed data for one demo business
+- Demo admin account
+- Sample customers and orders
+
+Important:
+Do not build /track yet.
+Only prepare the admin system so it already generates tracking links for future /track implementation.
+
+After building, show:
+1. How to run the app
+2. Required environment variables
+3. Database migration steps
+4. How to test order status update email
+```
