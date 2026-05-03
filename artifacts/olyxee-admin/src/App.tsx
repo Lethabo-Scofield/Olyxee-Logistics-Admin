@@ -74,20 +74,20 @@ function HomeRedirect() {
         <Redirect to="/dashboard" />
       </Show>
       <Show when="signed-out">
-        <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-sidebar text-sidebar-foreground p-6 text-center">
+        <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-neutral-950 text-neutral-100 p-6 text-center">
           <div className="mb-10 flex flex-col items-center gap-3">
             <div className="h-10 w-10 bg-primary flex items-center justify-center">
               <span className="text-white font-bold text-lg">O</span>
             </div>
             <div>
-              <p className="text-xs tracking-[0.25em] uppercase text-sidebar-foreground/40 mb-1">Olyxee Enterprise</p>
+              <p className="text-xs tracking-[0.25em] uppercase text-neutral-500 mb-1">Olyxee Enterprise</p>
               <h2 className="text-xl font-bold">Logistics Console</h2>
             </div>
           </div>
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 max-w-xl">
             Command Center for Logistics
           </h1>
-          <p className="text-base text-sidebar-foreground/50 max-w-lg mb-10">
+          <p className="text-base text-neutral-400 max-w-lg mb-10">
             Precise, professional, and built for teams who manage shipments, customers, and operations at scale.
           </p>
           <a
@@ -96,7 +96,7 @@ function HomeRedirect() {
           >
             Sign In to Console
           </a>
-          <p className="mt-12 text-[11px] text-sidebar-foreground/25 tracking-widest uppercase">
+          <p className="mt-12 text-[11px] text-neutral-600 tracking-widest uppercase">
             Powered by Olyxee
           </p>
         </div>
