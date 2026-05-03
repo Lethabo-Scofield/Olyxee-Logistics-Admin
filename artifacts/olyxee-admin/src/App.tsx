@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { ClerkProvider, SignIn, SignUp, Show, useClerk } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
-import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from 'wouter';
+import { Switch, Route, useLocation, Router as WouterRouter, Redirect, Link } from 'wouter';
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -39,18 +39,23 @@ const clerkAppearance = {
   theme: shadcn,
   cssLayerName: "clerk",
   variables: {
-    colorPrimary: "#2563eb",
+    colorPrimary: "#111111",
     colorBackground: "#ffffff",
     borderRadius: "0px",
+    fontFamily: "inherit",
   },
   elements: {
-    rootBox: "w-full flex justify-center",
-    cardBox: "bg-white w-[420px] max-w-full overflow-hidden border border-gray-200",
-    card: "!shadow-none !border-0 !bg-transparent",
+    rootBox: "w-full",
+    cardBox: "w-full !shadow-none !border-0 !bg-transparent",
+    card: "!shadow-none !border-0 !bg-transparent !p-0",
     footer: "!shadow-none !border-0 !bg-transparent",
+    // Hide Clerk dev mode badge
+    badge: "!hidden",
+    developerMode: "!hidden",
   },
 };
 
+// ─── Image compression ────────────────────────────────────────────────────────
 function compressImageFile(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -73,172 +78,158 @@ function compressImageFile(file: File): Promise<string> {
   });
 }
 
-function LogoUploadZone() {
-  const { logoUrl, setLogoUrl, businessName, setBusinessName } = useTheme();
+// ─── Logo upload (compact, light theme) ──────────────────────────────────────
+function LogoUploadCompact() {
+  const { logoUrl, setLogoUrl } = useTheme();
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleFile = async (file: File) => {
     if (!file.type.startsWith("image/")) return;
-    if (file.size > 5 * 1024 * 1024) { alert("Please use an image under 5 MB."); return; }
-    const dataUrl = await compressImageFile(file);
-    setLogoUrl(dataUrl);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
+    if (file.size > 5 * 1024 * 1024) { alert("Image must be under 5 MB."); return; }
+    setLogoUrl(await compressImageFile(file));
   };
 
   return (
-    <div className="w-full max-w-sm flex flex-col items-center gap-4">
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])}
-      />
-
+    <div className="flex flex-col items-center gap-1.5">
+      <input ref={fileRef} type="file" accept="image/*" className="hidden"
+        onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
       {logoUrl ? (
-        <div className="flex flex-col items-center gap-3">
-          <div className="bg-white px-6 py-4 flex items-center justify-center">
-            <img src={logoUrl} alt="Your logo" className="max-h-16 max-w-[220px] object-contain" />
-          </div>
-          <button
-            onClick={() => fileRef.current?.click()}
-            className="text-xs text-neutral-500 hover:text-neutral-300 underline underline-offset-2 transition-colors"
-          >
+        <button onClick={() => fileRef.current?.click()} className="group flex flex-col items-center gap-1">
+          <img src={logoUrl} alt="logo" className="max-h-10 max-w-[140px] object-contain" />
+          <span className="text-[10px] text-gray-400 group-hover:text-gray-600 underline underline-offset-2 transition-colors">
             Change logo
-          </button>
-        </div>
+          </span>
+        </button>
       ) : (
         <button
           onClick={() => fileRef.current?.click()}
-          onDrop={handleDrop}
-          onDragOver={e => e.preventDefault()}
-          className="w-full border-2 border-dashed border-neutral-700 hover:border-neutral-500 px-8 py-8 flex flex-col items-center gap-2 transition-colors group cursor-pointer"
+          className="flex items-center gap-2 border border-dashed border-gray-300 hover:border-gray-400 px-4 py-2 text-xs text-gray-500 hover:text-gray-700 transition-colors"
         >
-          <div className="h-10 w-10 border border-neutral-700 group-hover:border-neutral-500 flex items-center justify-center mb-1 transition-colors">
-            <svg className="h-5 w-5 text-neutral-500 group-hover:text-neutral-300 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="square" strokeLinejoin="miter" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-            </svg>
-          </div>
-          <p className="text-sm font-semibold text-neutral-300 group-hover:text-white transition-colors">Upload your logo</p>
-          <p className="text-xs text-neutral-600">PNG, JPG, SVG · drag & drop or click</p>
+          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="square" strokeLinejoin="miter" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+          </svg>
+          Upload your logo
         </button>
       )}
+    </div>
+  );
+}
 
-      <div className="w-full">
-        <input
-          type="text"
-          value={businessName}
-          onChange={e => setBusinessName(e.target.value)}
-          placeholder="Your business name"
-          className="w-full bg-neutral-900 border border-neutral-800 text-neutral-100 placeholder:text-neutral-600 px-4 py-2.5 text-sm text-center focus:outline-none focus:border-neutral-600 transition-colors"
-        />
+// ─── Branded mark (light theme) ───────────────────────────────────────────────
+function BrandMark() {
+  const { logoUrl, businessName } = useTheme();
+  if (logoUrl) {
+    return (
+      <div className="flex flex-col items-center gap-1.5">
+        <img src={logoUrl} alt={businessName} className="max-h-10 max-w-[160px] object-contain" />
+        {businessName && (
+          <p className="text-[10px] tracking-widest uppercase text-gray-400">{businessName}</p>
+        )}
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-3">
+      <div className="h-8 w-8 bg-gray-900 flex items-center justify-center flex-shrink-0">
+        <span className="text-white font-bold text-sm">
+          {businessName?.[0]?.toUpperCase() ?? "O"}
+        </span>
+      </div>
+      <div>
+        <p className="text-xs font-semibold text-gray-900 leading-tight">
+          {businessName || "Olyxee Logistics"}
+        </p>
+        <p className="text-[10px] text-gray-400 uppercase tracking-widest">Enterprise Console</p>
       </div>
     </div>
   );
 }
 
-function BrandedHeader({ compact = false }: { compact?: boolean }) {
-  const { logoUrl, businessName } = useTheme();
-
-  if (logoUrl) {
-    return (
-      <div className={`flex flex-col items-center gap-2 ${compact ? "mb-6" : "mb-10"}`}>
-        <img src={logoUrl} alt={businessName} className="max-h-12 max-w-[180px] object-contain" />
-        {businessName && (
-          <p className="text-xs tracking-widest uppercase text-neutral-500">{businessName}</p>
-        )}
-      </div>
-    );
-  }
-
+// ─── Tab switcher ─────────────────────────────────────────────────────────────
+function AuthTabs({ active }: { active: "sign-in" | "sign-up" }) {
   return (
-    <div className={`flex flex-col items-center gap-3 ${compact ? "mb-6" : "mb-10"}`}>
-      <div className="h-10 w-10 bg-primary flex items-center justify-center">
-        <span className="text-white font-bold text-lg">
-          {businessName?.[0]?.toUpperCase() ?? "O"}
-        </span>
-      </div>
-      <div className="text-center">
-        <p className="text-xs tracking-[0.25em] uppercase text-neutral-500 mb-0.5">
-          {businessName || "Olyxee Enterprise"}
+    <div className="flex border-b border-gray-200 mb-6">
+      <a
+        href={`${basePath}/sign-in`}
+        className={`flex-1 py-3 text-sm font-medium text-center transition-colors border-b-2 -mb-px ${
+          active === "sign-in"
+            ? "border-gray-900 text-gray-900"
+            : "border-transparent text-gray-400 hover:text-gray-600"
+        }`}
+      >
+        Sign In
+      </a>
+      <a
+        href={`${basePath}/sign-up`}
+        className={`flex-1 py-3 text-sm font-medium text-center transition-colors border-b-2 -mb-px ${
+          active === "sign-up"
+            ? "border-gray-900 text-gray-900"
+            : "border-transparent text-gray-400 hover:text-gray-600"
+        }`}
+      >
+        Create Account
+      </a>
+    </div>
+  );
+}
+
+// ─── Auth card shell ──────────────────────────────────────────────────────────
+function AuthCard({ mode }: { mode: "sign-in" | "sign-up" }) {
+  return (
+    <div className="min-h-[100dvh] bg-gray-50 flex flex-col items-center justify-center px-4 py-12">
+      <div className="w-full max-w-[420px]">
+
+        {/* Top: logo + upload */}
+        <div className="flex items-center justify-between mb-8">
+          <BrandMark />
+          <LogoUploadCompact />
+        </div>
+
+        {/* Card */}
+        <div className="bg-white border border-gray-200 p-8">
+          <AuthTabs active={mode} />
+
+          {mode === "sign-in" ? (
+            <SignIn
+              routing="path"
+              path={`${basePath}/sign-in`}
+              signUpUrl={`${basePath}/sign-up`}
+              appearance={clerkAppearance}
+            />
+          ) : (
+            <SignUp
+              routing="path"
+              path={`${basePath}/sign-up`}
+              signInUrl={`${basePath}/sign-in`}
+              appearance={clerkAppearance}
+            />
+          )}
+        </div>
+
+        {/* Footer */}
+        <p className="mt-6 text-center text-[10px] text-gray-300 tracking-widest uppercase">
+          Powered by Olyxee
         </p>
-        <p className="text-sm font-semibold text-neutral-200">Logistics Console</p>
       </div>
     </div>
   );
+}
+
+// ─── Pages ────────────────────────────────────────────────────────────────────
+function SignInPage() {
+  return <AuthCard mode="sign-in" />;
+}
+
+function SignUpPage() {
+  return <AuthCard mode="sign-up" />;
 }
 
 function HomeRedirect() {
   return (
     <>
-      <Show when="signed-in">
-        <Redirect to="/dashboard" />
-      </Show>
-      <Show when="signed-out">
-        <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-neutral-950 text-neutral-100 px-6 py-16">
-          <div className="w-full max-w-sm flex flex-col items-center text-center">
-
-            <BrandedHeader />
-
-            <h1 className="text-3xl font-bold tracking-tight mb-2">
-              Welcome back
-            </h1>
-            <p className="text-sm text-neutral-400 mb-10">
-              Personalize your console, then sign in to manage your shipments.
-            </p>
-
-            <LogoUploadZone />
-
-            <a
-              href={`${basePath}/sign-in`}
-              className="mt-8 w-full inline-flex h-11 items-center justify-center bg-white text-neutral-950 px-8 text-sm font-semibold transition-opacity hover:opacity-90"
-            >
-              Sign In to Console
-            </a>
-
-            <a
-              href={`${basePath}/sign-up`}
-              className="mt-3 w-full inline-flex h-11 items-center justify-center border border-neutral-800 text-neutral-300 px-8 text-sm font-medium hover:border-neutral-600 hover:text-white transition-colors"
-            >
-              Create Account
-            </a>
-
-            <p className="mt-12 text-[11px] text-neutral-700 tracking-widest uppercase">
-              Powered by Olyxee
-            </p>
-          </div>
-        </div>
-      </Show>
+      <Show when="signed-in"><Redirect to="/dashboard" /></Show>
+      <Show when="signed-out"><Redirect to="/sign-in" /></Show>
     </>
-  );
-}
-
-function SignInPage() {
-  return (
-    <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-neutral-950 px-4 py-16">
-      <BrandedHeader compact />
-      <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
-      <p className="mt-10 text-[11px] text-neutral-700 tracking-widest uppercase">
-        Powered by Olyxee
-      </p>
-    </div>
-  );
-}
-
-function SignUpPage() {
-  return (
-    <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-neutral-950 px-4 py-16">
-      <BrandedHeader compact />
-      <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
-      <p className="mt-10 text-[11px] text-neutral-700 tracking-widest uppercase">
-        Powered by Olyxee
-      </p>
-    </div>
   );
 }
 
@@ -246,17 +237,16 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   return (
     <>
       <Show when="signed-in">
-        <AppLayout>
-          <Component />
-        </AppLayout>
+        <AppLayout><Component /></AppLayout>
       </Show>
       <Show when="signed-out">
-        <Redirect to="/" />
+        <Redirect to="/sign-in" />
       </Show>
     </>
   );
 }
 
+// ─── Clerk cache invalidation ─────────────────────────────────────────────────
 function ClerkQueryClientCacheInvalidator() {
   const { addListener } = useClerk();
   const queryClient = useQueryClient();
@@ -277,9 +267,7 @@ function ClerkQueryClientCacheInvalidator() {
 }
 
 const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: { retry: 1, refetchOnWindowFocus: false },
-  },
+  defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
 });
 
 function ClerkProviderWithRoutes() {

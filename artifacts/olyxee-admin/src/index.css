@@ -205,3 +205,11 @@
     border-radius: 0;
   }
 }
+
+/* Hide Clerk development mode badge/banner */
+.cl-badge,
+.cl-devBrowserWarning,
+[data-localization-key="badge__devMode"],
+[data-localization-key*="devMode"] {
+  display: none !important;
+}
