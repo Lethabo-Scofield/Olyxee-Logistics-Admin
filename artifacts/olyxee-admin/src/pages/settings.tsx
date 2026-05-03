@@ -9,13 +9,13 @@ import { Moon, Sun, Check, Palette, Building2, Image, AlertCircle } from "lucide
 import { toast } from "sonner";
 
 const PRESET_COLORS = [
+  { label: "Charcoal", hex: "#2b2b2b" },
+  { label: "Graphite", hex: "#3f3f3f" },
+  { label: "Slate", hex: "#475569" },
   { label: "Ocean Blue", hex: "#2563eb" },
   { label: "Indigo", hex: "#4f46e5" },
-  { label: "Slate", hex: "#475569" },
   { label: "Emerald", hex: "#059669" },
-  { label: "Teal", hex: "#0d9488" },
   { label: "Rose", hex: "#e11d48" },
-  { label: "Orange", hex: "#ea580c" },
   { label: "Violet", hex: "#7c3aed" },
 ];
 

@@ -57,7 +57,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               href={item.href}
               className={`flex items-center gap-2.5 px-3 py-2 text-sm font-medium transition-colors ${
                 isActive
-                  ? "bg-primary text-white"
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
                   : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               }`}
             >
@@ -72,7 +72,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             href="/settings"
             className={`flex items-center gap-2.5 px-3 py-2 text-sm font-medium transition-colors ${
               location.startsWith("/settings")
-                ? "bg-primary text-white"
+                ? "bg-sidebar-primary text-sidebar-primary-foreground"
                 : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             }`}
           >

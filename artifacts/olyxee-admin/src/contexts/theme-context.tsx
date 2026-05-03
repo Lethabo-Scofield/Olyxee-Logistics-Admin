@@ -21,7 +21,7 @@ const STORAGE_KEY = "olyxee_theme";
 
 const DEFAULTS: ThemeSettings = {
   isDark: false,
-  primaryColor: "#2563eb",
+  primaryColor: "#2b2b2b",
   logoUrl: "",
   businessName: "Olyxee Logistics",
   businessTagline: "Enterprise Logistics",
