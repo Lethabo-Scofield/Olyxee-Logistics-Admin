@@ -1,0 +1,54 @@
+16:06:46.079 
+16:06:46.455 
+vite v7.3.2 building client environment for production...
+16:06:46.629 
+transforming...
+16:06:47.200 
+src/components/ui/sonner.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+16:06:47.208 
+src/components/ui/tooltip.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+16:06:47.663 
+src/components/ui/sheet.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+16:06:47.665 
+src/components/ui/avatar.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+16:06:48.116 
+src/components/ui/label.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+16:06:48.118 
+src/components/ui/select.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+16:06:50.859 
+✓ 2231 modules transformed.
+16:06:51.266 
+rendering chunks...
+16:06:51.278 
+computing gzip size...
+16:06:51.302 
+dist/public/index.html                   0.74 kB │ gzip:   0.41 kB
+16:06:51.303 
+dist/public/assets/index-B-LBnfrA.css  107.55 kB │ gzip:  17.86 kB
+16:06:51.304 
+dist/public/assets/index-B4QisniX.js   592.14 kB │ gzip: 175.69 kB
+16:06:51.304 
+✓ built in 4.78s
+16:06:51.304 
+16:06:51.304 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+16:06:51.304 
+- Using dynamic import() to code-split the application
+16:06:51.305 
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+16:06:51.311 
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+16:06:51.407 
+Error: No entrypoint found in output directory: "artifacts/olyxee-admin/dist/public". Searched for: 
+16:06:51.407 
+- app.{js,cjs,mjs,ts,cts,mts}
+16:06:51.407 
+- index.{js,cjs,mjs,ts,cts,mts}
+16:06:51.407 
+- server.{js,cjs,mjs,ts,cts,mts}
+16:06:51.407 
+- src/app.{js,cjs,mjs,ts,cts,mts}
+16:06:51.407 
+- src/index.{js,cjs,mjs,ts,cts,mts}
+16:06:51.407 
+- src/server.{js,cjs,mjs,ts,cts,mts}
