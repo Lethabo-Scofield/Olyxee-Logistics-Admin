@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ClerkProvider, SignIn, SignUp, Show, useClerk } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
@@ -81,8 +81,9 @@ function compressImageFile(file: File): Promise<string> {
 
 // ─── Logo upload (compact, light theme) ──────────────────────────────────────
 function LogoUploadCompact() {
-  const { logoUrl, setLogoUrl } = useTheme();
+  const { logoUrl, setLogoUrl, businessName, setBusinessName } = useTheme();
   const fileRef = useRef<HTMLInputElement>(null);
+  const [showSetup, setShowSetup] = useState(false);
 
   const handleFile = async (file: File) => {
     if (!file.type.startsWith("image/")) return;
@@ -90,28 +91,67 @@ function LogoUploadCompact() {
     setLogoUrl(await compressImageFile(file));
   };
 
+  if (logoUrl && !showSetup) {
+    return (
+      <button
+        onClick={() => setShowSetup(true)}
+        className="group flex items-center gap-1.5 text-[11px] text-gray-400 hover:text-gray-600 transition-colors"
+      >
+        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 012.828 2.828L11.828 15.828a2 2 0 01-1.414.586H9v-2a2 2 0 01.586-1.414z" />
+        </svg>
+        Edit branding
+      </button>
+    );
+  }
+
   return (
-    <div className="flex flex-col items-center gap-1.5">
+    <div className="flex flex-col items-end gap-2">
       <input ref={fileRef} type="file" accept="image/*" className="hidden"
-        onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
-      {logoUrl ? (
-        <button onClick={() => fileRef.current?.click()} className="group flex flex-col items-center gap-1">
-          <img src={logoUrl} alt="logo" className="max-h-10 max-w-[140px] object-contain" />
-          <span className="text-[10px] text-gray-400 group-hover:text-gray-600 underline underline-offset-2 transition-colors">
-            Change logo
-          </span>
-        </button>
-      ) : (
+        onChange={e => { e.target.files?.[0] && handleFile(e.target.files[0]); }} />
+
+      <div className="bg-white border border-gray-200 shadow-sm p-3 flex flex-col gap-2.5 w-56">
+        <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest">Brand setup</p>
+
+        <input
+          type="text"
+          value={businessName}
+          onChange={e => setBusinessName(e.target.value)}
+          placeholder="Business name"
+          className="w-full border border-gray-200 px-2.5 py-1.5 text-xs text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 transition-colors"
+        />
+
         <button
           onClick={() => fileRef.current?.click()}
-          className="flex items-center gap-2 border border-dashed border-gray-300 hover:border-gray-400 px-4 py-2 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+          className="flex items-center justify-center gap-2 border border-dashed border-gray-300 hover:border-gray-500 py-2 text-xs text-gray-500 hover:text-gray-700 transition-colors w-full"
         >
-          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="h-3.5 w-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="square" strokeLinejoin="miter" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
           </svg>
-          Upload your logo
+          {logoUrl ? "Change logo" : "Upload logo"}
         </button>
-      )}
+
+        {logoUrl && (
+          <div className="flex items-center gap-2 border border-gray-100 px-2 py-1.5 bg-gray-50">
+            <img src={logoUrl} alt="logo" className="max-h-6 max-w-[80px] object-contain" />
+            <button
+              onClick={() => setLogoUrl("")}
+              className="ml-auto text-[10px] text-gray-400 hover:text-red-500 transition-colors"
+            >
+              Remove
+            </button>
+          </div>
+        )}
+
+        {(logoUrl || businessName) && (
+          <button
+            onClick={() => setShowSetup(false)}
+            className="text-[10px] text-gray-400 hover:text-gray-600 text-right transition-colors"
+          >
+            Done
+          </button>
+        )}
+      </div>
     </div>
   );
 }
