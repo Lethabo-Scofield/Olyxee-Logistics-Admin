@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" fill="none">
+  <rect width="200" height="60" rx="8" fill="#1e293b"/>
+  <path d="M20 30L40 15L60 30L40 45L20 30Z" fill="#3b82f6"/>
+  <path d="M40 15V45" stroke="white" stroke-width="4"/>
+  <path d="M20 30H60" stroke="white" stroke-width="4"/>
+  <text x="75" y="40" font-family="Inter, sans-serif" font-size="28" font-weight="bold" fill="white">Olyxee</text>
+</svg>
