@@ -206,7 +206,10 @@
   }
 }
 
-/* Hide Clerk development mode badge/banner */
+/* Hide Clerk footer, dev mode badge, and duplicate sign-in/sign-up links */
+.cl-footer,
+.cl-footerAction,
+.cl-footerPages,
 .cl-badge,
 .cl-devBrowserWarning,
 [data-localization-key="badge__devMode"],
