@@ -1,17 +1,24 @@
 import { db, usersTable, businessesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import type { Request, Response, NextFunction } from "express";
+import { getAuth, clerkClient } from "@clerk/express";
 import { generateId } from "./id";
-
-const DEV_USER_ID = "dev-admin";
 
 export async function requireAuth(
   req: Request,
-  _res: Response,
+  res: Response,
   next: NextFunction,
 ): Promise<void> {
+  const auth = getAuth(req);
+  const clerkUserId = auth?.userId;
+
+  if (!clerkUserId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
   let user = await db.query.usersTable.findFirst({
-    where: eq(usersTable.clerkUserId, DEV_USER_ID),
+    where: eq(usersTable.clerkUserId, clerkUserId),
   });
 
   if (!user) {
@@ -20,10 +27,21 @@ export async function requireAuth(
     });
 
     if (!business) {
-      _res.status(500).json({
-        error: "No business found. Run `pnpm --filter @workspace/db run seed`.",
-      });
+      res.status(500).json({ error: "No business configured" });
       return;
+    }
+
+    let name = "User";
+    let email = "";
+    try {
+      const cu = await clerkClient.users.getUser(clerkUserId);
+      name =
+        [cu.firstName, cu.lastName].filter(Boolean).join(" ") ||
+        cu.username ||
+        "User";
+      email = cu.primaryEmailAddress?.emailAddress ?? "";
+    } catch (err) {
+      req.log?.warn({ err }, "Failed to fetch Clerk user profile");
     }
 
     const inserted = await db
@@ -31,21 +49,23 @@ export async function requireAuth(
       .values({
         id: generateId(),
         businessId: business.id,
-        clerkUserId: DEV_USER_ID,
-        name: "Admin User",
-        email: "admin@olyxee.local",
+        clerkUserId,
+        name,
+        email,
         role: "admin",
       })
       .onConflictDoNothing()
       .returning();
 
-    user = inserted[0] ?? await db.query.usersTable.findFirst({
-      where: eq(usersTable.clerkUserId, DEV_USER_ID),
-    });
+    user =
+      inserted[0] ??
+      (await db.query.usersTable.findFirst({
+        where: eq(usersTable.clerkUserId, clerkUserId),
+      }));
   }
 
   if (!user) {
-    _res.status(500).json({ error: "Failed to provision dev user" });
+    res.status(500).json({ error: "Failed to provision user" });
     return;
   }
 

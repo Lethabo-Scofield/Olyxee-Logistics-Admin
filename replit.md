@@ -4,6 +4,14 @@
 
 pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
 
+## Authentication
+
+Clerk Auth (Replit-managed) wired into `artifacts/olyxee-admin` (web) and `artifacts/api-server`.
+- Sign-in page: `/sign-in`, sign-up page: `/sign-up`. After successful auth, users land on `/dashboard`.
+- All admin routes are guarded client-side via `<Show when="signed-in">`; unauthenticated visitors are redirected to `/sign-in`.
+- Server-side: `clerkMiddleware()` is mounted in `artifacts/api-server/src/app.ts`. The `requireAuth` middleware in `artifacts/api-server/src/lib/auth.ts` reads `getAuth(req).userId`, then looks up (or auto-provisions on first sign-in) a row in our `users` table linked to that `clerkUserId`, scoped to the seeded `olyxee` business. The signed-in user's name + email are pulled from Clerk and stored in our DB.
+- Sign-out is available in the sidebar user widget (LogOut icon).
+
 ## Stack
 
 - **Monorepo tool**: pnpm workspaces

@@ -2,12 +2,53 @@ import React from "react";
 import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, Users, Package, FileText,
-  Menu, Moon, Sun, Settings,
+  Menu, Moon, Sun, Settings, LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTheme } from "@/contexts/theme-context";
+import { useUser, useClerk } from "@clerk/react";
+
+function UserRow() {
+  const { user } = useUser();
+  const { signOut } = useClerk();
+  const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+  const name =
+    user?.fullName ||
+    user?.username ||
+    user?.primaryEmailAddress?.emailAddress ||
+    "User";
+  const email = user?.primaryEmailAddress?.emailAddress ?? "";
+  const initial = (name || "U").charAt(0).toUpperCase();
+
+  return (
+    <div className="flex items-center gap-2.5 px-4 py-3">
+      <Avatar className="h-7 w-7 flex-shrink-0">
+        {user?.imageUrl ? <AvatarImage src={user.imageUrl} alt={name} /> : null}
+        <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground text-xs">
+          {initial}
+        </AvatarFallback>
+      </Avatar>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-medium truncate">{name}</p>
+        {email ? (
+          <p className="text-xs text-sidebar-foreground/50 truncate">{email}</p>
+        ) : null}
+      </div>
+      <button
+        type="button"
+        onClick={() => signOut({ redirectUrl: `${basePath}/sign-in` })}
+        className="text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors p-1"
+        aria-label="Sign out"
+        title="Sign out"
+      >
+        <LogOut className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -88,17 +129,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* User row */}
-        <div className="flex items-center gap-2.5 px-4 py-3">
-          <Avatar className="h-7 w-7 flex-shrink-0">
-            <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground text-xs">
-              A
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium truncate">Admin User</p>
-            <p className="text-xs text-sidebar-foreground/50 truncate">admin@olyxee.local</p>
-          </div>
-        </div>
+        <UserRow />
 
         {/* Olyxee branding */}
         <div className="px-5 py-2 border-t border-sidebar-border">
