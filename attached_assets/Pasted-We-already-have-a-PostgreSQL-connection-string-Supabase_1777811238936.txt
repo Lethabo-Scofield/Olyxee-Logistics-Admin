@@ -1,0 +1,187 @@
+We already have a PostgreSQL connection string (Supabase). Build the database layer and integrate it with Prisma for a multi-tenant logistics admin system.
+
+Goal:
+- Connect to Postgres using DATABASE_URL and DIRECT_URL
+- Define schema for multi-tenant system (business_id isolation)
+- Run migrations
+- Seed initial data
+- Ensure ready for admin panel usage
+
+Tech:
+- Node.js
+- Prisma ORM
+- PostgreSQL
+
+Step 1: Setup
+- Install prisma and @prisma/client
+- Run: npx prisma init
+- Configure .env with:
+  DATABASE_URL
+  DIRECT_URL
+
+Update prisma/schema.prisma:
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+Step 2: Define models
+
+model Business {
+  id              String   @id @default(uuid())
+  name            String
+  slug            String   @unique
+  websiteUrl      String?
+  supportEmail    String?
+  emailDomain     String?
+  createdAt       DateTime @default(now())
+
+  users           User[]
+  customers       Customer[]
+  orders          Order[]
+  auditLogs       AuditLog[]
+}
+
+model User {
+  id          String   @id @default(uuid())
+  businessId  String
+  name        String
+  email       String   @unique
+  role        String
+  createdAt   DateTime @default(now())
+
+  business    Business @relation(fields: [businessId], references: [id])
+}
+
+model Customer {
+  id           String   @id @default(uuid())
+  businessId   String
+  fullName     String
+  email        String
+  phone        String?
+  companyName  String?
+  address      String?
+  createdAt    DateTime @default(now())
+
+  business     Business @relation(fields: [businessId], references: [id])
+  orders       Order[]
+}
+
+model Order {
+  id                      String   @id @default(uuid())
+  businessId              String
+  customerId              String
+  trackingId              String   @unique
+  orderReference          String?
+  description             String?
+  currentStatus           String
+  estimatedDeliveryDate   DateTime?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  business                Business @relation(fields: [businessId], references: [id])
+  customer                Customer @relation(fields: [customerId], references: [id])
+  trackingEvents          TrackingEvent[]
+  emailNotifications      EmailNotification[]
+}
+
+model TrackingEvent {
+  id          String   @id @default(uuid())
+  orderId     String
+  status      String
+  message     String?
+  location    String?
+  createdBy   String?
+  createdAt   DateTime @default(now())
+
+  order       Order @relation(fields: [orderId], references: [id])
+}
+
+model EmailNotification {
+  id                  String   @id @default(uuid())
+  orderId             String
+  customerEmail       String
+  subject             String
+  body                String
+  status              String
+  providerMessageId   String?
+  createdAt           DateTime @default(now())
+
+  order               Order @relation(fields: [orderId], references: [id])
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  businessId  String
+  userId      String?
+  action      String
+  entityType  String
+  entityId    String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  business    Business @relation(fields: [businessId], references: [id])
+}
+
+Step 3: Run migrations
+
+- npx prisma migrate dev --name init
+- npx prisma generate
+
+Step 4: Seed script
+
+Create prisma/seed.ts:
+
+- Create one demo business
+- Create one admin user
+- Create 2 customers
+- Create 3 orders with different statuses
+- Create tracking events for each order
+
+Include realistic values:
+- business slug: freightshift
+- tracking IDs like: FSH-2026-000001
+
+Run:
+npx prisma db seed
+
+Step 5: Multi-tenant rule
+
+- Every query must include businessId
+- Never return data without filtering by businessId
+
+Example:
+
+const orders = await prisma.order.findMany({
+  where: { businessId: currentUser.businessId }
+})
+
+Step 6: Tracking ID generator utility
+
+Create function:
+
+generateTrackingId(businessSlug):
+- take first 3 letters uppercase
+- append year
+- append padded sequence number
+
+Example output:
+FSH-2026-000491
+
+Step 7: Output
+
+After setup, print:
+- Database connected successfully
+- Tables created
+- Seed data inserted
+- Sample admin login info
+- Sample tracking IDs
+
+Do not build UI yet.
+Only ensure database + Prisma layer is fully working and testable.
