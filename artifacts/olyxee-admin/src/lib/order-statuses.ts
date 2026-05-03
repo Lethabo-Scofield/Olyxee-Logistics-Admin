@@ -12,22 +12,33 @@ export const ORDER_STATUSES = [
 
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
-const TRANSITIONS: Record<string, OrderStatus[]> = {
-  "Order received":  ["Processing", "Cancelled"],
-  "Processing":      ["Driver assigned", "Delayed", "Cancelled"],
-  "Driver assigned": ["In transit", "Delayed", "Cancelled"],
-  "In transit":      ["Out for delivery", "Delayed", "Failed delivery", "Cancelled"],
-  "Delayed":         ["In transit", "Driver assigned", "Out for delivery", "Failed delivery", "Cancelled"],
-  "Out for delivery":["Delivered", "Failed delivery", "Delayed"],
-  "Delivered":       [],
-  "Failed delivery": ["Driver assigned", "In transit", "Cancelled"],
-  "Cancelled":       [],
+export interface StatusChoices {
+  primary: OrderStatus;
+  exceptions: OrderStatus[];
+}
+
+const CHOICES: Record<string, StatusChoices | null> = {
+  "Order received":   { primary: "Processing",       exceptions: ["Delayed", "Cancelled"] },
+  "Processing":       { primary: "Driver assigned",  exceptions: ["Delayed", "Cancelled"] },
+  "Driver assigned":  { primary: "In transit",       exceptions: ["Delayed", "Cancelled"] },
+  "In transit":       { primary: "Out for delivery", exceptions: ["Delayed", "Cancelled"] },
+  "Delayed":          { primary: "In transit",       exceptions: ["Failed delivery", "Cancelled"] },
+  "Out for delivery": { primary: "Delivered",        exceptions: ["Failed delivery", "Cancelled"] },
+  "Failed delivery":  { primary: "Driver assigned",  exceptions: ["Delayed", "Cancelled"] },
+  "Delivered":        null,
+  "Cancelled":        null,
 };
 
+export function statusChoices(current: string): StatusChoices | null {
+  return CHOICES[current] ?? null;
+}
+
 export function nextStatuses(current: string): OrderStatus[] {
-  return TRANSITIONS[current] ?? ORDER_STATUSES.filter(s => s !== current);
+  const c = statusChoices(current);
+  if (!c) return [];
+  return [c.primary, ...c.exceptions];
 }
 
 export function isTerminal(status: string): boolean {
-  return TRANSITIONS[status]?.length === 0;
+  return CHOICES[status] === null;
 }

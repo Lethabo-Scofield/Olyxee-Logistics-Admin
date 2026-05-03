@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -15,7 +15,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { Plus, Search, ArrowRight, Package, Pencil, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ORDER_STATUSES, nextStatuses, isTerminal } from "@/lib/order-statuses";
+import { ORDER_STATUSES, statusChoices, isTerminal } from "@/lib/order-statuses";
 
 function CreateOrderDialog({ onSuccess }: { onSuccess: () => void }) {
   const [open, setOpen] = useState(false);
@@ -148,16 +148,39 @@ function QuickUpdateSheet({ order, onSuccess }: QuickUpdateSheetProps) {
               <p className="text-sm text-muted-foreground border px-3 py-2 bg-muted/40">
                 This order is <span className="font-semibold">{order.currentStatus}</span> — no further updates possible.
               </p>
-            ) : (
-              <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))}>
-                <SelectTrigger><SelectValue placeholder="Select next status..." /></SelectTrigger>
-                <SelectContent>
-                  {nextStatuses(order.currentStatus).map(s => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+            ) : (() => {
+              const choices = statusChoices(order.currentStatus);
+              if (!choices) return null;
+              return (
+                <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Select next status..." /></SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Next step</SelectLabel>
+                      <SelectItem value={choices.primary}>
+                        <span className="flex items-center gap-2">
+                          <span className="text-primary font-bold">→</span> {choices.primary}
+                        </span>
+                      </SelectItem>
+                    </SelectGroup>
+                    <SelectSeparator />
+                    <SelectGroup>
+                      <SelectLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Exceptions</SelectLabel>
+                      {choices.exceptions.map(s => (
+                        <SelectItem key={s} value={s}>
+                          <span className="flex items-center gap-2">
+                            <span className={s === "Cancelled" ? "text-red-500 font-bold" : "text-amber-500 font-bold"}>
+                              {s === "Cancelled" ? "✕" : "⚠"}
+                            </span>
+                            {s}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              );
+            })()}
           </div>
 
           <div className="space-y-2">

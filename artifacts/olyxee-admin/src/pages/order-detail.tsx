@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/status-badge";
 import {
@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { nextStatuses, isTerminal } from "@/lib/order-statuses";
+import { statusChoices, isTerminal } from "@/lib/order-statuses";
 
 const STATUS_ICON_CONFIG: Record<string, {
   icon: React.ElementType;
@@ -192,21 +192,44 @@ export default function OrderDetailPage() {
                     <p className="text-sm text-muted-foreground border px-3 py-2 bg-muted/40">
                       This order is <span className="font-semibold">{order.currentStatus}</span> — no further status changes are possible.
                     </p>
-                  ) : (
-                    <Select
-                      value={statusForm.status}
-                      onValueChange={v => setStatusForm(f => ({ ...f, status: v }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose next status..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {nextStatuses(order.currentStatus).map(s => (
-                          <SelectItem key={s} value={s}>{s}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
+                  ) : (() => {
+                    const choices = statusChoices(order.currentStatus);
+                    if (!choices) return null;
+                    return (
+                      <Select
+                        value={statusForm.status}
+                        onValueChange={v => setStatusForm(f => ({ ...f, status: v }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose next status..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Next step</SelectLabel>
+                            <SelectItem value={choices.primary}>
+                              <span className="flex items-center gap-2">
+                                <span className="text-primary font-bold">→</span> {choices.primary}
+                              </span>
+                            </SelectItem>
+                          </SelectGroup>
+                          <SelectSeparator />
+                          <SelectGroup>
+                            <SelectLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Exceptions</SelectLabel>
+                            {choices.exceptions.map(s => (
+                              <SelectItem key={s} value={s}>
+                                <span className="flex items-center gap-2">
+                                  <span className={s === "Cancelled" ? "text-red-500 font-bold" : "text-amber-500 font-bold"}>
+                                    {s === "Cancelled" ? "✕" : "⚠"}
+                                  </span>
+                                  {s}
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    );
+                  })()}
                 </div>
 
                 <div className="grid sm:grid-cols-2 gap-4">
