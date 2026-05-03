@@ -1,8 +1,7 @@
-@layer theme, base, clerk, components, utilities;
+@layer theme, base, components, utilities;
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
-@import '@clerk/themes/shadcn.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -206,13 +205,3 @@
   }
 }
 
-/* Hide Clerk footer, dev mode badge, and duplicate sign-in/sign-up links */
-.cl-footer,
-.cl-footerAction,
-.cl-footerPages,
-.cl-badge,
-.cl-devBrowserWarning,
-[data-localization-key="badge__devMode"],
-[data-localization-key*="devMode"] {
-  display: none !important;
-}

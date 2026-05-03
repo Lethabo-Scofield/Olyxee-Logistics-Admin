@@ -1,10 +1,8 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Link, useLocation } from "wouter";
-import { useAuth, useUser, useClerk } from "@clerk/react";
-import { setAuthTokenGetter } from "@workspace/api-client-react";
 import {
   LayoutDashboard, Users, Package, FileText,
-  LogOut, Menu, Moon, Sun, Settings,
+  Menu, Moon, Sun, Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -19,15 +17,8 @@ const NAV_ITEMS = [
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { getToken } = useAuth();
-  const { user } = useUser();
-  const { signOut } = useClerk();
   const [location] = useLocation();
   const { isDark, setIsDark, logoUrl, businessName } = useTheme();
-
-  useEffect(() => {
-    setAuthTokenGetter(() => getToken());
-  }, [getToken]);
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-sidebar text-sidebar-foreground">
@@ -99,22 +90,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         {/* User row */}
         <div className="flex items-center gap-2.5 px-4 py-3">
           <Avatar className="h-7 w-7 flex-shrink-0">
-            <AvatarImage src={user?.imageUrl} />
             <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground text-xs">
-              {user?.firstName?.charAt(0) || "U"}
+              A
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium truncate">{user?.fullName}</p>
-            <p className="text-xs text-sidebar-foreground/50 truncate">{user?.primaryEmailAddress?.emailAddress}</p>
+            <p className="text-xs font-medium truncate">Admin User</p>
+            <p className="text-xs text-sidebar-foreground/50 truncate">admin@olyxee.local</p>
           </div>
-          <button
-            onClick={() => signOut()}
-            title="Sign out"
-            className="text-sidebar-foreground/40 hover:text-sidebar-foreground/80 transition-colors"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-          </button>
         </div>
 
         {/* Olyxee branding */}
