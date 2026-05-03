@@ -9,10 +9,42 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/status-badge";
-import { ArrowLeft, Copy, Check, Mail, RefreshCw, MapPin, Clock, ExternalLink } from "lucide-react";
+import {
+  ArrowLeft, Copy, Check, Mail, RefreshCw, MapPin, ExternalLink,
+  ClipboardList, Settings2, UserCheck, Truck, AlertTriangle,
+  Navigation, House, PackageX, Ban, Package,
+} from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { nextStatuses, isTerminal } from "@/lib/order-statuses";
+
+const STATUS_ICON_CONFIG: Record<string, {
+  icon: React.ElementType;
+  bg: string;
+  border: string;
+  iconColor: string;
+  label: string;
+}> = {
+  "Order received":   { icon: ClipboardList, bg: "bg-sky-50",    border: "border-sky-300",   iconColor: "text-sky-600",   label: "Order Received" },
+  "Processing":       { icon: Settings2,     bg: "bg-violet-50", border: "border-violet-300", iconColor: "text-violet-600",label: "Processing" },
+  "Driver assigned":  { icon: UserCheck,     bg: "bg-indigo-50", border: "border-indigo-300", iconColor: "text-indigo-600",label: "Driver Assigned" },
+  "In transit":       { icon: Truck,         bg: "bg-blue-50",   border: "border-blue-300",   iconColor: "text-blue-600",  label: "In Transit" },
+  "Delayed":          { icon: AlertTriangle, bg: "bg-amber-50",  border: "border-amber-300",  iconColor: "text-amber-600", label: "Delayed" },
+  "Out for delivery": { icon: Navigation,    bg: "bg-orange-50", border: "border-orange-300", iconColor: "text-orange-600",label: "Out for Delivery" },
+  "Delivered":        { icon: House,         bg: "bg-green-50",  border: "border-green-400",  iconColor: "text-green-600", label: "Delivered" },
+  "Failed delivery":  { icon: PackageX,      bg: "bg-red-50",    border: "border-red-300",    iconColor: "text-red-600",   label: "Failed Delivery" },
+  "Cancelled":        { icon: Ban,           bg: "bg-gray-100",  border: "border-gray-300",   iconColor: "text-gray-500",  label: "Cancelled" },
+};
+
+function getStatusConfig(status: string) {
+  return STATUS_ICON_CONFIG[status] ?? {
+    icon: Package,
+    bg: "bg-muted",
+    border: "border-border",
+    iconColor: "text-muted-foreground",
+    label: status,
+  };
+}
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -224,38 +256,75 @@ export default function OrderDetailPage() {
               {!order.trackingEvents?.length ? (
                 <p className="text-sm text-muted-foreground">No tracking events yet.</p>
               ) : (
-                <div className="relative pl-8">
-                  <div className="absolute left-3 top-2 bottom-2 w-px bg-border" />
-                  <div className="space-y-5">
-                    {order.trackingEvents.map((event, idx) => (
-                      <div key={event.id} className="relative">
-                        <div
-                          className={`absolute -left-5 flex h-6 w-6 items-center justify-center border-2 ${
-                            idx === 0
-                              ? "border-primary bg-primary"
-                              : "border-border bg-background"
-                          }`}
-                        >
-                          <Clock className={`h-3 w-3 ${idx === 0 ? "text-white" : "text-muted-foreground"}`} />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <StatusBadge status={event.status} />
-                            <span className="text-xs text-muted-foreground">
-                              {format(new Date(event.createdAt), "MMM d, yyyy · HH:mm")}
-                            </span>
+                <div className="relative pl-12">
+                  {/* Vertical line */}
+                  <div className="absolute left-5 top-6 bottom-6 w-px bg-border" />
+
+                  <div className="space-y-6">
+                    {order.trackingEvents.map((event, idx) => {
+                      const cfg = getStatusConfig(event.status);
+                      const Icon = cfg.icon;
+                      const isLatest = idx === 0;
+                      const isDelivered = event.status === "Delivered";
+
+                      return (
+                        <div key={event.id} className="relative">
+                          {/* Icon bubble */}
+                          <div
+                            className={`
+                              absolute -left-7 flex items-center justify-center border-2 transition-all
+                              ${isDelivered ? "h-11 w-11 -left-8" : "h-9 w-9"}
+                              ${isLatest ? `${cfg.bg} ${cfg.border}` : "bg-background border-border"}
+                            `}
+                          >
+                            <Icon
+                              className={`
+                                ${isDelivered ? "h-5 w-5" : "h-4 w-4"}
+                                ${isLatest ? cfg.iconColor : "text-muted-foreground/40"}
+                              `}
+                            />
                           </div>
-                          {event.message && (
-                            <p className="text-sm text-muted-foreground mt-1">{event.message}</p>
-                          )}
-                          {event.location && (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                              <MapPin className="h-3 w-3" /> {event.location}
+
+                          {/* Content */}
+                          <div className={`min-w-0 pt-1.5 ${isDelivered && isLatest ? "pl-2" : ""}`}>
+                            {/* Delivered special banner */}
+                            {isDelivered && isLatest && (
+                              <div className="flex items-center gap-2 mb-2 px-3 py-1.5 bg-green-50 border border-green-200 w-fit">
+                                <House className="h-3.5 w-3.5 text-green-600" />
+                                <span className="text-xs font-semibold text-green-700 tracking-wide uppercase">
+                                  Package received by customer
+                                </span>
+                              </div>
+                            )}
+
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className={`text-sm font-semibold ${isLatest ? "" : "text-muted-foreground"}`}>
+                                {cfg.label}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {format(new Date(event.createdAt), "MMM d, yyyy · HH:mm")}
+                              </span>
+                              {isLatest && (
+                                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground border px-1.5 py-0.5">
+                                  Latest
+                                </span>
+                              )}
                             </div>
-                          )}
+
+                            {event.message && (
+                              <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                                {event.message}
+                              </p>
+                            )}
+                            {event.location && (
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                                <MapPin className="h-3 w-3" /> {event.location}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
