@@ -1,0 +1,25 @@
+# Dependencies (Vercel installs these)
+node_modules
+
+# Replit-specific
+.replit
+replit.nix
+.local
+
+# Dev artifacts
+artifacts/olyxee-admin/node_modules
+artifacts/api-server/node_modules
+lib/*/node_modules
+scripts/node_modules
+
+# Source maps (keep build maps but not source)
+**/*.map
+
+# Test / CI
+**/*.test.ts
+**/*.spec.ts
+**/coverage
+
+# Build caches
+**/.turbo
+**/.vite

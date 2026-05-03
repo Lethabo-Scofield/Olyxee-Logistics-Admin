@@ -58,6 +58,24 @@ async function buildAll() {
     banner: sharedBanner,
   });
 
+  // ── Build 2: Vercel serverless handler ────────────────────────────────────
+  // Outputs api/handler.mjs — a self-contained bundle that exports the
+  // Express app. Vercel's Node.js runtime accepts an Express app as the
+  // default export of a serverless function file.
+  const vercelOutDir = path.resolve(artifactDir, "../../api");
+  await esbuild({
+    entryPoints: [path.resolve(artifactDir, "src/handler.ts")],
+    platform: "node",
+    bundle: true,
+    format: "esm",
+    outdir: vercelOutDir,
+    outExtension: { ".js": ".mjs" },
+    logLevel: "info",
+    external: sharedExternal,
+    // No sourcemap for the serverless bundle — keeps the function size down.
+    plugins: [esbuildPluginPino({ transports: [] })],
+    banner: sharedBanner,
+  });
 }
 
 buildAll().catch((err) => {
