@@ -1,0 +1,7 @@
+{
+  "runtime": "nodejs20.x",
+  "handler": "handler.mjs",
+  "launcherType": "Nodejs",
+  "shouldAddHelpers": true,
+  "maxDuration": 30
+}
