@@ -1,18 +1,29 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useListCustomers, useCreateCustomer } from "@workspace/api-client-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, ChevronRight, Users } from "lucide-react";
+import { Plus, Search, Users } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
-function CreateCustomerSheet({ onSuccess }: { onSuccess: () => void }) {
+const AVATAR = `${import.meta.env.BASE_URL}avatar-placeholder.png`;
+
+function CustomerAvatar({ name, size = "sm" }: { name: string; size?: "sm" | "lg" }) {
+  const dim = size === "lg" ? "h-16 w-16" : "h-8 w-8";
+  return (
+    <div className={`${dim} flex-shrink-0 overflow-hidden bg-muted border`}>
+      <img src={AVATAR} alt={name} className="h-full w-full object-cover opacity-60" />
+    </div>
+  );
+}
+
+function CreateCustomerDialog({ onSuccess }: { onSuccess: () => void }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ fullName: "", email: "", phone: "", companyName: "", address: "" });
   const createMutation = useCreateCustomer();
@@ -34,45 +45,48 @@ function CreateCustomerSheet({ onSuccess }: { onSuccess: () => void }) {
   };
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
         <Button className="gap-2"><Plus className="h-4 w-4" /> New Customer</Button>
-      </SheetTrigger>
-      <SheetContent className="w-[400px]">
-        <SheetHeader>
-          <SheetTitle>New Customer</SheetTitle>
-        </SheetHeader>
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="fullName">Full Name *</Label>
-            <Input id="fullName" value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} required />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email *</Label>
-            <Input id="email" type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} required />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone</Label>
-            <Input id="phone" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="companyName">Company Name</Label>
-            <Input id="companyName" value={form.companyName} onChange={e => setForm(f => ({ ...f, companyName: e.target.value }))} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="address">Address</Label>
-            <Input id="address" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} />
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[460px]">
+        <DialogHeader>
+          <DialogTitle>New Customer</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="mt-2 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2 col-span-2">
+              <Label htmlFor="fullName">Full Name *</Label>
+              <Input id="fullName" value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} required />
+            </div>
+            <div className="space-y-2 col-span-2">
+              <Label htmlFor="email">Email *</Label>
+              <Input id="email" type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone</Label>
+              <Input id="phone" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="companyName">Company</Label>
+              <Input id="companyName" value={form.companyName} onChange={e => setForm(f => ({ ...f, companyName: e.target.value }))} />
+            </div>
+            <div className="space-y-2 col-span-2">
+              <Label htmlFor="address">Address</Label>
+              <Input id="address" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} />
+            </div>
           </div>
           <Button type="submit" className="w-full mt-2" disabled={createMutation.isPending}>
             {createMutation.isPending ? "Creating..." : "Create Customer"}
           </Button>
         </form>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }
 
 export default function CustomersPage() {
+  const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [querySearch, setQuerySearch] = useState("");
@@ -89,72 +103,81 @@ export default function CustomersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Customers</h1>
-          <p className="text-gray-500 mt-1">{data?.total ?? 0} total customers</p>
+          <h1 className="text-2xl font-bold tracking-tight">Customers</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">{data?.total ?? 0} total customers</p>
         </div>
-        <CreateCustomerSheet onSuccess={() => refetch()} />
+        <CreateCustomerDialog onSuccess={() => refetch()} />
       </div>
 
       <Card>
         <CardHeader className="pb-3">
           <form onSubmit={handleSearch} className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input className="pl-9" placeholder="Search by name, email, or company..." value={search} onChange={e => setSearch(e.target.value)} />
             </div>
             <Button type="submit" variant="secondary">Search</Button>
           </form>
         </CardHeader>
+
         <CardContent className="p-0">
           {isLoading ? (
             <div className="p-6 space-y-3">
-              {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <Skeleton className="h-8 w-8 flex-shrink-0" />
+                  <Skeleton className="h-5 flex-1" />
+                </div>
+              ))}
             </div>
           ) : !data?.data.length ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <Users className="h-12 w-12 text-gray-300 mb-4" />
-              <p className="text-gray-500 font-medium">No customers found</p>
-              <p className="text-gray-400 text-sm mt-1">Create your first customer to get started</p>
+              <div className="h-16 w-16 mb-4 opacity-20">
+                <img src={AVATAR} alt="" className="h-full w-full object-cover" />
+              </div>
+              <p className="text-muted-foreground font-medium">No customers found</p>
+              <p className="text-muted-foreground/60 text-sm mt-1">Create your first customer to get started</p>
             </div>
           ) : (
             <>
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10"></TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Company</TableHead>
                     <TableHead>Phone</TableHead>
                     <TableHead>Since</TableHead>
-                    <TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {data.data.map((customer) => (
-                    <TableRow key={customer.id} className="cursor-pointer hover:bg-gray-50">
-                      <TableCell className="font-medium">
-                        <Link href={`/customers/${customer.id}`} className="hover:underline text-blue-600">
-                          {customer.fullName}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="text-gray-600">{customer.email}</TableCell>
-                      <TableCell className="text-gray-600">{customer.companyName ?? "—"}</TableCell>
-                      <TableCell className="text-gray-600">{customer.phone ?? "—"}</TableCell>
-                      <TableCell className="text-gray-500 text-sm">
-                        {format(new Date(customer.createdAt), "MMM d, yyyy")}
-                      </TableCell>
+                    <TableRow
+                      key={customer.id}
+                      className="cursor-pointer hover:bg-muted/40 group"
+                      onClick={() => navigate(`/customers/${customer.id}`)}
+                    >
                       <TableCell>
-                        <Link href={`/customers/${customer.id}`}>
-                          <ChevronRight className="h-4 w-4 text-gray-400" />
-                        </Link>
+                        <CustomerAvatar name={customer.fullName} />
+                      </TableCell>
+                      <TableCell className="font-semibold">
+                        {customer.fullName}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{customer.email}</TableCell>
+                      <TableCell className="text-muted-foreground">{customer.companyName ?? "—"}</TableCell>
+                      <TableCell className="text-muted-foreground">{customer.phone ?? "—"}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {format(new Date(customer.createdAt), "MMM d, yyyy")}
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+
               {data.total > 20 && (
                 <div className="flex items-center justify-between px-6 py-4 border-t">
-                  <span className="text-sm text-gray-500">Page {page} of {Math.ceil(data.total / 20)}</span>
+                  <span className="text-sm text-muted-foreground">Page {page} of {Math.ceil(data.total / 20)}</span>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>Previous</Button>
                     <Button variant="outline" size="sm" disabled={page >= Math.ceil(data.total / 20)} onClick={() => setPage(p => p + 1)}>Next</Button>
