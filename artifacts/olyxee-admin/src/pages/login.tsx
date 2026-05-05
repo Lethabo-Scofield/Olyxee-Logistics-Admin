@@ -31,18 +31,6 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-8">
       <div className="w-[440px] max-w-full bg-white border border-[hsl(220,13%,88%)] p-8">
-        <div className="flex flex-col items-center mb-6">
-          <div className="h-10 w-10 bg-[hsl(220,20%,10%)] flex items-center justify-center mb-3">
-            <span className="text-white font-bold">O</span>
-          </div>
-          <h1 className="text-2xl font-bold text-[hsl(220,20%,10%)]">
-            Welcome back
-          </h1>
-          <p className="text-sm text-[hsl(220,9%,46%)] mt-1">
-            Sign in to your Olyxee admin account
-          </p>
-        </div>
-
         {!isConfigured ? (
           <div
             className="text-xs text-amber-700 border border-amber-200 bg-amber-50 p-3 mb-4"
@@ -106,7 +94,7 @@ export default function LoginPage() {
           </Link>
         </p>
         <p className="text-[10px] text-center text-[hsl(220,9%,46%)] mt-4 tracking-widest uppercase">
-          Powered by Supabase
+          Powered by Olyxee
         </p>
         <input type="hidden" name="basePath" value={basePath} />
       </div>
