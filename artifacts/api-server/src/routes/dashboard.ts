@@ -60,7 +60,13 @@ router.get("/dashboard/recent-orders", requireAuth, async (req, res) => {
     const orders = await db
       .select()
       .from(ordersTable)
-      .leftJoin(customersTable, eq(ordersTable.customerId, customersTable.id))
+      .leftJoin(
+        customersTable,
+        and(
+          eq(ordersTable.customerId, customersTable.id),
+          eq(customersTable.businessId, businessId),
+        ),
+      )
       .where(eq(ordersTable.businessId, businessId))
       .orderBy(desc(ordersTable.updatedAt))
       .limit(10);

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, customersTable, ordersTable } from "@workspace/db";
+import { db, customersTable, ordersTable, auditLogsTable } from "@workspace/db";
 import { eq, and, ilike, or, desc, sql } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import { generateId } from "../lib/id";
@@ -58,6 +58,7 @@ router.get("/customers", requireAuth, async (req, res) => {
 router.post("/customers", requireAuth, async (req, res) => {
   try {
     const businessId = (req as any).businessId;
+    const userId = (req as any).userId;
     const parse = CreateCustomerBody.safeParse(req.body);
     if (!parse.success) {
       res.status(400).json({ error: "Invalid input", details: parse.error.issues });
@@ -65,20 +66,35 @@ router.post("/customers", requireAuth, async (req, res) => {
     }
 
     const { fullName, email, phone, companyName, address } = parse.data;
-    const customer = await db
-      .insert(customersTable)
-      .values({
+
+    // Customer + audit log written atomically so the audit trail can never
+    // miss a successful create (or record one that didn't actually happen).
+    const c = await db.transaction(async (tx) => {
+      const inserted = await tx
+        .insert(customersTable)
+        .values({
+          id: generateId(),
+          businessId,
+          fullName,
+          email,
+          phone: phone ?? null,
+          companyName: companyName ?? null,
+          address: address ?? null,
+        })
+        .returning();
+      const customer = inserted[0]!;
+      await tx.insert(auditLogsTable).values({
         id: generateId(),
         businessId,
-        fullName,
-        email,
-        phone: phone ?? null,
-        companyName: companyName ?? null,
-        address: address ?? null,
-      })
-      .returning();
+        userId,
+        action: "CREATE_CUSTOMER",
+        entityType: "customer",
+        entityId: customer.id,
+        metadata: { fullName: customer.fullName, email: customer.email },
+      });
+      return customer;
+    });
 
-    const c = customer[0];
     res.status(201).json({ ...c, createdAt: c.createdAt.toISOString() });
   } catch (err) {
     req.log.error({ err }, "Failed to create customer");
@@ -113,6 +129,7 @@ router.get("/customers/:customerId", requireAuth, async (req, res) => {
 router.put("/customers/:customerId", requireAuth, async (req, res) => {
   try {
     const businessId = (req as any).businessId;
+    const userId = (req as any).userId;
     const customerId = req.params.customerId as string;
     const parse = UpdateCustomerBody.safeParse(req.body);
     if (!parse.success) {
@@ -120,32 +137,62 @@ router.put("/customers/:customerId", requireAuth, async (req, res) => {
       return;
     }
 
-    const existing = await db.query.customersTable.findFirst({
-      where: and(
-        eq(customersTable.id, customerId),
-        eq(customersTable.businessId, businessId),
-      ),
-    });
+    const updatedCustomer = await db.transaction(async (tx) => {
+      const existing = await tx.query.customersTable.findFirst({
+        where: and(
+          eq(customersTable.id, customerId),
+          eq(customersTable.businessId, businessId),
+        ),
+      });
 
-    if (!existing) {
-      res.status(404).json({ error: "Customer not found" });
-      return;
-    }
+      if (!existing) return null;
 
-    const updated = await db
-      .update(customersTable)
-      .set({
+      const next = {
         fullName: parse.data.fullName ?? existing.fullName,
         email: parse.data.email ?? existing.email,
         phone: parse.data.phone ?? existing.phone,
         companyName: parse.data.companyName ?? existing.companyName,
         address: parse.data.address ?? existing.address,
-      })
-      .where(eq(customersTable.id, customerId))
-      .returning();
+      };
 
-    const c = updated[0];
-    res.json({ ...c, createdAt: c.createdAt.toISOString() });
+      const updated = await tx
+        .update(customersTable)
+        .set(next)
+        .where(
+          and(
+            eq(customersTable.id, customerId),
+            eq(customersTable.businessId, businessId),
+          ),
+        )
+        .returning();
+
+      // Capture before/after for audit trail. Only fields that changed.
+      const changes: Record<string, { before: unknown; after: unknown }> = {};
+      for (const key of Object.keys(next) as (keyof typeof next)[]) {
+        if ((existing as any)[key] !== (next as any)[key]) {
+          changes[key] = { before: (existing as any)[key], after: (next as any)[key] };
+        }
+      }
+
+      await tx.insert(auditLogsTable).values({
+        id: generateId(),
+        businessId,
+        userId,
+        action: "UPDATE_CUSTOMER",
+        entityType: "customer",
+        entityId: customerId,
+        metadata: { changes },
+      });
+
+      return updated[0]!;
+    });
+
+    if (!updatedCustomer) {
+      res.status(404).json({ error: "Customer not found" });
+      return;
+    }
+
+    res.json({ ...updatedCustomer, createdAt: updatedCustomer.createdAt.toISOString() });
   } catch (err) {
     req.log.error({ err }, "Failed to update customer");
     res.status(500).json({ error: "Internal server error" });

@@ -62,7 +62,13 @@ router.get("/orders", requireAuth, async (req, res) => {
       db
         .select()
         .from(ordersTable)
-        .leftJoin(customersTable, eq(ordersTable.customerId, customersTable.id))
+        .leftJoin(
+          customersTable,
+          and(
+            eq(ordersTable.customerId, customersTable.id),
+            eq(customersTable.businessId, businessId),
+          ),
+        )
         .where(and(...whereConditions))
         .orderBy(desc(ordersTable.updatedAt))
         .limit(limit)
@@ -187,7 +193,12 @@ router.get("/orders/:orderId", requireAuth, async (req, res) => {
     }
 
     const [customer, business, trackingEvents, emailNotifications] = await Promise.all([
-      db.query.customersTable.findFirst({ where: eq(customersTable.id, order.customerId) }),
+      db.query.customersTable.findFirst({
+        where: and(
+          eq(customersTable.id, order.customerId),
+          eq(customersTable.businessId, businessId),
+        ),
+      }),
       db.query.businessesTable.findFirst({ where: eq(businessesTable.id, businessId) }),
       db
         .select()
@@ -246,29 +257,53 @@ router.post("/orders/:orderId/status", requireAuth, async (req, res) => {
     }
 
     const [customer, business] = await Promise.all([
-      db.query.customersTable.findFirst({ where: eq(customersTable.id, order.customerId) }),
+      db.query.customersTable.findFirst({
+        where: and(
+          eq(customersTable.id, order.customerId),
+          eq(customersTable.businessId, businessId),
+        ),
+      }),
       db.query.businessesTable.findFirst({ where: eq(businessesTable.id, businessId) }),
     ]);
 
-    // 1. Save tracking event
-    const trackingEvent = await db
-      .insert(trackingEventsTable)
-      .values({
-        id: generateId(),
-        orderId,
-        status,
-        message: message ?? null,
-        location: location ?? null,
-        createdBy: userId,
-      })
-      .returning();
+    // Wrap the DB writes (tracking event + order update) in a transaction so a
+    // partial failure can't leave the order with a bumped tracking event but
+    // an out-of-date currentStatus. Email send + email_notifications write are
+    // intentionally OUTSIDE the transaction so a slow SMTP call never holds a
+    // DB transaction open.
+    const { trackingEvent: tev, updatedOrder } = await db.transaction(async (tx) => {
+      const trackingEvent = await tx
+        .insert(trackingEventsTable)
+        .values({
+          id: generateId(),
+          orderId,
+          status,
+          message: message ?? null,
+          location: location ?? null,
+          createdBy: userId,
+        })
+        .returning();
 
-    // 2. Update order status
-    const updatedOrder = await db
-      .update(ordersTable)
-      .set({ currentStatus: status, updatedAt: new Date() })
-      .where(eq(ordersTable.id, orderId))
-      .returning();
+      const updatedOrder = await tx
+        .update(ordersTable)
+        .set({ currentStatus: status, updatedAt: new Date() })
+        .where(
+          and(eq(ordersTable.id, orderId), eq(ordersTable.businessId, businessId)),
+        )
+        .returning();
+
+      // Belt-and-braces: if the update affected 0 rows (the order was deleted
+      // or its business_id changed between the read above and this write),
+      // throw to roll back the tracking event so we never end up with an
+      // orphan event for a status that didn't actually take effect.
+      if (!updatedOrder[0]) {
+        throw new Error("Order disappeared mid-update");
+      }
+
+      return { trackingEvent, updatedOrder };
+    });
+
+    const trackingEvent = tev;
 
     // 3. Build tracking link
     const trackingLink = business
@@ -353,7 +388,12 @@ router.post("/orders/:orderId/resend-email", requireAuth, async (req, res) => {
     }
 
     const [customer, business] = await Promise.all([
-      db.query.customersTable.findFirst({ where: eq(customersTable.id, order.customerId) }),
+      db.query.customersTable.findFirst({
+        where: and(
+          eq(customersTable.id, order.customerId),
+          eq(customersTable.businessId, businessId),
+        ),
+      }),
       db.query.businessesTable.findFirst({ where: eq(businessesTable.id, businessId) }),
     ]);
 
