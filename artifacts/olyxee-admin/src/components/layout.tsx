@@ -6,43 +6,46 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useTheme } from "@/contexts/theme-context";
-import { useUser, useClerk } from "@clerk/react";
+import { useAuth } from "@/contexts/auth-context";
 
 function UserRow() {
-  const { user } = useUser();
-  const { signOut } = useClerk();
-  const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+  const { user, signOut } = useAuth();
+  const [, setLocation] = useLocation();
 
-  const name =
-    user?.fullName ||
-    user?.username ||
-    user?.primaryEmailAddress?.emailAddress ||
+  const meta = (user?.user_metadata ?? {}) as Record<string, unknown>;
+  const fullName =
+    (typeof meta.full_name === "string" && meta.full_name) ||
+    (typeof meta.name === "string" && meta.name) ||
+    user?.email ||
     "User";
-  const email = user?.primaryEmailAddress?.emailAddress ?? "";
-  const initial = (name || "U").charAt(0).toUpperCase();
+  const email = user?.email ?? "";
+  const initial = (fullName || "U").charAt(0).toUpperCase();
 
   return (
     <div className="flex items-center gap-2.5 px-4 py-3">
       <Avatar className="h-7 w-7 flex-shrink-0">
-        {user?.imageUrl ? <AvatarImage src={user.imageUrl} alt={name} /> : null}
         <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground text-xs">
           {initial}
         </AvatarFallback>
       </Avatar>
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium truncate">{name}</p>
+        <p className="text-xs font-medium truncate">{fullName}</p>
         {email ? (
           <p className="text-xs text-sidebar-foreground/50 truncate">{email}</p>
         ) : null}
       </div>
       <button
         type="button"
-        onClick={() => signOut({ redirectUrl: `${basePath}/sign-in` })}
+        onClick={async () => {
+          await signOut();
+          setLocation("/login");
+        }}
         className="text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors p-1"
         aria-label="Sign out"
         title="Sign out"
+        data-testid="button-signout"
       >
         <LogOut className="h-3.5 w-3.5" />
       </button>

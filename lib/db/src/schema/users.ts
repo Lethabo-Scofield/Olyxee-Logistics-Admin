@@ -8,7 +8,7 @@ export const usersTable = pgTable("users", {
   businessId: text("business_id")
     .notNull()
     .references(() => businessesTable.id),
-  clerkUserId: text("clerk_user_id").notNull().unique(),
+  authUserId: text("auth_user_id").notNull().unique(),
   name: text("name").notNull(),
   email: text("email").notNull(),
   role: text("role", { enum: ["owner", "admin", "staff"] })
