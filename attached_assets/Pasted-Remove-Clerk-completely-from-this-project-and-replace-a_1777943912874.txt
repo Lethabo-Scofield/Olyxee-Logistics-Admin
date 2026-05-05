@@ -1,0 +1,104 @@
+Remove Clerk completely from this project and replace authentication with Supabase Auth.
+
+Requirements:
+
+1. Remove Clerk
+- Remove all Clerk packages.
+- Remove all Clerk imports, providers, middleware, hooks, and environment variables.
+- Delete usage of:
+  - CLERK_PUBLISHABLE_KEY
+  - CLERK_SECRET_KEY
+  - VITE_CLERK_PUBLISHABLE_KEY
+- Remove any Clerk-based auto-provisioning logic.
+
+2. Add Supabase Auth
+Use Supabase Auth for:
+- Sign up
+- Login
+- Logout
+- Session persistence
+- Current user detection
+
+Use these env vars only:
+- DATABASE_URL
+- VITE_SUPABASE_URL
+- VITE_SUPABASE_ANON_KEY
+- SUPABASE_SERVICE_ROLE_KEY if backend admin access is needed
+
+3. User provisioning
+On first successful sign-up:
+- Create a row in `users`
+- Link user to a `business_id`
+- If the user signs up with an Olyxee email, link them to the seeded Olyxee business
+- Otherwise create or request a business profile during onboarding
+
+4. Multi-tenant access
+Ensure every query is scoped by `business_id`.
+
+Users must only see:
+- Their own business customers
+- Their own business orders
+- Their own tracking events
+- Their own email notifications
+- Their own audit logs
+
+5. Update database security
+Add or update Supabase RLS policies for:
+- businesses
+- users
+- customers
+- orders
+- tracking_events
+- email_notifications
+- audit_logs
+
+Policies must enforce:
+- authenticated users only
+- access only where `business_id` matches the signed-in user’s business
+
+6. Update frontend
+Replace Clerk UI with:
+- `/signup`
+- `/login`
+- `/logout`
+- protected admin dashboard
+- redirect unauthenticated users to `/login`
+
+7. Update backend
+Replace Clerk user ID checks with Supabase user session checks.
+
+Backend flow:
+- Read authenticated Supabase user
+- Find matching row in `users`
+- Get `business_id`
+- Scope all reads/writes to that `business_id`
+
+8. Production cleanup
+Update `.env.example`.
+
+Remove all Clerk references from:
+- code
+- README
+- deployment docs
+- Vercel environment variable instructions
+
+9. Testing
+Add tests to confirm:
+- User can sign up
+- User can log in
+- User row is created
+- User is linked to business
+- User cannot access another business’s data
+- Customer creation works
+- Order creation works
+- Status update creates tracking event
+- Status update logs audit event
+- Email notification is created/logged
+
+Definition of done:
+- App runs with no Clerk dependency
+- Auth works using Supabase only
+- Protected routes work
+- Multi-tenant isolation works
+- Vercel deploy requires no Clerk variables
+- All tests pass
