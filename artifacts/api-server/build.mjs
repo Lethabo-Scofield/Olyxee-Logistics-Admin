@@ -58,26 +58,9 @@ async function buildAll() {
     banner: sharedBanner,
   });
 
-  // ── Build 2: Vercel serverless handler (opt-in via BUILD_VERCEL=1) ───────
-  // Outputs api/handler.mjs — a self-contained bundle that exports the
-  // Express app. Only emitted when BUILD_VERCEL=1, since Replit deployments
-  // use the standalone server bundle from Build 1.
-  if (process.env.BUILD_VERCEL === "1") {
-    const vercelOutDir = path.resolve(artifactDir, "../../api");
-    await esbuild({
-      entryPoints: [path.resolve(artifactDir, "src/handler.ts")],
-      platform: "node",
-      bundle: true,
-      format: "esm",
-      outdir: vercelOutDir,
-      outExtension: { ".js": ".mjs" },
-      logLevel: "info",
-      external: sharedExternal,
-      // No sourcemap for the serverless bundle — keeps the function size down.
-      plugins: [esbuildPluginPino({ transports: [] })],
-      banner: sharedBanner,
-    });
-  }
+  // (The optional Vercel serverless handler build was removed alongside
+  // src/handler.ts during the Replit migration. Replit deployments use the
+  // standalone server bundle from Build 1 above.)
 }
 
 buildAll().catch((err) => {
