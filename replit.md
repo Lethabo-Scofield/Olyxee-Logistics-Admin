@@ -37,10 +37,30 @@ See `.env.example`:
 
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
+- `pnpm run build:vercel` — Vercel-only build: bundles the admin SPA and the api-server serverless handler
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - `pnpm --filter @workspace/api-server run dev` — run API server locally
 
 After pushing the schema to a Supabase Postgres, run `lib/db/migrations/0001_supabase_rls.sql` once via the Supabase SQL editor to enable RLS.
+
+## Vercel Deployment
+
+The whole project deploys to a single Vercel project at the repo root.
+
+- **Frontend** (`olyxee-admin`) → static SPA served from `artifacts/olyxee-admin/dist/public`
+- **Backend** (`api-server`) → bundled into `api/index.mjs` by `artifacts/api-server/build.mjs` (Build 2). Vercel auto-detects it as a serverless function. The Express app is exported as the default export — Express apps are valid Node HTTP handlers, so Vercel invokes them directly per request.
+- **mockup-sandbox** → dev-only, not deployed.
+
+Routing is configured in `vercel.json`:
+- `/api/*` → the serverless function (Express handles its own routing via `app.use("/api", router)`)
+- everything else → `/index.html` (SPA fallback)
+
+Vercel project settings:
+- **Root Directory**: repo root (not an artifact)
+- **Build Command**, **Install Command**, **Output Directory**: configured in `vercel.json` — leave the dashboard fields blank/default
+- **Environment variables** (set for Production + Preview): `DATABASE_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. For `DATABASE_URL` use the **pooled** Supabase connection (port 6543) — direct connections exhaust quickly under serverless cold-start patterns.
+
+The `api/` directory at the repo root is gitignored — it's build output.
 
 See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.

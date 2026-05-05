@@ -4,7 +4,12 @@
   "installCommand": "pnpm install --frozen-lockfile",
   "outputDirectory": "artifacts/olyxee-admin/dist/public",
   "framework": null,
+  "functions": {
+    "api/[[...path]].mjs": {
+      "maxDuration": 30
+    }
+  },
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }
