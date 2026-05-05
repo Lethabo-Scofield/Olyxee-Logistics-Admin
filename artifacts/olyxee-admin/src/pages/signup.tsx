@@ -49,7 +49,7 @@ export default function SignupPage() {
             Create your account
           </h1>
           <p className="text-[15px] text-[hsl(220,9%,46%)] mt-1.5">
-            Get started with Olyxee Logistics
+            Get started with the Logistics Admin Panel
           </p>
         </div>
 

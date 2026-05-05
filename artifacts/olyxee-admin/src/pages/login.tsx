@@ -40,10 +40,10 @@ export default function LoginPage() {
             data-testid="img-logo"
           />
           <h1 className="text-[26px] font-semibold text-[hsl(220,20%,10%)] tracking-tight">
-            Welcome back
+            Logistics Admin Panel
           </h1>
           <p className="text-[15px] text-[hsl(220,9%,46%)] mt-1.5">
-            Sign in to your Olyxee account
+            Sign in to your account
           </p>
         </div>
 
