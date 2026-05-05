@@ -170,9 +170,26 @@
 
 /* Flat, sharp overrides for Shadcn components */
 @layer components {
-  /* Inputs */
+  /* Inputs — square corners + always-readable text color (overrides
+     browser/user-agent defaults and stops autofill from showing as grey) */
   input, textarea, select {
     border-radius: 0 !important;
+    color: hsl(var(--foreground));
+  }
+  input::placeholder, textarea::placeholder {
+    color: hsl(var(--muted-foreground));
+    opacity: 1;
+  }
+  /* Chrome/Safari autofill paints its own background + text colour. Override
+     both so autofilled email/password values stay readable on the white form. */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-text-fill-color: hsl(var(--foreground)) !important;
+    -webkit-box-shadow: 0 0 0 1000px hsl(var(--background)) inset !important;
+    caret-color: hsl(var(--foreground));
+    transition: background-color 9999s ease-in-out 0s;
   }
 
   /* No shadows on anything */
