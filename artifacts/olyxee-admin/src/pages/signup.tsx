@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+const logoUrl = `${import.meta.env.BASE_URL}favicon.png`;
+
 export default function SignupPage() {
   const { signUp } = useAuth();
   const [, setLocation] = useLocation();
@@ -34,91 +36,127 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-8">
-      <div className="w-[440px] max-w-full bg-white border border-[hsl(220,13%,88%)] p-8">
-        <div className="flex flex-col items-center mb-6">
-          <div className="h-10 w-10 bg-[hsl(220,20%,10%)] flex items-center justify-center mb-3">
-            <span className="text-white font-bold">O</span>
-          </div>
-          <h1 className="text-2xl font-bold text-[hsl(220,20%,10%)]">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-white px-4 py-10">
+      <div className="w-full max-w-[420px]">
+        <div className="flex flex-col items-center mb-8">
+          <img
+            src={logoUrl}
+            alt="Olyxee"
+            className="h-14 w-14 mb-5"
+            data-testid="img-logo"
+          />
+          <h1 className="text-[26px] font-semibold text-[hsl(220,20%,10%)] tracking-tight">
             Create your account
           </h1>
-          <p className="text-sm text-[hsl(220,9%,46%)] mt-1">
+          <p className="text-[15px] text-[hsl(220,9%,46%)] mt-1.5">
             Get started with Olyxee Logistics
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="fullName">Full name</Label>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-2">
+            <Label
+              htmlFor="fullName"
+              className="text-[13px] font-medium text-[hsl(220,20%,10%)]"
+            >
+              Full name
+            </Label>
             <Input
               id="fullName"
               type="text"
               autoComplete="name"
               required
+              placeholder="Jane Doe"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
+              className="h-11 bg-white border-[hsl(220,13%,82%)] focus-visible:border-[hsl(220,20%,10%)] focus-visible:ring-0"
               data-testid="input-fullname"
             />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="email">Email address</Label>
+
+          <div className="space-y-2">
+            <Label
+              htmlFor="email"
+              className="text-[13px] font-medium text-[hsl(220,20%,10%)]"
+            >
+              Email address
+            </Label>
             <Input
               id="email"
               type="email"
               autoComplete="email"
               required
+              placeholder="you@company.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              className="h-11 bg-white border-[hsl(220,13%,82%)] focus-visible:border-[hsl(220,20%,10%)] focus-visible:ring-0"
               data-testid="input-email"
             />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="password">Password</Label>
+
+          <div className="space-y-2">
+            <Label
+              htmlFor="password"
+              className="text-[13px] font-medium text-[hsl(220,20%,10%)]"
+            >
+              Password
+            </Label>
             <Input
               id="password"
               type="password"
               autoComplete="new-password"
               required
               minLength={8}
+              placeholder="At least 8 characters"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              className="h-11 bg-white border-[hsl(220,13%,82%)] focus-visible:border-[hsl(220,20%,10%)] focus-visible:ring-0"
               data-testid="input-password"
             />
+            <p className="text-[12px] text-[hsl(220,9%,46%)]">
+              Use 8 or more characters with a mix of letters and numbers.
+            </p>
           </div>
+
           {error ? (
             <div
-              className="text-sm text-red-600 border border-red-200 bg-red-50 p-2"
+              className="text-[13px] text-red-600 border border-red-200 bg-red-50 p-3"
               data-testid="text-error"
             >
               {error}
             </div>
           ) : null}
+
           {info ? (
             <div
-              className="text-sm text-green-700 border border-green-200 bg-green-50 p-2"
+              className="text-[13px] text-green-700 border border-green-200 bg-green-50 p-3"
               data-testid="text-info"
             >
               {info}
             </div>
           ) : null}
+
           <Button
             type="submit"
             disabled={submitting}
-            className="w-full bg-[hsl(220,20%,10%)] hover:bg-[hsl(220,20%,20%)] text-white"
+            className="w-full h-11 bg-[hsl(220,20%,10%)] hover:bg-[hsl(220,20%,20%)] text-white font-medium text-[15px]"
             data-testid="button-signup"
           >
             {submitting ? "Creating account…" : "Create account"}
           </Button>
+
+          <p className="text-[12px] text-center text-[hsl(220,9%,46%)]">
+            By creating an account you agree to Olyxee's terms of service.
+          </p>
         </form>
 
-        <p className="text-sm text-center text-[hsl(220,9%,46%)] mt-6">
+        <p className="text-[14px] text-center text-[hsl(220,9%,46%)] mt-7">
           Already have an account?{" "}
           <Link
             href="/login"
-            className="text-[hsl(220,20%,10%)] font-medium underline"
+            className="text-[hsl(220,20%,10%)] font-medium hover:underline"
           >
-            Log in
+            Sign in
           </Link>
         </p>
       </div>
