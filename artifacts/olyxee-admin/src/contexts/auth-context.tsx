@@ -93,6 +93,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           password,
           options: {
             data: fullName ? { full_name: fullName } : undefined,
+            emailRedirectTo:
+              typeof window !== "undefined"
+                ? `${window.location.origin}${import.meta.env.BASE_URL ?? "/"}login`
+                : undefined,
           },
         });
         return {
