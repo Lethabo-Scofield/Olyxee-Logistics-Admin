@@ -15,20 +15,20 @@ const SLIDES: Slide[] = [
   {
     src: slide1,
     alt: "Forklift operator at a logistics warehouse",
-    title: "Move freight with confidence",
-    body: "Track every pallet, shipment, and delivery in one place — from loading dock to last mile.",
+    title: "Run your logistics on Olyxee",
+    body: "One platform for customers, orders, and shipments — purpose-built for modern logistics teams.",
   },
   {
     src: slide2,
     alt: "Driver behind the wheel of a delivery truck",
-    title: "Empower your drivers",
-    body: "Give your team a clear view of routes, customers, and order status the moment they hit the road.",
+    title: "Move faster with Olyxee",
+    body: "Real-time visibility from dispatch to delivery, with audit trails your operations team can trust.",
   },
   {
     src: slide3,
     alt: "Truck driver smiling from the cab",
-    title: "Built for South African logistics",
-    body: "FreightShift Logistics runs on modern tooling so your operations team can focus on what matters.",
+    title: "Built for the road ahead",
+    body: "Olyxee gives logistics businesses the tooling they need to scale — without the spreadsheets.",
   },
 ];
 
@@ -74,7 +74,7 @@ export function AuthLayout({ children }: { children: ReactNode }) {
 
         <div className="relative z-10 flex h-full flex-col justify-between p-10 text-white">
           <div className="text-[11px] font-medium tracking-[0.2em] uppercase opacity-80">
-            FreightShift Logistics
+            Olyxee
           </div>
 
           <div className="max-w-md">
