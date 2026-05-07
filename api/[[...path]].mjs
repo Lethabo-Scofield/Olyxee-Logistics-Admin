@@ -95773,6 +95773,15 @@ function getAllowedOrigins() {
   if (process.env.CORS_ALLOW_ALL === "1") {
     return true;
   }
+  if (process.env.NODE_ENV !== "production") {
+    const origins = /* @__PURE__ */ new Set();
+    const dev = process.env.REPLIT_DEV_DOMAIN;
+    if (dev) origins.add(`https://${dev}`);
+    const list = (process.env.REPLIT_DOMAINS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+    for (const d of list) origins.add(`https://${d}`);
+    origins.add("http://localhost:80");
+    return Array.from(origins);
+  }
   return [];
 }
 

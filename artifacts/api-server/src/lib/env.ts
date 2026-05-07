@@ -107,6 +107,21 @@ export function getAllowedOrigins(): string[] | true {
   if (process.env.CORS_ALLOW_ALL === "1") {
     return true;
   }
+  // In dev (and only in dev) auto-allow the Replit preview domains so the
+  // iframe can call the API without the user manually configuring
+  // ALLOWED_ORIGINS for every Repl.
+  if (process.env.NODE_ENV !== "production") {
+    const origins = new Set<string>();
+    const dev = process.env.REPLIT_DEV_DOMAIN;
+    if (dev) origins.add(`https://${dev}`);
+    const list = (process.env.REPLIT_DOMAINS ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    for (const d of list) origins.add(`https://${d}`);
+    origins.add("http://localhost:80");
+    return Array.from(origins);
+  }
   // No allowlist and no escape hatch → only same-origin requests (no Origin
   // header) will succeed; all cross-origin requests are refused.
   return [];
