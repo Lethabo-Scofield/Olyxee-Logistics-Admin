@@ -8,5 +8,8 @@
   },
   "dependencies": {
     "zod": "catalog:"
+  },
+  "scripts": {
+    "build:vercel": "echo 'Vercel disabled — deploy via Replit' && exit 0"
   }
 }
