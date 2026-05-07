@@ -15,7 +15,32 @@ export interface Business {
   slug: string;
   websiteUrl: string;
   supportEmail: string;
+  industry?: string | null;
+  employeeCount?: string | null;
+  location?: string | null;
+  phone?: string | null;
+  onboardingCompleted: boolean;
   createdAt: string;
+}
+
+export interface UpdateBusinessBody {
+  name?: string;
+  industry?: string;
+  employeeCount?: string;
+  location?: string;
+  phone?: string;
+  websiteUrl?: string;
+  supportEmail?: string;
+  onboardingCompleted?: boolean;
+}
+
+export interface CheckEmailBody {
+  email: string;
+}
+
+export interface CheckEmailResult {
+  exists: boolean;
+  fallback?: boolean;
 }
 
 export interface DashboardSummary {

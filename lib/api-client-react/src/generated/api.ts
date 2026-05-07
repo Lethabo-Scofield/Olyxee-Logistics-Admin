@@ -18,6 +18,8 @@ import type {
 
 import type {
   Business,
+  CheckEmailBody,
+  CheckEmailResult,
   CreateCustomerBody,
   CreateOrderBody,
   Customer,
@@ -37,6 +39,7 @@ import type {
   StatusCount,
   StatusUpdateResult,
   TrackingEvent,
+  UpdateBusinessBody,
   UpdateCustomerBody,
   UpdateOrderStatusBody,
 } from "./api.schemas";
@@ -126,6 +129,92 @@ export function useHealthCheck<
 }
 
 /**
+ * @summary Check whether a Supabase user exists for the given email
+ */
+export const getCheckEmailExistsUrl = () => {
+  return `/api/auth/check-email`;
+};
+
+export const checkEmailExists = async (
+  checkEmailBody: CheckEmailBody,
+  options?: RequestInit,
+): Promise<CheckEmailResult> => {
+  return customFetch<CheckEmailResult>(getCheckEmailExistsUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(checkEmailBody),
+  });
+};
+
+export const getCheckEmailExistsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof checkEmailExists>>,
+    TError,
+    { data: BodyType<CheckEmailBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof checkEmailExists>>,
+  TError,
+  { data: BodyType<CheckEmailBody> },
+  TContext
+> => {
+  const mutationKey = ["checkEmailExists"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof checkEmailExists>>,
+    { data: BodyType<CheckEmailBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return checkEmailExists(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CheckEmailExistsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof checkEmailExists>>
+>;
+export type CheckEmailExistsMutationBody = BodyType<CheckEmailBody>;
+export type CheckEmailExistsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Check whether a Supabase user exists for the given email
+ */
+export const useCheckEmailExists = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof checkEmailExists>>,
+    TError,
+    { data: BodyType<CheckEmailBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof checkEmailExists>>,
+  TError,
+  { data: BodyType<CheckEmailBody> },
+  TContext
+> => {
+  return useMutation(getCheckEmailExistsMutationOptions(options));
+};
+
+/**
  * @summary Get current user's business
  */
 export const getGetBusinessUrl = () => {
@@ -197,6 +286,92 @@ export function useGetBusiness<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Update the current user's business (used by onboarding)
+ */
+export const getUpdateBusinessUrl = () => {
+  return `/api/business`;
+};
+
+export const updateBusiness = async (
+  updateBusinessBody: UpdateBusinessBody,
+  options?: RequestInit,
+): Promise<Business> => {
+  return customFetch<Business>(getUpdateBusinessUrl(), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateBusinessBody),
+  });
+};
+
+export const getUpdateBusinessMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateBusiness>>,
+    TError,
+    { data: BodyType<UpdateBusinessBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateBusiness>>,
+  TError,
+  { data: BodyType<UpdateBusinessBody> },
+  TContext
+> => {
+  const mutationKey = ["updateBusiness"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateBusiness>>,
+    { data: BodyType<UpdateBusinessBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return updateBusiness(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateBusinessMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateBusiness>>
+>;
+export type UpdateBusinessMutationBody = BodyType<UpdateBusinessBody>;
+export type UpdateBusinessMutationError = ErrorType<void>;
+
+/**
+ * @summary Update the current user's business (used by onboarding)
+ */
+export const useUpdateBusiness = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateBusiness>>,
+    TError,
+    { data: BodyType<UpdateBusinessBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateBusiness>>,
+  TError,
+  { data: BodyType<UpdateBusinessBody> },
+  TContext
+> => {
+  return useMutation(getUpdateBusinessMutationOptions(options));
+};
 
 /**
  * @summary Get dashboard summary metrics

@@ -23,8 +23,10 @@ interface AuthContextValue {
     email: string,
     password: string,
     fullName?: string,
+    businessName?: string,
   ) => Promise<{ error: string | null; needsEmailConfirmation: boolean }>;
   signOut: () => Promise<void>;
+  checkEmailExists: (email: string) => Promise<{ exists: boolean; fallback?: boolean; error: string | null }>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -87,12 +89,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
         return { error: error?.message ?? null };
       },
-      signUp: async (email, password, fullName) => {
+      signUp: async (email, password, fullName, businessName) => {
+        // The API server reads `full_name` and `business_name` from the
+        // Supabase user metadata when provisioning the businesses + users
+        // rows on first authenticated request. Both are optional, so only
+        // forward what the caller actually supplied.
+        const meta: Record<string, string> = {};
+        if (fullName) meta.full_name = fullName;
+        if (businessName) meta.business_name = businessName;
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            data: fullName ? { full_name: fullName } : undefined,
+            data: Object.keys(meta).length > 0 ? meta : undefined,
             emailRedirectTo:
               typeof window !== "undefined"
                 ? `${window.location.origin}${import.meta.env.BASE_URL ?? "/"}login`
@@ -108,6 +117,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       signOut: async () => {
         await supabase.auth.signOut();
+      },
+      checkEmailExists: async (email) => {
+        try {
+          const base = import.meta.env.BASE_URL ?? "/";
+          const resp = await fetch(`${base}api/auth/check-email`.replace(/\/+/g, "/"), {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ email }),
+          });
+          if (!resp.ok) {
+            return { exists: false, error: `Lookup failed (${resp.status})` };
+          }
+          const data = (await resp.json()) as { exists: boolean; fallback?: boolean };
+          return { exists: !!data.exists, fallback: data.fallback, error: null };
+        } catch (err) {
+          return {
+            exists: false,
+            error: err instanceof Error ? err.message : "Lookup failed",
+          };
+        }
       },
     }),
     [status, session],

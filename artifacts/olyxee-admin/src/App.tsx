@@ -5,9 +5,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppLayout } from "@/components/layout";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
+import { useGetBusiness } from "@workspace/api-client-react";
 
 import LoginPage from "@/pages/login";
-import SignupPage from "@/pages/signup";
+import OnboardingPage from "@/pages/onboarding";
 import DashboardPage from "@/pages/dashboard";
 import CustomersPage from "@/pages/customers";
 import CustomerDetailPage from "@/pages/customer-detail";
@@ -23,8 +24,20 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
 });
 
-function Protected({ component: Component }: { component: React.ComponentType }) {
+function Protected({
+  component: Component,
+  skipOnboardingGuard = false,
+  withLayout = true,
+}: {
+  component: React.ComponentType;
+  skipOnboardingGuard?: boolean;
+  withLayout?: boolean;
+}) {
   const { status } = useAuth();
+  const businessQuery = useGetBusiness({
+    query: { enabled: status === "authenticated" } as never,
+  });
+
   if (status === "loading") {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-background">
@@ -35,6 +48,21 @@ function Protected({ component: Component }: { component: React.ComponentType })
   if (status === "unauthenticated") {
     return <Redirect to="/login" />;
   }
+
+  if (!skipOnboardingGuard) {
+    if (businessQuery.isLoading) {
+      return (
+        <div className="flex min-h-[100dvh] items-center justify-center bg-background">
+          <div className="text-sm text-muted-foreground">Loading…</div>
+        </div>
+      );
+    }
+    if (businessQuery.data && !businessQuery.data.onboardingCompleted) {
+      return <Redirect to="/onboarding" />;
+    }
+  }
+
+  if (!withLayout) return <Component />;
   return (
     <AppLayout>
       <Component />
@@ -62,7 +90,13 @@ function AppRoutes() {
     <Switch>
       <Route path="/"><Redirect to="/dashboard" /></Route>
       <Route path="/login" component={() => <PublicOnly component={LoginPage} />} />
-      <Route path="/signup" component={() => <PublicOnly component={SignupPage} />} />
+      <Route path="/signup"><Redirect to="/login" /></Route>
+      <Route
+        path="/onboarding"
+        component={() => (
+          <Protected component={OnboardingPage} skipOnboardingGuard withLayout={false} />
+        )}
+      />
       <Route path="/dashboard" component={() => <Protected component={DashboardPage} />} />
       <Route path="/customers" component={() => <Protected component={CustomersPage} />} />
       <Route path="/customers/:id" component={() => <Protected component={CustomerDetailPage} />} />

@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication helpers
   - name: businesses
     description: Business management
   - name: customers
@@ -36,6 +38,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 
+  /auth/check-email:
+    post:
+      operationId: checkEmailExists
+      tags: [auth]
+      summary: Check whether a Supabase user exists for the given email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckEmailBody"
+      responses:
+        "200":
+          description: Email lookup result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckEmailResult"
+
   /business:
     get:
       operationId: getBusiness
@@ -46,6 +67,27 @@ paths:
       responses:
         "200":
           description: Business details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+        "404":
+          description: Business not found
+    put:
+      operationId: updateBusiness
+      tags: [businesses]
+      summary: Update the current user's business (used by onboarding)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBusinessBody"
+      responses:
+        "200":
+          description: Business updated
           content:
             application/json:
               schema:
@@ -457,6 +499,20 @@ components:
           type: string
         supportEmail:
           type: string
+        industry:
+          type: string
+          nullable: true
+        employeeCount:
+          type: string
+          nullable: true
+        location:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        onboardingCompleted:
+          type: boolean
         createdAt:
           type: string
       required:
@@ -465,7 +521,46 @@ components:
         - slug
         - websiteUrl
         - supportEmail
+        - onboardingCompleted
         - createdAt
+
+    UpdateBusinessBody:
+      type: object
+      properties:
+        name:
+          type: string
+        industry:
+          type: string
+        employeeCount:
+          type: string
+        location:
+          type: string
+        phone:
+          type: string
+        websiteUrl:
+          type: string
+        supportEmail:
+          type: string
+        onboardingCompleted:
+          type: boolean
+
+    CheckEmailBody:
+      type: object
+      properties:
+        email:
+          type: string
+      required:
+        - email
+
+    CheckEmailResult:
+      type: object
+      properties:
+        exists:
+          type: boolean
+        fallback:
+          type: boolean
+      required:
+        - exists
 
     DashboardSummary:
       type: object

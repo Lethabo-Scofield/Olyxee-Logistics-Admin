@@ -15,6 +15,18 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
+ * @summary Check whether a Supabase user exists for the given email
+ */
+export const CheckEmailExistsBody = zod.object({
+  email: zod.string(),
+});
+
+export const CheckEmailExistsResponse = zod.object({
+  exists: zod.boolean(),
+  fallback: zod.boolean().optional(),
+});
+
+/**
  * @summary Get current user's business
  */
 export const GetBusinessResponse = zod.object({
@@ -23,6 +35,39 @@ export const GetBusinessResponse = zod.object({
   slug: zod.string(),
   websiteUrl: zod.string(),
   supportEmail: zod.string(),
+  industry: zod.string().nullish(),
+  employeeCount: zod.string().nullish(),
+  location: zod.string().nullish(),
+  phone: zod.string().nullish(),
+  onboardingCompleted: zod.boolean(),
+  createdAt: zod.string(),
+});
+
+/**
+ * @summary Update the current user's business (used by onboarding)
+ */
+export const UpdateBusinessBody = zod.object({
+  name: zod.string().optional(),
+  industry: zod.string().optional(),
+  employeeCount: zod.string().optional(),
+  location: zod.string().optional(),
+  phone: zod.string().optional(),
+  websiteUrl: zod.string().optional(),
+  supportEmail: zod.string().optional(),
+  onboardingCompleted: zod.boolean().optional(),
+});
+
+export const UpdateBusinessResponse = zod.object({
+  id: zod.string(),
+  name: zod.string(),
+  slug: zod.string(),
+  websiteUrl: zod.string(),
+  supportEmail: zod.string(),
+  industry: zod.string().nullish(),
+  employeeCount: zod.string().nullish(),
+  location: zod.string().nullish(),
+  phone: zod.string().nullish(),
+  onboardingCompleted: zod.boolean(),
   createdAt: zod.string(),
 });
 
