@@ -30,6 +30,12 @@ const SLIDES: Slide[] = [
     title: "Built for the road ahead",
     body: "Olyxee gives logistics businesses the tooling they need to scale — without the spreadsheets.",
   },
+  {
+    src: bgImage,
+    alt: "Shipping containers and a freight truck at a port",
+    title: "From port to doorstep",
+    body: "Manage container loads, line-haul, and last-mile deliveries together — without juggling spreadsheets.",
+  },
 ];
 
 const AUTOPLAY_MS = 5500;
@@ -46,15 +52,9 @@ export function AuthLayout({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <div
-      className="relative min-h-[100dvh] grid lg:grid-cols-2 bg-[hsl(220,20%,10%)] bg-cover bg-center bg-no-repeat"
-      style={{ backgroundImage: `url(${bgImage})` }}
-    >
-      {/* Global dark overlay so foreground content stays legible over the photo */}
-      <div className="absolute inset-0 bg-black/55 lg:bg-black/40" aria-hidden />
-
+    <div className="min-h-[100dvh] grid lg:grid-cols-2 bg-white">
       {/* Left: image carousel */}
-      <div className="relative hidden lg:block overflow-hidden">
+      <div className="relative hidden lg:block overflow-hidden bg-[hsl(220,20%,10%)]">
         {SLIDES.map((slide, i) => (
           <div
             key={slide.src}
@@ -120,10 +120,8 @@ export function AuthLayout({ children }: { children: ReactNode }) {
       </div>
 
       {/* Right: form pane */}
-      <div className="relative z-10 flex items-center justify-center px-4 py-10">
-        <div className="w-full max-w-[440px] rounded-2xl bg-white/95 backdrop-blur-md shadow-2xl ring-1 ring-black/5 px-8 py-10">
-          {children}
-        </div>
+      <div className="flex items-center justify-center px-4 py-10">
+        <div className="w-full max-w-[420px]">{children}</div>
       </div>
     </div>
   );
