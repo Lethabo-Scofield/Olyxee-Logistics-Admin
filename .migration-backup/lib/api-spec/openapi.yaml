@@ -84,7 +84,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateBusinessBody"
+              $ref: "#/components/schemas/BusinessUpdate"
       responses:
         "200":
           description: Business updated
@@ -184,7 +184,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateCustomerBody"
+              $ref: "#/components/schemas/CustomerInput"
       responses:
         "201":
           description: Customer created
@@ -232,7 +232,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateCustomerBody"
+              $ref: "#/components/schemas/CustomerUpdate"
       responses:
         "200":
           description: Customer updated
@@ -312,7 +312,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateOrderBody"
+              $ref: "#/components/schemas/OrderInput"
       responses:
         "201":
           description: Order created
@@ -362,7 +362,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateOrderStatusBody"
+              $ref: "#/components/schemas/OrderStatusUpdate"
       responses:
         "200":
           description: Status updated and email sent
@@ -524,7 +524,7 @@ components:
         - onboardingCompleted
         - createdAt
 
-    UpdateBusinessBody:
+    BusinessUpdate:
       type: object
       properties:
         name:
@@ -622,7 +622,7 @@ components:
         - email
         - createdAt
 
-    CreateCustomerBody:
+    CustomerInput:
       type: object
       properties:
         fullName:
@@ -639,7 +639,7 @@ components:
         - fullName
         - email
 
-    UpdateCustomerBody:
+    CustomerUpdate:
       type: object
       properties:
         fullName:
@@ -779,7 +779,7 @@ components:
         - trackingEvents
         - emailNotifications
 
-    CreateOrderBody:
+    OrderInput:
       type: object
       properties:
         customerId:
@@ -793,7 +793,7 @@ components:
       required:
         - customerId
 
-    UpdateOrderStatusBody:
+    OrderStatusUpdate:
       type: object
       properties:
         status:

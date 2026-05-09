@@ -23,7 +23,7 @@ export interface Business {
   createdAt: string;
 }
 
-export interface UpdateBusinessBody {
+export interface BusinessUpdate {
   name?: string;
   industry?: string;
   employeeCount?: string;
@@ -68,7 +68,7 @@ export interface Customer {
   createdAt: string;
 }
 
-export interface CreateCustomerBody {
+export interface CustomerInput {
   fullName: string;
   email: string;
   phone?: string;
@@ -76,7 +76,7 @@ export interface CreateCustomerBody {
   address?: string;
 }
 
-export interface UpdateCustomerBody {
+export interface CustomerUpdate {
   fullName?: string;
   email?: string;
   phone?: string;
@@ -162,17 +162,17 @@ export interface OrderDetail {
   emailNotifications: EmailNotification[];
 }
 
-export interface CreateOrderBody {
+export interface OrderInput {
   customerId: string;
   orderReference?: string;
   description?: string;
   estimatedDeliveryDate?: string;
 }
 
-export type UpdateOrderStatusBodyStatus =
-  (typeof UpdateOrderStatusBodyStatus)[keyof typeof UpdateOrderStatusBodyStatus];
+export type OrderStatusUpdateStatus =
+  (typeof OrderStatusUpdateStatus)[keyof typeof OrderStatusUpdateStatus];
 
-export const UpdateOrderStatusBodyStatus = {
+export const OrderStatusUpdateStatus = {
   Order_received: "Order received",
   Processing: "Processing",
   Driver_assigned: "Driver assigned",
@@ -184,8 +184,8 @@ export const UpdateOrderStatusBodyStatus = {
   Cancelled: "Cancelled",
 } as const;
 
-export interface UpdateOrderStatusBody {
-  status: UpdateOrderStatusBodyStatus;
+export interface OrderStatusUpdate {
+  status: OrderStatusUpdateStatus;
   message?: string;
   location?: string;
 }

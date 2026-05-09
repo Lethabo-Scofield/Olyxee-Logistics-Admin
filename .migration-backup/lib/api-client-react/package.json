@@ -11,8 +11,5 @@
   },
   "peerDependencies": {
     "react": ">=18"
-  },
-  "scripts": {
-    "build:vercel": "echo 'Vercel disabled — deploy via Replit' && exit 0"
   }
 }
