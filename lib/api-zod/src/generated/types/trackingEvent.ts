@@ -6,6 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
+export interface TrackingEvent {
+  id: string;
+  orderId: string;
   status: string;
+  message?: string;
+  location?: string;
+  createdBy?: string;
+  createdAt: string;
 }

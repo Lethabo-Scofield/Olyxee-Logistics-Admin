@@ -6,6 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
+export interface OrderInput {
+  customerId: string;
+  orderReference?: string;
+  description?: string;
+  estimatedDeliveryDate?: string;
 }
