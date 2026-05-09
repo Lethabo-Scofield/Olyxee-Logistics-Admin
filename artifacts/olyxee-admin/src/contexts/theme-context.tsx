@@ -4,6 +4,7 @@ export interface ThemeSettings {
   isDark: boolean;
   primaryColor: string;
   logoUrl: string;
+  faviconUrl: string;
   businessName: string;
   businessTagline: string;
 }
@@ -12,6 +13,7 @@ interface ThemeContextValue extends ThemeSettings {
   setIsDark: (v: boolean) => void;
   setPrimaryColor: (hex: string) => void;
   setLogoUrl: (url: string) => void;
+  setFaviconUrl: (url: string) => void;
   setBusinessName: (name: string) => void;
   setBusinessTagline: (tagline: string) => void;
   saveSettings: (partial: Partial<ThemeSettings>) => void;
@@ -23,6 +25,7 @@ const DEFAULTS: ThemeSettings = {
   isDark: false,
   primaryColor: "#2b2b2b",
   logoUrl: "",
+  faviconUrl: "",
   businessName: "",
   businessTagline: "",
 };
@@ -71,10 +74,39 @@ const ThemeContext = createContext<ThemeContextValue>({
   setIsDark: () => {},
   setPrimaryColor: () => {},
   setLogoUrl: () => {},
+  setFaviconUrl: () => {},
   setBusinessName: () => {},
   setBusinessTagline: () => {},
   saveSettings: () => {},
 });
+
+function applyFavicon(url: string) {
+  if (typeof document === "undefined") return;
+  const head = document.head;
+  // Remove all existing icon links so we replace, not stack.
+  const existing = head.querySelectorAll(
+    'link[rel="icon"], link[rel="shortcut icon"], link[rel="apple-touch-icon"]',
+  );
+  existing.forEach((el) => el.parentNode?.removeChild(el));
+  if (!url) {
+    // Restore default favicon shipped with the app.
+    const def = document.createElement("link");
+    def.rel = "icon";
+    def.type = "image/png";
+    def.href = `${import.meta.env.BASE_URL}favicon.png`;
+    head.appendChild(def);
+    return;
+  }
+  const link = document.createElement("link");
+  link.rel = "icon";
+  // Let the browser sniff the type from the data URL / file.
+  link.href = url;
+  head.appendChild(link);
+  const apple = document.createElement("link");
+  apple.rel = "apple-touch-icon";
+  apple.href = url;
+  head.appendChild(apple);
+}
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<ThemeSettings>(loadSettings);
@@ -93,6 +125,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     applyPrimaryColor(settings.primaryColor);
   }, [settings.primaryColor]);
 
+  useEffect(() => {
+    applyFavicon(settings.faviconUrl);
+  }, [settings.faviconUrl]);
+
   const update = useCallback((partial: Partial<ThemeSettings>) => {
     setSettings(prev => {
       const next = { ...prev, ...partial };
@@ -106,6 +142,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setIsDark: (v) => update({ isDark: v }),
     setPrimaryColor: (hex) => update({ primaryColor: hex }),
     setLogoUrl: (url) => update({ logoUrl: url }),
+    setFaviconUrl: (url) => update({ faviconUrl: url }),
     setBusinessName: (name) => update({ businessName: name }),
     setBusinessTagline: (tagline) => update({ businessTagline: tagline }),
     saveSettings: update,

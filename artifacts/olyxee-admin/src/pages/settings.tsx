@@ -1,12 +1,24 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTheme } from "@/contexts/theme-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Moon, Sun, Check, Palette, Building2, Image, AlertCircle } from "lucide-react";
+import { Moon, Sun, Check, Palette, Building2, Image, AlertCircle, Upload, X } from "lucide-react";
 import { toast } from "sonner";
+
+const MAX_LOGO_BYTES = 1024 * 1024; // 1 MB — kept small because we store as a data URL in localStorage.
+const MAX_FAVICON_BYTES = 256 * 1024; // 256 KB
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error ?? new Error("Read failed"));
+    reader.readAsDataURL(file);
+  });
+}
 
 const PRESET_COLORS = [
   { label: "Charcoal", hex: "#2b2b2b" },
@@ -26,25 +38,61 @@ export default function SettingsPage() {
     businessName: theme.businessName,
     businessTagline: theme.businessTagline,
     logoUrl: theme.logoUrl,
+    faviconUrl: theme.faviconUrl,
     primaryColor: theme.primaryColor,
   });
 
   const [logoPreviewError, setLogoPreviewError] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const faviconInputRef = useRef<HTMLInputElement>(null);
 
   const handleSave = () => {
     theme.saveSettings({
       businessName: form.businessName,
       businessTagline: form.businessTagline,
       logoUrl: form.logoUrl,
+      faviconUrl: form.faviconUrl,
       primaryColor: form.primaryColor,
     });
     toast.success("Settings saved");
   };
 
+  async function handleImagePicked(
+    file: File | undefined,
+    kind: "logo" | "favicon",
+  ) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose an image file (PNG, JPG, SVG, or ICO).");
+      return;
+    }
+    const max = kind === "logo" ? MAX_LOGO_BYTES : MAX_FAVICON_BYTES;
+    if (file.size > max) {
+      const limit = kind === "logo" ? "1 MB" : "256 KB";
+      toast.error(`Image is too large — keep it under ${limit}.`);
+      return;
+    }
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      if (kind === "logo") {
+        setForm((f) => ({ ...f, logoUrl: dataUrl }));
+        setLogoPreviewError(false);
+      } else {
+        setForm((f) => ({ ...f, faviconUrl: dataUrl }));
+        // Apply favicon immediately so the user sees the browser tab update,
+        // even before they click Save.
+        theme.setFaviconUrl(dataUrl);
+      }
+    } catch {
+      toast.error("Could not read that image. Try a different file.");
+    }
+  }
+
   const hasChanges =
     form.businessName !== theme.businessName ||
     form.businessTagline !== theme.businessTagline ||
     form.logoUrl !== theme.logoUrl ||
+    form.faviconUrl !== theme.faviconUrl ||
     form.primaryColor !== theme.primaryColor;
 
   return (
@@ -93,15 +141,48 @@ export default function SettingsPage() {
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Image className="h-4 w-4 text-muted-foreground" />
-              <Label>Logo URL</Label>
+              <Label>Logo</Label>
             </div>
             <p className="text-xs text-muted-foreground">
-              Paste a direct image URL (PNG, SVG, or JPEG). Recommended size: 200×60px or wider horizontal logo.
+              Upload a PNG, SVG, or JPEG (max 1 MB). Recommended size: 200×60px or wider horizontal logo. You can also paste a URL.
             </p>
+            <input
+              ref={logoInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                handleImagePicked(e.target.files?.[0], "logo");
+                e.target.value = "";
+              }}
+            />
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => logoInputRef.current?.click()}
+                data-testid="button-upload-logo"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Upload image
+              </Button>
+              {form.logoUrl ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => { setForm(f => ({ ...f, logoUrl: "" })); setLogoPreviewError(false); }}
+                  data-testid="button-remove-logo"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Remove
+                </Button>
+              ) : null}
+            </div>
             <Input
-              value={form.logoUrl}
+              value={form.logoUrl.startsWith("data:") ? "" : form.logoUrl}
               onChange={e => { setForm(f => ({ ...f, logoUrl: e.target.value })); setLogoPreviewError(false); }}
-              placeholder="https://yourcompany.com/logo.png"
+              placeholder={form.logoUrl.startsWith("data:") ? "Uploaded image in use" : "Or paste a URL: https://yourcompany.com/logo.png"}
+              disabled={form.logoUrl.startsWith("data:")}
             />
             {form.logoUrl && (
               <div className="border p-4 bg-sidebar flex items-center gap-3">
@@ -121,6 +202,64 @@ export default function SettingsPage() {
                 <span className="text-xs text-sidebar-foreground/50 ml-auto">Sidebar preview</span>
               </div>
             )}
+          </div>
+
+          <Separator />
+
+          {/* Favicon */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Image className="h-4 w-4 text-muted-foreground" />
+              <Label>Favicon</Label>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              The small icon shown in the browser tab. Upload a square PNG, ICO, or SVG (max 256 KB). 32×32 or 64×64 works best.
+            </p>
+            <input
+              ref={faviconInputRef}
+              type="file"
+              accept="image/*,.ico"
+              className="hidden"
+              onChange={(e) => {
+                handleImagePicked(e.target.files?.[0], "favicon");
+                e.target.value = "";
+              }}
+            />
+            <div className="flex gap-2 items-center">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => faviconInputRef.current?.click()}
+                data-testid="button-upload-favicon"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Upload favicon
+              </Button>
+              {form.faviconUrl ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setForm(f => ({ ...f, faviconUrl: "" }));
+                    theme.setFaviconUrl("");
+                  }}
+                  data-testid="button-remove-favicon"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Remove
+                </Button>
+              ) : null}
+              {form.faviconUrl ? (
+                <div className="ml-2 flex items-center gap-2 text-xs text-muted-foreground">
+                  <img
+                    src={form.faviconUrl}
+                    alt="Favicon preview"
+                    className="h-6 w-6 object-contain border bg-background"
+                  />
+                  <span>Browser tab preview</span>
+                </div>
+              ) : null}
+            </div>
           </div>
         </CardContent>
       </Card>
