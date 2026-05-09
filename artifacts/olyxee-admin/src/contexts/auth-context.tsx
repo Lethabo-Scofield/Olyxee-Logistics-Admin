@@ -127,15 +127,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             body: JSON.stringify({ email }),
           });
           if (!resp.ok) {
-            return { exists: false, error: `Lookup failed (${resp.status})` };
+            // No API backend reachable (e.g. SPA-only deploy on Vercel where
+            // /api routes get caught by the SPA fallback and return 405/404).
+            // Treat as "can't enumerate" so the UI shows the sign-in form
+            // with a hint to switch to "create account" if needed.
+            return { exists: false, fallback: true, error: null };
+          }
+          const ct = resp.headers.get("content-type") ?? "";
+          if (!ct.includes("application/json")) {
+            return { exists: false, fallback: true, error: null };
           }
           const data = (await resp.json()) as { exists: boolean; fallback?: boolean };
           return { exists: !!data.exists, fallback: data.fallback, error: null };
-        } catch (err) {
-          return {
-            exists: false,
-            error: err instanceof Error ? err.message : "Lookup failed",
-          };
+        } catch {
+          // Network error / no backend — same fallback behavior.
+          return { exists: false, fallback: true, error: null };
         }
       },
     }),
