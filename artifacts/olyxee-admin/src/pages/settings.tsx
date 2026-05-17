@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Moon, Sun, Check, AlertCircle, Upload, X, Eye, Loader2, Pipette, Shuffle,
-  Building2, Palette, Mail, SunMoon, RotateCcw, Sparkles, ChevronRight,
+  Building2, Palette, Mail, SunMoon, RotateCcw, Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -437,7 +438,9 @@ function hslToHex(h: number, s: number, l: number): string {
 function SectionShell({
   id, icon: Icon, title, description, action, children,
 }: {
-  id: string;
+  // Optional — used to be required for scrollspy anchors. With tabs now
+  // driving navigation, callers usually omit it.
+  id?: string;
   icon: React.ElementType;
   title: string;
   description?: React.ReactNode;
@@ -611,47 +614,9 @@ function LivePreview({
   );
 }
 
-// ─── Scrollspy hook ───────────────────────────────────────────────────────────
-// Watches each section header and reports the one currently closest to the
-// top of the viewport. Used to highlight the active item in the side nav.
-function useScrollSpy(ids: string[], offset = 96): string | null {
-  const [active, setActive] = useState<string | null>(ids[0] ?? null);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const elements = ids
-      .map((id) => document.getElementById(id))
-      .filter((el): el is HTMLElement => el !== null);
-    if (elements.length === 0) return;
-
-    const compute = () => {
-      let current: string | null = null;
-      // Pick the last section whose top has scrolled past the offset. This
-      // matches the visually-active section even when the user is mid-section.
-      for (const el of elements) {
-        const top = el.getBoundingClientRect().top;
-        if (top - offset <= 0) {
-          current = el.id;
-        }
-      }
-      // If we're above the first section, default to the first.
-      if (!current) current = elements[0].id;
-      setActive((prev) => (prev === current ? prev : current));
-    };
-
-    compute();
-    window.addEventListener("scroll", compute, { passive: true });
-    window.addEventListener("resize", compute);
-    return () => {
-      window.removeEventListener("scroll", compute);
-      window.removeEventListener("resize", compute);
-    };
-  }, [ids, offset]);
-
-  return active;
-}
-
-// ─── Side nav ─────────────────────────────────────────────────────────────────
+// ─── Tab definitions ──────────────────────────────────────────────────────────
+// Each entry drives one TabsTrigger and matches the `id` of one TabsContent
+// below. Order here is the order shown to the user.
 const NAV_ITEMS = [
   { id: "identity", label: "Identity", icon: Building2 },
   { id: "brand", label: "Brand", icon: Palette },
@@ -659,70 +624,6 @@ const NAV_ITEMS = [
   { id: "emails", label: "Emails", icon: Mail },
   { id: "appearance", label: "Appearance", icon: SunMoon },
 ] as const;
-
-function SideNav({
-  active, dirtyIds,
-}: {
-  active: string | null;
-  // Sections with unsaved changes get a small dot next to their nav label.
-  dirtyIds: ReadonlySet<string>;
-}) {
-  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
-    e.preventDefault();
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "start" });
-    // Keep the URL hash in sync without re-triggering a hashchange-driven jump.
-    if (window.history.replaceState) {
-      window.history.replaceState(null, "", `#${id}`);
-    }
-  };
-
-  return (
-    <nav aria-label="Settings sections" className="space-y-0.5">
-      {NAV_ITEMS.map((item) => {
-        const Icon = item.icon;
-        const isActive = active === item.id;
-        const isDirty = dirtyIds.has(item.id);
-        return (
-          <a
-            key={item.id}
-            href={`#${item.id}`}
-            onClick={(e) => handleClick(e, item.id)}
-            className={cn(
-              "group flex items-center gap-2.5 px-3 py-2 text-sm transition-colors",
-              "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              isActive
-                ? "bg-muted text-foreground font-medium"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
-            )}
-            aria-current={isActive ? "true" : undefined}
-          >
-            <Icon
-              className={cn(
-                "h-4 w-4 transition-colors",
-                isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground",
-              )}
-            />
-            <span className="flex-1 truncate">{item.label}</span>
-            {isDirty && (
-              <span
-                className="h-1.5 w-1.5 bg-amber-500 inline-block"
-                aria-label="Unsaved changes"
-              />
-            )}
-            <ChevronRight
-              className={cn(
-                "h-3.5 w-3.5 transition-all",
-                isActive ? "text-foreground translate-x-0 opacity-100" : "text-muted-foreground/40 -translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-100",
-              )}
-            />
-          </a>
-        );
-      })}
-    </nav>
-  );
-}
 
 // ─── Settings page ────────────────────────────────────────────────────────────
 export default function SettingsPage() {
@@ -819,22 +720,22 @@ export default function SettingsPage() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [guardActive]);
 
-  // On first mount, honour a deep-link hash (#brand, #emails, …) so links
-  // from elsewhere can drop the user straight into a section.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const id = window.location.hash.replace(/^#/, "");
-    if (!id) return;
-    // Defer until the section refs are in the DOM.
-    requestAnimationFrame(() => {
-      document.getElementById(id)?.scrollIntoView({ behavior: "auto", block: "start" });
-    });
-  }, []);
+  // Active tab. Honour a deep-link hash (#brand, #emails, …) on first mount
+  // so links from elsewhere can drop the user straight onto a tab.
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    if (typeof window === "undefined") return NAV_ITEMS[0].id;
+    const hash = window.location.hash.replace(/^#/, "");
+    return NAV_ITEMS.some((n) => n.id === hash) ? hash : NAV_ITEMS[0].id;
+  });
 
-  // Memoize the IDs so useScrollSpy's effect doesn't rebind window listeners
-  // on every render — fresh array identity each render = listener churn.
-  const spyIds = useMemo(() => NAV_ITEMS.map((n) => n.id), []);
-  const active = useScrollSpy(spyIds);
+  // Keep the URL hash in sync as the tab changes — preserves deep-linking
+  // and back/forward navigation between tabs.
+  const handleTabChange = useCallback((value: string) => {
+    setActiveTab(value);
+    if (typeof window !== "undefined" && window.history.replaceState) {
+      window.history.replaceState(null, "", `#${value}`);
+    }
+  }, []);
 
   async function handleLogoPicked(file: File) {
     try {
@@ -865,26 +766,41 @@ export default function SettingsPage() {
         </p>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[200px_minmax(0,1fr)] gap-8 lg:gap-12 max-w-4xl">
-        {/* Side nav — sticky on lg+, hidden on smaller screens (the section
-            headers stay scannable on phones without it). */}
-        <aside className="hidden lg:block">
-          <div className="sticky top-6">
-            <p className="text-[11px] uppercase tracking-wide text-muted-foreground px-3 mb-2">
-              Sections
-            </p>
-            <SideNav active={active} dirtyIds={dirty} />
-            <p className="text-[11px] text-muted-foreground px-3 mt-4 leading-relaxed">
-              Tip: press <kbd className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-[10px] font-medium bg-muted border border-border">⌘S</kbd> to save.
-            </p>
-          </div>
-        </aside>
+      {/* Tabs — replace the long scroll. Only the active panel renders, so
+          there's no off-screen content competing for attention. */}
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="max-w-4xl">
+        {/* TabsList scrolls horizontally on narrow viewports so the labels
+            never wrap or truncate. */}
+        <TabsList className="h-auto p-1 bg-muted/60 w-full sm:w-auto flex flex-wrap justify-start gap-0.5">
+          {NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const isDirty = dirty.has(item.id);
+            return (
+              <TabsTrigger
+                key={item.id}
+                value={item.id}
+                className="gap-2 px-3 py-1.5 data-[state=active]:shadow-sm"
+              >
+                <Icon className="h-3.5 w-3.5" />
+                <span>{item.label}</span>
+                {isDirty && (
+                  <span
+                    className="h-1.5 w-1.5 bg-amber-500 inline-block"
+                    aria-label="Unsaved changes"
+                  />
+                )}
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
 
-        {/* Sections */}
-        <div className="space-y-8 min-w-0">
-          {/* ─── Identity ─────────────────────────────────────────────── */}
+        <p className="text-[11px] text-muted-foreground mt-3 leading-relaxed">
+          Tip: press <kbd className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-[10px] font-medium bg-muted border border-border">⌘S</kbd> to save.
+        </p>
+
+        {/* ─── Identity ─────────────────────────────────────────────── */}
+        <TabsContent value="identity" className="mt-6 focus-visible:outline-none">
           <SectionShell
-            id="identity"
             icon={Building2}
             title="Identity"
             description="The name your team and customers see across Olyxee."
@@ -911,10 +827,11 @@ export default function SettingsPage() {
               />
             </SectionRow>
           </SectionShell>
+        </TabsContent>
 
-          {/* ─── Brand ────────────────────────────────────────────────── */}
+        {/* ─── Brand ────────────────────────────────────────────────── */}
+        <TabsContent value="brand" className="mt-6 focus-visible:outline-none">
           <SectionShell
-            id="brand"
             icon={Palette}
             title="Brand"
             description="Logo, favicon, and the accent color that ties everything together."
@@ -961,23 +878,41 @@ export default function SettingsPage() {
             </SectionRow>
           </SectionShell>
 
-          {/* ─── Live preview ─────────────────────────────────────────── */}
+          {/* Quiet reset-color escape hatch lives with the brand tab. */}
+          <footer className="px-1 pt-4 text-xs text-muted-foreground flex items-center justify-between">
+            <span>Branding is stored on this device.</span>
+            <button
+              type="button"
+              onClick={() => setForm((f) => ({ ...f, primaryColor: DEFAULT_PRIMARY }))}
+              className="hover:text-foreground transition-colors inline-flex items-center gap-1"
+            >
+              <RotateCcw className="h-3 w-3" />
+              Reset brand color
+            </button>
+          </footer>
+        </TabsContent>
+
+        {/* ─── Live preview ─────────────────────────────────────────── */}
+        <TabsContent value="preview" className="mt-6 focus-visible:outline-none">
           <LivePreview
             businessName={form.businessName}
             logoUrl={form.logoUrl}
             faviconUrl={form.faviconUrl}
             primaryColor={form.primaryColor}
           />
+        </TabsContent>
 
-          {/* ─── Customer emails ──────────────────────────────────────── */}
+        {/* ─── Customer emails ──────────────────────────────────────── */}
+        <TabsContent value="emails" className="mt-6 focus-visible:outline-none">
           <EmailCustomizationSection
             businessName={form.businessName || "Olyxee"}
             onDirtyChange={setEmailDirty}
           />
+        </TabsContent>
 
-          {/* ─── Appearance ───────────────────────────────────────────── */}
+        {/* ─── Appearance ───────────────────────────────────────────── */}
+        <TabsContent value="appearance" className="mt-6 focus-visible:outline-none">
           <SectionShell
-            id="appearance"
             icon={SunMoon}
             title="Appearance"
             description="Pick the look that's easier on your eyes."
@@ -1005,23 +940,8 @@ export default function SettingsPage() {
               </div>
             </div>
           </SectionShell>
-
-          {/* Footer — quiet restore-defaults escape hatch for the whole page. */}
-          <footer className="px-1 pt-4 text-xs text-muted-foreground flex items-center justify-between">
-            <span>Branding is stored on this device.</span>
-            <button
-              type="button"
-              onClick={() => {
-                setForm((f) => ({ ...f, primaryColor: DEFAULT_PRIMARY }));
-              }}
-              className="hover:text-foreground transition-colors inline-flex items-center gap-1"
-            >
-              <RotateCcw className="h-3 w-3" />
-              Reset brand color
-            </button>
-          </footer>
-        </div>
-      </div>
+        </TabsContent>
+      </Tabs>
 
       {/* ─── Sticky save bar ───────────────────────────────────────────────
           Floats above the content with a soft backdrop blur. Slides in only
