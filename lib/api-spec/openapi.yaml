@@ -38,25 +38,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 
-  /auth/check-email:
-    post:
-      operationId: checkEmailExists
-      tags: [auth]
-      summary: Check whether a Supabase user exists for the given email
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CheckEmailBody"
-      responses:
-        "200":
-          description: Email lookup result
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CheckEmailResult"
-
   /business:
     get:
       operationId: getBusiness
@@ -543,24 +524,6 @@ components:
           type: string
         onboardingCompleted:
           type: boolean
-
-    CheckEmailBody:
-      type: object
-      properties:
-        email:
-          type: string
-      required:
-        - email
-
-    CheckEmailResult:
-      type: object
-      properties:
-        exists:
-          type: boolean
-        fallback:
-          type: boolean
-      required:
-        - exists
 
     DashboardSummary:
       type: object
