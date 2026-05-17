@@ -6,8 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const logoUrl = `${import.meta.env.BASE_URL}favicon.png`;
-
 type Mode = "signin" | "signup";
 
 export default function LoginPage() {
@@ -46,7 +44,6 @@ export default function LoginPage() {
   return (
     <AuthLayout>
       <div className="flex flex-col items-center mb-8">
-        <img src={logoUrl} alt="Olyxee" className="h-14 w-14 mb-5" data-testid="img-logo" />
         <h1 className="text-[26px] font-semibold text-[hsl(220,20%,10%)] tracking-tight text-center">
           {mode === "signin" ? "Welcome to Olyxee Logistics" : "Create your account"}
         </h1>

@@ -73,9 +73,12 @@ export function AuthLayout({ children }: { children: ReactNode }) {
         ))}
 
         <div className="relative z-10 flex h-full flex-col justify-between p-10 text-white">
-          <div className="text-[11px] font-medium tracking-[0.2em] uppercase opacity-80">
-            Olyxee
-          </div>
+          <img
+            src={`${import.meta.env.BASE_URL}logo.svg`}
+            alt="Olyxee"
+            className="h-8 w-auto"
+            draggable={false}
+          />
 
           <div className="max-w-md">
             <div className="relative h-[140px]">
