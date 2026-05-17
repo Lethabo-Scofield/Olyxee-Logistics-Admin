@@ -6,6 +6,9 @@ export interface ThemeSettings {
   logoUrl: string;
   faviconUrl: string;
   businessName: string;
+  // Short tag-line shown under the business name on emails and the customer
+  // tracking page. Kept optional — empty string means "don't render".
+  businessTagline: string;
 }
 
 interface ThemeContextValue extends ThemeSettings {
@@ -14,6 +17,7 @@ interface ThemeContextValue extends ThemeSettings {
   setLogoUrl: (url: string) => void;
   setFaviconUrl: (url: string) => void;
   setBusinessName: (name: string) => void;
+  setBusinessTagline: (tagline: string) => void;
   saveSettings: (partial: Partial<ThemeSettings>) => void;
 }
 
@@ -25,6 +29,7 @@ const DEFAULTS: ThemeSettings = {
   logoUrl: "",
   faviconUrl: "",
   businessName: "",
+  businessTagline: "",
 };
 
 function hexToHsl(hex: string): { h: number; s: number; l: number } | null {
@@ -90,8 +95,6 @@ function loadSettings(): ThemeSettings {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { ...DEFAULTS };
     const parsed = JSON.parse(raw) as Record<string, unknown>;
-    // Drop any other deprecated fields silently (e.g. businessTagline).
-    delete parsed.businessTagline;
     return { ...DEFAULTS, ...(parsed as Partial<ThemeSettings>) };
   } catch {
     return { ...DEFAULTS };
@@ -105,6 +108,7 @@ const ThemeContext = createContext<ThemeContextValue>({
   setLogoUrl: () => {},
   setFaviconUrl: () => {},
   setBusinessName: () => {},
+  setBusinessTagline: () => {},
   saveSettings: () => {},
 });
 
@@ -144,6 +148,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setLogoUrl: (url) => update({ logoUrl: url }),
     setFaviconUrl: (url) => update({ faviconUrl: url }),
     setBusinessName: (name) => update({ businessName: name }),
+    setBusinessTagline: (tagline) => update({ businessTagline: tagline }),
     saveSettings: update,
   };
 

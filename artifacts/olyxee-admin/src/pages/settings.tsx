@@ -529,15 +529,154 @@ function RestoreButton({ onClick, label = "Restore" }: { onClick: () => void; la
   );
 }
 
+// ─── Inline mini-previews ─────────────────────────────────────────────────────
+// Small "see it before you save it" cards that sit directly under each brand
+// control. They use the form's *current* (un-saved) values so the user can
+// experiment freely and revert without ever committing.
+
+function PreviewFrame({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="mt-3 border border-border bg-muted/20">
+      <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground border-b border-border bg-muted/40 font-medium">
+        {label}
+      </div>
+      <div className="p-4">{children}</div>
+    </div>
+  );
+}
+
+// "How it looks on the customer email / tracking header"
+function IdentityPreview({ businessName, tagline }: { businessName: string; tagline: string }) {
+  const name = businessName.trim() || "Your business";
+  return (
+    <PreviewFrame label="On customer emails">
+      <div className="space-y-0.5">
+        <p className="text-base font-semibold text-foreground leading-tight">{name}</p>
+        {tagline.trim() ? (
+          <p className="text-xs text-muted-foreground">{tagline}</p>
+        ) : (
+          <p className="text-xs text-muted-foreground/60 italic">
+            Add a tagline to give customers a one-line sense of who you are.
+          </p>
+        )}
+      </div>
+    </PreviewFrame>
+  );
+}
+
+// "How it looks in the sidebar of this app"
+function SidebarLogoPreview({
+  logoUrl, businessName, primaryColor,
+}: { logoUrl: string; businessName: string; primaryColor: string }) {
+  const name = businessName.trim() || "Your business";
+  return (
+    <PreviewFrame label="In the sidebar">
+      <div className="flex items-center gap-2.5 px-3 h-12 border border-border bg-background">
+        {logoUrl ? (
+          <img
+            src={logoUrl}
+            alt=""
+            aria-hidden="true"
+            className="h-6 w-auto object-contain max-w-[72px] flex-shrink-0"
+          />
+        ) : (
+          <div
+            className="h-6 w-6 flex items-center justify-center flex-shrink-0"
+            style={{ background: primaryColor }}
+          >
+            <span className="text-white text-[10px] font-bold leading-none">
+              {name.charAt(0).toUpperCase()}
+            </span>
+          </div>
+        )}
+        <span className="font-semibold text-sm tracking-tight truncate">{name}</span>
+      </div>
+    </PreviewFrame>
+  );
+}
+
+// Browser-tab chrome mockup so the favicon's real context is visible.
+function BrowserTabPreview({ faviconUrl, businessName }: { faviconUrl: string; businessName: string }) {
+  const name = businessName.trim() || "Your business";
+  return (
+    <PreviewFrame label="In a browser tab">
+      {/* Browser chrome — a stack of tabs with the active one highlighted so
+          the favicon reads in its real visual context. */}
+      <div className="bg-muted/60 pt-2 px-2 border-b border-border">
+        <div className="flex items-end gap-1">
+          {/* Inactive tab — provides a contrast reference. */}
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted/40 border-t border-l border-r border-border text-[11px] text-muted-foreground">
+            <div className="h-3 w-3 bg-muted-foreground/30" aria-hidden="true" />
+            <span>Mail</span>
+          </div>
+          {/* Active tab — the one with our favicon. */}
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-background border-t border-l border-r border-border -mb-px text-[11px] text-foreground max-w-[180px]">
+            {faviconUrl ? (
+              <img
+                src={faviconUrl}
+                alt=""
+                aria-hidden="true"
+                className="h-3.5 w-3.5 object-contain flex-shrink-0"
+              />
+            ) : (
+              <div className="h-3.5 w-3.5 bg-muted-foreground/30 flex-shrink-0" aria-hidden="true" />
+            )}
+            <span className="truncate font-medium">{name}</span>
+            <X className="h-2.5 w-2.5 text-muted-foreground/60 flex-shrink-0" aria-hidden="true" />
+          </div>
+        </div>
+      </div>
+      {/* A sliver of "page" so the tab clearly sits on top of something. */}
+      <div className="h-6 bg-background border-x border-b border-border" />
+      {!faviconUrl && (
+        <p className="text-[11px] text-muted-foreground/70 mt-3">
+          No favicon yet — your tab will show a generic icon.
+        </p>
+      )}
+    </PreviewFrame>
+  );
+}
+
+// Shows the color on the same surfaces it'll actually drive (button + status
+// chip) so the user can sanity-check contrast at a glance.
+function BrandColorPreview({ color }: { color: string }) {
+  return (
+    <PreviewFrame label="Where this color shows up">
+      <div className="flex flex-wrap items-center gap-3">
+        <span
+          className="inline-flex items-center justify-center h-9 px-4 text-sm font-medium text-white"
+          style={{ background: color }}
+        >
+          Primary button
+        </span>
+        <span
+          className="inline-flex items-center gap-1.5 h-7 px-2.5 text-xs font-medium border"
+          style={{ borderColor: color, color }}
+        >
+          <span className="h-1.5 w-1.5" style={{ background: color }} aria-hidden="true" />
+          Active status
+        </span>
+        <span
+          className="text-sm font-medium underline underline-offset-2"
+          style={{ color }}
+        >
+          A link
+        </span>
+      </div>
+    </PreviewFrame>
+  );
+}
+
 // ─── Live brand preview ───────────────────────────────────────────────────────
 // Senior-dev touch: show the admin EXACTLY where their choices land. The
 // preview renders a mini sidebar (logo + business name on the brand color) and
 // a mini browser tab (favicon + name) using the current form values — so the
 // user sees the result before they hit Save.
 function LivePreview({
-  businessName, logoUrl, faviconUrl, primaryColor,
+  businessName, businessTagline, logoUrl, faviconUrl, primaryColor,
 }: {
   businessName: string;
+  businessTagline: string;
   logoUrl: string;
   faviconUrl: string;
   primaryColor: string;
@@ -569,7 +708,9 @@ function LivePreview({
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold truncate" title={name}>{name}</p>
-              <p className="text-[11px] text-muted-foreground">Logistics workspace</p>
+              <p className="text-[11px] text-muted-foreground truncate">
+                {businessTagline.trim() || "Logistics workspace"}
+              </p>
             </div>
           </div>
         </div>
@@ -636,12 +777,13 @@ export default function SettingsPage() {
   const initial = useMemo(
     () => ({
       businessName: theme.businessName,
+      businessTagline: theme.businessTagline,
       logoUrl: theme.logoUrl,
       faviconUrl: theme.faviconUrl,
       primaryColor: theme.primaryColor,
     }),
     // Re-baseline only when the saved theme values change (e.g. after a save).
-    [theme.businessName, theme.logoUrl, theme.faviconUrl, theme.primaryColor],
+    [theme.businessName, theme.businessTagline, theme.logoUrl, theme.faviconUrl, theme.primaryColor],
   );
 
   const [form, setForm] = useState(initial);
@@ -657,7 +799,12 @@ export default function SettingsPage() {
   // show a precise "N changes" count in the save bar.
   const dirty = useMemo(() => {
     const ids = new Set<string>();
-    if (form.businessName !== initial.businessName) ids.add("identity");
+    if (
+      form.businessName !== initial.businessName ||
+      form.businessTagline !== initial.businessTagline
+    ) {
+      ids.add("identity");
+    }
     if (
       form.logoUrl !== initial.logoUrl ||
       form.faviconUrl !== initial.faviconUrl ||
@@ -671,6 +818,7 @@ export default function SettingsPage() {
   const hasChanges = dirty.size > 0;
   const changeCount =
     (form.businessName !== initial.businessName ? 1 : 0) +
+    (form.businessTagline !== initial.businessTagline ? 1 : 0) +
     (form.logoUrl !== initial.logoUrl ? 1 : 0) +
     (form.faviconUrl !== initial.faviconUrl ? 1 : 0) +
     (form.primaryColor !== initial.primaryColor ? 1 : 0);
@@ -678,6 +826,7 @@ export default function SettingsPage() {
   const handleSave = useCallback(() => {
     theme.saveSettings({
       businessName: form.businessName,
+      businessTagline: form.businessTagline,
       logoUrl: form.logoUrl,
       faviconUrl: form.faviconUrl,
       primaryColor: form.primaryColor,
@@ -809,7 +958,13 @@ export default function SettingsPage() {
             action={
               dirty.has("identity") && (
                 <RestoreButton
-                  onClick={() => setForm((f) => ({ ...f, businessName: initial.businessName }))}
+                  onClick={() =>
+                    setForm((f) => ({
+                      ...f,
+                      businessName: initial.businessName,
+                      businessTagline: initial.businessTagline,
+                    }))
+                  }
                 />
               )
             }
@@ -826,6 +981,27 @@ export default function SettingsPage() {
                 placeholder="Your business name"
                 className="h-11"
                 autoComplete="organization"
+              />
+            </SectionRow>
+
+            <SectionRow
+              label="Tagline"
+              hint="A short phrase shown under your name on customer emails and the tracking page. Optional."
+              htmlFor="businessTagline"
+            >
+              <Input
+                id="businessTagline"
+                value={form.businessTagline}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, businessTagline: e.target.value.slice(0, 80) }))
+                }
+                placeholder="e.g. Fast, reliable shipping across the EU"
+                className="h-11"
+                maxLength={80}
+              />
+              <IdentityPreview
+                businessName={form.businessName}
+                tagline={form.businessTagline}
               />
             </SectionRow>
           </SectionShell>
@@ -860,6 +1036,11 @@ export default function SettingsPage() {
                 onFile={handleLogoPicked}
                 onRemove={() => setForm((f) => ({ ...f, logoUrl: "" }))}
               />
+              <SidebarLogoPreview
+                logoUrl={form.logoUrl}
+                businessName={form.businessName}
+                primaryColor={form.primaryColor}
+              />
             </SectionRow>
 
             <SectionRow label="Favicon" hint="Shown in browser tabs. Square images work best.">
@@ -870,6 +1051,10 @@ export default function SettingsPage() {
                 onFile={handleFaviconPicked}
                 onRemove={() => setForm((f) => ({ ...f, faviconUrl: "" }))}
               />
+              <BrowserTabPreview
+                faviconUrl={form.faviconUrl}
+                businessName={form.businessName}
+              />
             </SectionRow>
 
             <SectionRow label="Brand color">
@@ -877,6 +1062,7 @@ export default function SettingsPage() {
                 value={form.primaryColor}
                 onChange={(hex) => setForm((f) => ({ ...f, primaryColor: hex }))}
               />
+              <BrandColorPreview color={form.primaryColor} />
             </SectionRow>
           </SectionShell>
 
@@ -898,6 +1084,7 @@ export default function SettingsPage() {
         <TabsContent value="preview" className="mt-6 focus-visible:outline-none">
           <LivePreview
             businessName={form.businessName}
+            businessTagline={form.businessTagline}
             logoUrl={form.logoUrl}
             faviconUrl={form.faviconUrl}
             primaryColor={form.primaryColor}
