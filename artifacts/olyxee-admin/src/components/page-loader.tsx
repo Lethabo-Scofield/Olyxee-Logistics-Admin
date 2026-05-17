@@ -8,10 +8,13 @@ interface PageLoaderProps {
 }
 
 export function PageLoader({
-  label = "Loading…",
+  label,
   className,
   fullHeight = false,
 }: PageLoaderProps) {
+  // No default label — a bare spinner reads as "working" without the page
+  // feeling broken. Callers can still pass `label` if they need explicit
+  // copy (e.g. for screen reader context).
   return (
     <div
       className={cn(
@@ -21,9 +24,10 @@ export function PageLoader({
       )}
       role="status"
       aria-live="polite"
+      aria-label={label ?? "Loading"}
     >
       <Spinner className="size-6 text-primary" aria-hidden="true" />
-      <p className="text-sm">{label}</p>
+      {label ? <p className="text-sm">{label}</p> : null}
     </div>
   );
 }

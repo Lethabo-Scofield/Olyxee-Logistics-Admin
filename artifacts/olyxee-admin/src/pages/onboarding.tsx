@@ -144,7 +144,7 @@ export default function OnboardingPage() {
           </div>
 
           {isLoading ? (
-            <PageLoader label="Loading your account…" />
+            <PageLoader />
           ) : (
             <form onSubmit={handleSubmit} className="space-y-7" data-testid="form-onboarding">
               {/* ─── Branding block — leads the form because it's what the user

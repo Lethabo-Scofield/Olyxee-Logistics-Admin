@@ -39,16 +39,11 @@ function Protected({
     query: { enabled: status === "authenticated" } as never,
   });
 
+  // Pre-auth check is usually instant (cookie/session resolves on first tick).
+  // Render nothing instead of a full white viewport so a quick check doesn't
+  // flash a "page crashed" looking blank screen at the user.
   if (status === "loading") {
-    return (
-      <div
-        className="flex min-h-[100dvh] items-center justify-center bg-background"
-        role="status"
-        aria-label="Loading"
-      >
-        <Spinner className="size-6 text-primary" />
-      </div>
-    );
+    return null;
   }
   if (status === "unauthenticated") {
     return <Redirect to="/login" />;
@@ -56,14 +51,19 @@ function Protected({
 
   if (!skipOnboardingGuard) {
     if (businessQuery.isLoading) {
+      // We're already authenticated here — render the real app chrome with a
+      // small inline spinner in the content area so the sidebar stays put
+      // and the page feels like it's loading data, not crashing.
       return (
-        <div
-          className="flex min-h-[100dvh] items-center justify-center bg-background"
-          role="status"
-          aria-label="Loading"
-        >
-          <Spinner className="size-6 text-primary" />
-        </div>
+        <AppLayout>
+          <div
+            className="flex min-h-[40vh] items-center justify-center"
+            role="status"
+            aria-label="Loading"
+          >
+            <Spinner className="size-6 text-primary" />
+          </div>
+        </AppLayout>
       );
     }
     if (businessQuery.data && !businessQuery.data.onboardingCompleted) {
@@ -81,16 +81,10 @@ function Protected({
 
 function PublicOnly({ component: Component }: { component: React.ComponentType }) {
   const { status } = useAuth();
+  // Same reasoning as Protected: auth check is fast, render nothing rather
+  // than flashing a blank white screen that looks broken.
   if (status === "loading") {
-    return (
-      <div
-        className="flex min-h-[100dvh] items-center justify-center bg-background"
-        role="status"
-        aria-label="Loading"
-      >
-        <Spinner className="size-6 text-primary" />
-      </div>
-    );
+    return null;
   }
   if (status === "authenticated") {
     return <Redirect to="/dashboard" />;
