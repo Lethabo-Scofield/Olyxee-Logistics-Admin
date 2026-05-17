@@ -311,7 +311,7 @@ export default function OrdersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Orders</h1>
           <p className="text-muted-foreground text-sm mt-0.5">{data?.total ?? 0} total orders</p>
@@ -330,7 +330,7 @@ export default function OrdersPage() {
               <Button type="submit" variant="secondary">Search</Button>
             </form>
             <Select value={statusFilter} onValueChange={v => { setStatusFilter(v); setPage(1); }}>
-              <SelectTrigger className="w-[200px]"><SelectValue placeholder="All statuses" /></SelectTrigger>
+              <SelectTrigger className="w-full sm:w-[200px]"><SelectValue placeholder="All statuses" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All statuses</SelectItem>
                 {ORDER_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}

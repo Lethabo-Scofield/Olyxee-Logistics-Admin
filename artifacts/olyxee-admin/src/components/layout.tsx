@@ -162,10 +162,17 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <span className="text-sm font-semibold text-sidebar-foreground">{businessName}</span>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content.
+          The outer <div> owns the scroll. The inner wrapper centers content
+          and caps width at 1536px so tables and cards have breathing room on
+          ultra-wide monitors instead of sprawling edge-to-edge — but tables
+          can still use the full container width on a 27" screen.
+          Padding scales: tight on mobile, generous on desktop. */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden md:mt-0 mt-12">
-        <div className="flex-1 overflow-auto p-6 md:p-8">
-          {children}
+        <div className="flex-1 overflow-auto">
+          <div className="mx-auto w-full max-w-screen-2xl px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 xl:px-10">
+            {children}
+          </div>
         </div>
       </main>
     </div>
