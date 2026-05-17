@@ -21,8 +21,8 @@ timeoutMs = 20000
 
 [[ports]]
 localPort = 8080
-externalPort = 80
+externalPort = 8080
 
 [[ports]]
 localPort = 23915
-externalPort = 3000
+externalPort = 80
