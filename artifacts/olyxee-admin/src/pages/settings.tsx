@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Moon, Sun, Check, AlertCircle, Upload, X, Eye, Loader2,
+  Moon, Sun, Check, AlertCircle, Upload, X, Eye, Loader2, Pipette, Shuffle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -99,6 +99,20 @@ const PRESET_COLORS = [
   { label: "Emerald", hex: "#059669" },
   { label: "Rose", hex: "#e11d48" },
 ];
+
+// Normalize free-typed hex into "#rrggbb". Returns null for invalid input so
+// we can surface a clear error instead of writing junk into the theme.
+function normalizeHex(raw: string): string | null {
+  const trimmed = raw.trim().replace(/^#/, "");
+  if (/^[0-9a-f]{3}$/i.test(trimmed)) {
+    // Expand #abc → #aabbcc so the picker + downstream code see a single form.
+    return "#" + trimmed.split("").map(c => c + c).join("").toLowerCase();
+  }
+  if (/^[0-9a-f]{6}$/i.test(trimmed)) {
+    return "#" + trimmed.toLowerCase();
+  }
+  return null;
+}
 
 // ─── Logo upload tile ─────────────────────────────────────────────────────────
 function LogoUpload({
@@ -203,6 +217,204 @@ function LogoUpload({
       )}
     </>
   );
+}
+
+// ─── Brand color picker ──────────────────────────────────────────────────────
+// Six curated presets cover most brands, but anything outside that palette
+// used to be impossible to pick. Now the user can:
+//   1. Tap a preset (fastest)
+//   2. Tap "Custom" to open the OS-native spectrum picker (full gamut)
+//   3. Type a hex code directly (designers will paste from Figma)
+//   4. Hit "Surprise me" for a tasteful random color when they're stuck
+// All three paths converge on the same `onChange(hex)` so the live preview
+// and Save button just work.
+function BrandColorPicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (hex: string) => void;
+}) {
+  const nativeRef = useRef<HTMLInputElement>(null);
+  const [hexDraft, setHexDraft] = useState(value);
+  const [hexError, setHexError] = useState(false);
+
+  // Keep the text field in sync when the user picks via preset / spectrum.
+  useEffect(() => {
+    setHexDraft(value);
+    setHexError(false);
+  }, [value]);
+
+  const presetMatch = PRESET_COLORS.some(
+    (c) => c.hex.toLowerCase() === value.toLowerCase(),
+  );
+
+  const commitHex = (raw: string) => {
+    const norm = normalizeHex(raw);
+    if (!norm) {
+      setHexError(true);
+      return;
+    }
+    setHexError(false);
+    setHexDraft(norm);
+    onChange(norm);
+  };
+
+  // Tasteful random — restrict to mid-saturation / mid-lightness so we
+  // don't hand the admin neon yellow or near-black.
+  const surpriseMe = () => {
+    const h = Math.floor(Math.random() * 360);
+    const s = 55 + Math.floor(Math.random() * 25); // 55-80
+    const l = 38 + Math.floor(Math.random() * 18); // 38-55
+    onChange(hslToHex(h, s, l));
+  };
+
+  return (
+    <section className="space-y-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <Label className="text-sm font-medium">Brand color</Label>
+        <button
+          type="button"
+          onClick={surpriseMe}
+          className="text-[11px] text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+        >
+          <Shuffle className="h-3 w-3" /> Surprise me
+        </button>
+      </div>
+
+      {/* Presets + Custom tile.
+          The Custom tile is a real button that triggers a hidden native color
+          input. Native input gives us the full OS spectrum picker (incl.
+          eyedropper on supported browsers) for free — no third-party deps. */}
+      <div className="grid grid-cols-7 gap-2">
+        {PRESET_COLORS.map((c) => {
+          const active = value.toLowerCase() === c.hex.toLowerCase();
+          return (
+            <button
+              key={c.hex}
+              type="button"
+              title={c.label}
+              onClick={() => onChange(c.hex)}
+              className={cn(
+                "relative aspect-square w-full flex items-center justify-center transition-transform",
+                "ring-offset-2 ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                active && "ring-2 ring-foreground scale-[0.95]",
+              )}
+              style={{ backgroundColor: c.hex }}
+              aria-pressed={active}
+            >
+              {active && <Check className="h-4 w-4 text-white drop-shadow" aria-hidden="true" />}
+              <span className="sr-only">{c.label}</span>
+            </button>
+          );
+        })}
+
+        {/* Custom (spectrum) tile */}
+        <button
+          type="button"
+          title="Pick a custom color"
+          onClick={() => nativeRef.current?.click()}
+          className={cn(
+            "relative aspect-square w-full flex items-center justify-center transition-transform",
+            "ring-offset-2 ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            // Rainbow conic gradient so users immediately recognize it as
+            // "pick anything you want".
+            "[background:conic-gradient(from_0deg,#ef4444,#f59e0b,#eab308,#22c55e,#06b6d4,#3b82f6,#8b5cf6,#ec4899,#ef4444)]",
+            !presetMatch && "ring-2 ring-foreground scale-[0.95]",
+          )}
+          aria-label="Pick a custom color"
+        >
+          {!presetMatch ? (
+            // Show the active custom swatch as a centered dot so the user
+            // sees their choice without losing the "spectrum" affordance.
+            <span
+              className="h-4 w-4 border-2 border-white shadow"
+              style={{ backgroundColor: value }}
+              aria-hidden="true"
+            />
+          ) : (
+            <Pipette className="h-4 w-4 text-white drop-shadow" aria-hidden="true" />
+          )}
+        </button>
+      </div>
+
+      {/* Hidden native input — drives the OS spectrum picker. */}
+      <input
+        ref={nativeRef}
+        type="color"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="sr-only"
+        aria-hidden="true"
+        tabIndex={-1}
+      />
+
+      {/* Hex code field — designers paste from Figma; pairs with a live
+          swatch so you see what you're typing before committing. */}
+      <div className="flex items-center gap-2 pt-1">
+        <div
+          className="h-9 w-9 border flex-shrink-0"
+          style={{ backgroundColor: hexError ? "transparent" : (normalizeHex(hexDraft) ?? value) }}
+        />
+        <div className="flex-1 relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground select-none pointer-events-none">
+            #
+          </span>
+          <Input
+            value={hexDraft.replace(/^#/, "")}
+            onChange={(e) => {
+              const next = e.target.value;
+              setHexDraft(next);
+              const norm = normalizeHex(next);
+              if (norm) {
+                setHexError(false);
+                onChange(norm);
+              } else if (next.trim() === "") {
+                setHexError(false);
+              } else {
+                setHexError(true);
+              }
+            }}
+            onBlur={(e) => commitHex(e.target.value)}
+            placeholder="2563eb"
+            maxLength={7}
+            spellCheck={false}
+            className={cn("pl-7 h-9 font-mono uppercase", hexError && "border-destructive focus-visible:ring-destructive")}
+            aria-invalid={hexError}
+          />
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-9 gap-1.5"
+          onClick={() => nativeRef.current?.click()}
+        >
+          <Pipette className="h-3.5 w-3.5" />
+          Spectrum
+        </Button>
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        {hexError
+          ? <span className="text-destructive">Enter a valid hex like <code>2563eb</code> or <code>#abc</code>.</span>
+          : "Used for buttons, links, and active states. Tap the rainbow tile or type any hex."}
+      </p>
+    </section>
+  );
+}
+
+// HSL → "#rrggbb" — tiny inline helper, avoids pulling in a color library.
+function hslToHex(h: number, s: number, l: number): string {
+  const sN = s / 100;
+  const lN = l / 100;
+  const k = (n: number) => (n + h / 30) % 12;
+  const a = sN * Math.min(lN, 1 - lN);
+  const f = (n: number) => {
+    const v = lN - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    return Math.round(v * 255).toString(16).padStart(2, "0");
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
 }
 
 // ─── Settings page ────────────────────────────────────────────────────────────
@@ -315,35 +527,10 @@ export default function SettingsPage() {
           </section>
 
           {/* ─── Brand color ──────────────────────────────────────── */}
-          <section className="space-y-3">
-            <Label className="text-sm font-medium">Brand color</Label>
-            <div className="grid grid-cols-6 gap-2">
-              {PRESET_COLORS.map(c => {
-                const active = form.primaryColor.toLowerCase() === c.hex.toLowerCase();
-                return (
-                  <button
-                    key={c.hex}
-                    type="button"
-                    title={c.label}
-                    onClick={() => setForm(f => ({ ...f, primaryColor: c.hex }))}
-                    className={cn(
-                      "relative aspect-square w-full flex items-center justify-center transition-transform",
-                      "ring-offset-2 ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                      active && "ring-2 ring-foreground scale-[0.95]",
-                    )}
-                    style={{ backgroundColor: c.hex }}
-                    aria-pressed={active}
-                  >
-                    {active && <Check className="h-4 w-4 text-white drop-shadow" aria-hidden="true" />}
-                    <span className="sr-only">{c.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Used for buttons, links, and active states.
-            </p>
-          </section>
+          <BrandColorPicker
+            value={form.primaryColor}
+            onChange={(hex) => setForm(f => ({ ...f, primaryColor: hex }))}
+          />
 
           {/* ─── Customer email wording ──────────────────────────── */}
           <EmailCustomizationSection />
