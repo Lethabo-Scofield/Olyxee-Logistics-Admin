@@ -8,9 +8,11 @@ import { Separator } from "@/components/ui/separator";
 import { Moon, Sun, Check, Palette, Building2, Image, AlertCircle, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 
-const MAX_LOGO_BYTES = 1024 * 1024; // 1 MB — kept small because we store as a data URL in localStorage.
-// Favicons accept any input size and are compressed client-side to 64x64 PNG.
-const FAVICON_OUTPUT_SIZE = 64;
+// Both logos and favicons accept any input size and are compressed client-side
+// before being stored as data URLs in localStorage.
+const FAVICON_OUTPUT_SIZE = 64; // square px
+const LOGO_MAX_DIMENSION = 512; // px (longest edge)
+const LOGO_JPEG_QUALITY = 0.85;
 
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -21,6 +23,23 @@ function readFileAsDataUrl(file: File): Promise<string> {
   });
 }
 
+// Load a File into an HTMLImageElement via an object URL.
+async function loadImage(file: File): Promise<{ img: HTMLImageElement; revoke: () => void }> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new window.Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error("Could not load image"));
+      el.src = url;
+    });
+    return { img, revoke: () => URL.revokeObjectURL(url) };
+  } catch (e) {
+    URL.revokeObjectURL(url);
+    throw e;
+  }
+}
+
 // Downscale a raster favicon to a small square PNG so we can store it inline
 // in localStorage and ship it in a <link rel="icon"> tag. SVG and ICO pass
 // through untouched: SVG is already vector and tiny, ICO carries multi-res
@@ -29,14 +48,8 @@ async function compressFavicon(file: File): Promise<string> {
   if (file.type === "image/svg+xml" || file.type === "image/x-icon" || file.type === "image/vnd.microsoft.icon") {
     return readFileAsDataUrl(file);
   }
-  const sourceUrl = URL.createObjectURL(file);
+  const { img, revoke } = await loadImage(file);
   try {
-    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const el = new window.Image();
-      el.onload = () => resolve(el);
-      el.onerror = () => reject(new Error("Could not load image"));
-      el.src = sourceUrl;
-    });
     const canvas = document.createElement("canvas");
     canvas.width = FAVICON_OUTPUT_SIZE;
     canvas.height = FAVICON_OUTPUT_SIZE;
@@ -51,7 +64,39 @@ async function compressFavicon(file: File): Promise<string> {
     ctx.drawImage(img, sx, sy, side, side, 0, 0, FAVICON_OUTPUT_SIZE, FAVICON_OUTPUT_SIZE);
     return canvas.toDataURL("image/png");
   } finally {
-    URL.revokeObjectURL(sourceUrl);
+    revoke();
+  }
+}
+
+// Downscale a logo to fit within LOGO_MAX_DIMENSION on its longest edge,
+// preserving aspect ratio. SVG passes through untouched (vector). PNG keeps
+// transparency; everything else (JPG, WebP) is encoded as JPEG for a much
+// smaller payload.
+async function compressLogo(file: File): Promise<string> {
+  if (file.type === "image/svg+xml") {
+    return readFileAsDataUrl(file);
+  }
+  const { img, revoke } = await loadImage(file);
+  try {
+    const { naturalWidth: w, naturalHeight: h } = img;
+    const scale = Math.min(1, LOGO_MAX_DIMENSION / Math.max(w, h));
+    const outW = Math.max(1, Math.round(w * scale));
+    const outH = Math.max(1, Math.round(h * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = outW;
+    canvas.height = outH;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas not supported");
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(img, 0, 0, outW, outH);
+    // Preserve transparency for PNG; use JPEG for everything else to save space.
+    if (file.type === "image/png") {
+      return canvas.toDataURL("image/png");
+    }
+    return canvas.toDataURL("image/jpeg", LOGO_JPEG_QUALITY);
+  } finally {
+    revoke();
   }
 }
 
@@ -101,15 +146,11 @@ export default function SettingsPage() {
       toast.error("Please choose an image file (PNG, JPG, SVG, or ICO).");
       return;
     }
-    // Logos still have a size limit because they're stored as-is. Favicons
-    // accept any size — we downscale them to 64x64 PNG client-side.
-    if (kind === "logo" && file.size > MAX_LOGO_BYTES) {
-      toast.error("Image is too large — keep it under 1 MB.");
-      return;
-    }
+    // Both logos and favicons accept any input size — we compress them
+    // client-side before storing.
     try {
       if (kind === "logo") {
-        const dataUrl = await readFileAsDataUrl(file);
+        const dataUrl = await compressLogo(file);
         setForm((f) => ({ ...f, logoUrl: dataUrl }));
         setLogoPreviewError(false);
       } else {
