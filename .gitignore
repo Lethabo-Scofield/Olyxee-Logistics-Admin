@@ -47,3 +47,5 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+api/_bundle/*
+!api/_bundle/.gitkeep

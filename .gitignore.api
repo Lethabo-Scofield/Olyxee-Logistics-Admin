@@ -1,0 +1,2 @@
+api/_bundle/*
+!api/_bundle/.gitkeep

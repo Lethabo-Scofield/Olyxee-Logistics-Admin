@@ -1,12 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pnpm --filter @workspace/api-server run build && pnpm --filter @workspace/olyxee-admin run build:vercel",
+  "buildCommand": "pnpm --filter @workspace/api-server run build && mkdir -p api/_bundle && cp artifacts/api-server/dist/*.mjs api/_bundle/ && pnpm --filter @workspace/olyxee-admin run build:vercel",
   "installCommand": "pnpm install",
   "outputDirectory": "artifacts/olyxee-admin/dist/public",
   "framework": "vite",
   "functions": {
     "api/index.ts": {
-      "includeFiles": "artifacts/api-server/dist/**"
+      "includeFiles": "api/_bundle/**"
     }
   },
   "rewrites": [
