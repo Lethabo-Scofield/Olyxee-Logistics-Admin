@@ -48,7 +48,7 @@ export default function LoginPage() {
       <div className="flex flex-col items-center mb-8">
         <img src={logoUrl} alt="Olyxee" className="h-14 w-14 mb-5" data-testid="img-logo" />
         <h1 className="text-[26px] font-semibold text-[hsl(220,20%,10%)] tracking-tight text-center">
-          {mode === "signin" ? "Welcome back" : "Create your account"}
+          {mode === "signin" ? "Welcome to Olyxee Logistics" : "Create your account"}
         </h1>
         <p className="text-[15px] text-[hsl(220,9%,46%)] mt-1.5 text-center">
           {mode === "signin"
