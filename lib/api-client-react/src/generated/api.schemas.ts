@@ -238,9 +238,30 @@ export interface PaginatedAuditLogs {
 
 export type ListCustomersParams = {
 search?: string;
+/**
+ * Filter to customers with (true) or without (false) a company name.
+ */
+hasCompany?: boolean;
+/**
+ * Filter to customers with (true) or without (false) a phone number.
+ */
+hasPhone?: boolean;
+/**
+ * Sort order for the results.
+ */
+sort?: ListCustomersSort;
 page?: number;
 limit?: number;
 };
+
+export type ListCustomersSort = typeof ListCustomersSort[keyof typeof ListCustomersSort];
+
+
+export const ListCustomersSort = {
+  newest: 'newest',
+  oldest: 'oldest',
+  name: 'name',
+} as const;
 
 export type ListOrdersParams = {
 search?: string;

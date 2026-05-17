@@ -137,6 +137,23 @@ paths:
           in: query
           schema:
             type: string
+        - name: hasCompany
+          in: query
+          description: Filter to customers with (true) or without (false) a company name.
+          schema:
+            type: boolean
+        - name: hasPhone
+          in: query
+          description: Filter to customers with (true) or without (false) a phone number.
+          schema:
+            type: boolean
+        - name: sort
+          in: query
+          description: Sort order for the results.
+          schema:
+            type: string
+            enum: [newest, oldest, name]
+            default: newest
         - name: page
           in: query
           schema:

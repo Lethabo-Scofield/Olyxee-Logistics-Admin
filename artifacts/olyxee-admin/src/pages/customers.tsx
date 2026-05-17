@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Users } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Search, Users, X } from "lucide-react";
 import { EmptyState } from "@/components/page-loader";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -86,17 +87,57 @@ function CreateCustomerDialog({ onSuccess }: { onSuccess: () => void }) {
   );
 }
 
+// Tri-state filter values:
+//   "any"  → don't send the param
+//   "yes"  → hasX=true
+//   "no"   → hasX=false
+type TriFilter = "any" | "yes" | "no";
+type SortValue = "newest" | "oldest" | "name";
+
+function triToParam(v: TriFilter): boolean | undefined {
+  return v === "yes" ? true : v === "no" ? false : undefined;
+}
+
 export default function CustomersPage() {
   const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [querySearch, setQuerySearch] = useState("");
+  const [hasCompany, setHasCompany] = useState<TriFilter>("any");
+  const [hasPhone, setHasPhone] = useState<TriFilter>("any");
+  const [sort, setSort] = useState<SortValue>("newest");
 
-  const { data, isLoading, refetch } = useListCustomers({ search: querySearch || undefined, page, limit: 20 });
+  const { data, isLoading, refetch } = useListCustomers({
+    search: querySearch || undefined,
+    hasCompany: triToParam(hasCompany),
+    hasPhone: triToParam(hasPhone),
+    sort,
+    page,
+    limit: 20,
+  });
+
+  // Any time a filter that's part of the query changes, jump back to page 1
+  // so the user isn't stranded on a now-empty page N.
+  const updateFilter = <T,>(setter: (v: T) => void) => (v: T) => {
+    setter(v);
+    setPage(1);
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setQuerySearch(search);
+    setPage(1);
+  };
+
+  const filtersActive =
+    hasCompany !== "any" || hasPhone !== "any" || sort !== "newest" || !!querySearch;
+
+  const handleClearAll = () => {
+    setSearch("");
+    setQuerySearch("");
+    setHasCompany("any");
+    setHasPhone("any");
+    setSort("newest");
     setPage(1);
   };
 
@@ -111,7 +152,7 @@ export default function CustomersPage() {
       </div>
 
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-3 space-y-3">
           <form onSubmit={handleSearch} className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -119,6 +160,54 @@ export default function CustomersPage() {
             </div>
             <Button type="submit" variant="secondary">Search</Button>
           </form>
+
+          {/* Filter row — applies immediately on change (no separate Apply button). */}
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={hasCompany} onValueChange={updateFilter(setHasCompany) as (v: string) => void}>
+              <SelectTrigger className="h-9 w-[160px]">
+                <SelectValue placeholder="Company" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="any">Any company</SelectItem>
+                <SelectItem value="yes">Has company</SelectItem>
+                <SelectItem value="no">No company</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={hasPhone} onValueChange={updateFilter(setHasPhone) as (v: string) => void}>
+              <SelectTrigger className="h-9 w-[160px]">
+                <SelectValue placeholder="Phone" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="any">Any phone</SelectItem>
+                <SelectItem value="yes">Has phone</SelectItem>
+                <SelectItem value="no">No phone</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={sort} onValueChange={updateFilter(setSort) as (v: string) => void}>
+              <SelectTrigger className="h-9 w-[160px]">
+                <SelectValue placeholder="Sort" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Newest first</SelectItem>
+                <SelectItem value="oldest">Oldest first</SelectItem>
+                <SelectItem value="name">Name (A–Z)</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {filtersActive && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="gap-1 text-muted-foreground"
+                onClick={handleClearAll}
+              >
+                <X className="h-3.5 w-3.5" /> Clear
+              </Button>
+            )}
+          </div>
         </CardHeader>
 
         <CardContent className="p-0">

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, customersTable, ordersTable, auditLogsTable } from "@workspace/db";
-import { eq, and, ilike, or, desc, sql } from "drizzle-orm";
+import { eq, and, ilike, or, desc, asc, sql, isNotNull, isNull, ne } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import { generateId } from "../lib/id";
 import { CreateCustomerBody, UpdateCustomerBody } from "@workspace/api-zod";
@@ -15,6 +15,18 @@ router.get("/customers", requireAuth, async (req, res) => {
     const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
     const offset = (page - 1) * limit;
 
+    // Query strings always arrive as strings; normalize the boolean filters
+    // explicitly so that an absent param is treated as "no filter" rather
+    // than falsy.
+    const parseBool = (v: unknown): boolean | undefined => {
+      if (v === "true") return true;
+      if (v === "false") return false;
+      return undefined;
+    };
+    const hasCompany = parseBool(req.query.hasCompany);
+    const hasPhone = parseBool(req.query.hasPhone);
+    const sort = (req.query.sort as string) ?? "newest";
+
     const whereConditions = [eq(customersTable.businessId, businessId)];
     if (search) {
       whereConditions.push(
@@ -25,13 +37,38 @@ router.get("/customers", requireAuth, async (req, res) => {
         ) as any,
       );
     }
+    // For the "has X" filters we also treat empty strings as missing — older
+    // records may have stored "" instead of NULL.
+    if (hasCompany === true) {
+      whereConditions.push(isNotNull(customersTable.companyName));
+      whereConditions.push(ne(customersTable.companyName, ""));
+    } else if (hasCompany === false) {
+      whereConditions.push(
+        or(isNull(customersTable.companyName), eq(customersTable.companyName, "")) as any,
+      );
+    }
+    if (hasPhone === true) {
+      whereConditions.push(isNotNull(customersTable.phone));
+      whereConditions.push(ne(customersTable.phone, ""));
+    } else if (hasPhone === false) {
+      whereConditions.push(
+        or(isNull(customersTable.phone), eq(customersTable.phone, "")) as any,
+      );
+    }
+
+    const orderBy =
+      sort === "oldest"
+        ? asc(customersTable.createdAt)
+        : sort === "name"
+        ? asc(customersTable.fullName)
+        : desc(customersTable.createdAt);
 
     const [customers, countResult] = await Promise.all([
       db
         .select()
         .from(customersTable)
         .where(and(...whereConditions))
-        .orderBy(desc(customersTable.createdAt))
+        .orderBy(orderBy)
         .limit(limit)
         .offset(offset),
       db

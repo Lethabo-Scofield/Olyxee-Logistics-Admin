@@ -20,6 +20,7 @@ export * from './emailResendResult';
 export * from './healthStatus';
 export * from './listAuditLogsParams';
 export * from './listCustomersParams';
+export * from './listCustomersSort';
 export * from './listOrdersParams';
 export * from './order';
 export * from './orderDetail';

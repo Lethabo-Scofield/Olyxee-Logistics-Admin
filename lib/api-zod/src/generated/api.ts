@@ -123,11 +123,15 @@ export const GetStatusBreakdownResponse = zod.array(GetStatusBreakdownResponseIt
 /**
  * @summary List customers for the current business
  */
+export const listCustomersQuerySortDefault = `newest`;
 export const listCustomersQueryPageDefault = 1;
 export const listCustomersQueryLimitDefault = 20;
 
 export const ListCustomersQueryParams = zod.object({
   "search": zod.coerce.string().optional(),
+  "hasCompany": zod.coerce.boolean().optional().describe('Filter to customers with (true) or without (false) a company name.'),
+  "hasPhone": zod.coerce.boolean().optional().describe('Filter to customers with (true) or without (false) a phone number.'),
+  "sort": zod.enum(['newest', 'oldest', 'name']).default(listCustomersQuerySortDefault).describe('Sort order for the results.'),
   "page": zod.coerce.number().default(listCustomersQueryPageDefault),
   "limit": zod.coerce.number().default(listCustomersQueryLimitDefault)
 })
