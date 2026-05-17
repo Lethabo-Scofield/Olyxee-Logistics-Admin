@@ -6,6 +6,7 @@ import { AppLayout } from "@/components/layout";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { useGetBusiness } from "@workspace/api-client-react";
+import { Spinner } from "@/components/ui/spinner";
 
 import LoginPage from "@/pages/login";
 import OnboardingPage from "@/pages/onboarding";
@@ -40,8 +41,12 @@ function Protected({
 
   if (status === "loading") {
     return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-background">
-        <div className="text-sm text-muted-foreground">Loading…</div>
+      <div
+        className="flex min-h-[100dvh] items-center justify-center bg-background"
+        role="status"
+        aria-label="Loading"
+      >
+        <Spinner className="size-6 text-primary" />
       </div>
     );
   }
@@ -52,8 +57,12 @@ function Protected({
   if (!skipOnboardingGuard) {
     if (businessQuery.isLoading) {
       return (
-        <div className="flex min-h-[100dvh] items-center justify-center bg-background">
-          <div className="text-sm text-muted-foreground">Loading…</div>
+        <div
+          className="flex min-h-[100dvh] items-center justify-center bg-background"
+          role="status"
+          aria-label="Loading"
+        >
+          <Spinner className="size-6 text-primary" />
         </div>
       );
     }
@@ -74,8 +83,12 @@ function PublicOnly({ component: Component }: { component: React.ComponentType }
   const { status } = useAuth();
   if (status === "loading") {
     return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-background">
-        <div className="text-sm text-muted-foreground">Loading…</div>
+      <div
+        className="flex min-h-[100dvh] items-center justify-center bg-background"
+        role="status"
+        aria-label="Loading"
+      >
+        <Spinner className="size-6 text-primary" />
       </div>
     );
   }

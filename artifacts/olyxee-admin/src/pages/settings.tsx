@@ -1274,8 +1274,12 @@ function EmailCustomizationSection({
       </div>
 
       {isLoading && !loaded ? (
-        <div className="px-4 py-6 flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+        <div
+          className="px-4 py-8 flex items-center justify-center"
+          role="status"
+          aria-label="Loading email wording"
+        >
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         </div>
       ) : (
         <>
