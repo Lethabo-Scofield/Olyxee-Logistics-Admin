@@ -16,6 +16,14 @@ import {
   CreateOrderBody,
   UpdateOrderStatusBody,
 } from "@workspace/api-zod";
+import { z } from "zod";
+import {
+  FSM_ORDER_STATUSES,
+  transitionOrder,
+  findStuckOrders,
+  ConcurrentTransitionError,
+  type OrderFsmStatus,
+} from "../lib/order-fsm";
 
 const router = Router();
 
@@ -144,18 +152,18 @@ router.post("/orders", requireAuth, async (req, res) => {
         trackingId: trackingId!,
         orderReference: parse.data.orderReference ?? null,
         description: parse.data.description ?? null,
-        currentStatus: "Order received",
+        currentStatus: "Created",
         estimatedDeliveryDate: parse.data.estimatedDeliveryDate ?? null,
       })
       .returning();
 
     const o = order[0];
 
-    // Create initial tracking event
+    // Create initial tracking event — the order enters the FSM at "Created".
     await db.insert(trackingEventsTable).values({
       id: generateId(),
       orderId: o.id,
-      status: "Order received",
+      status: "Created",
       message: "Order has been created",
       createdBy: userId,
     });
@@ -174,6 +182,20 @@ router.post("/orders", requireAuth, async (req, res) => {
     res.status(201).json(serializeOrder(o));
   } catch (err) {
     req.log.error({ err }, "Failed to create order");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// GET /orders/stuck — must be declared BEFORE /orders/:orderId so Express
+// doesn't treat "stuck" as an order ID param. Returns orders whose dwell
+// time in a watched lifecycle state exceeds the configured threshold.
+router.get("/orders/stuck", requireAuth, async (req, res) => {
+  try {
+    const businessId = (req as any).businessId;
+    const stuck = await findStuckOrders(businessId);
+    res.json({ data: stuck, total: stuck.length });
+  } catch (err) {
+    req.log.error({ err }, "Failed to list stuck orders");
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -373,6 +395,97 @@ router.post("/orders/:orderId/status", requireAuth, async (req, res) => {
   } catch (err) {
     req.log.error({ err }, "Failed to update order status");
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /orders/:orderId/transition — FSM-gated status change.
+//
+// Distinct from the legacy /status endpoint above: that one accepts any
+// free-text status (used for "In transit", "Out for delivery", etc., which
+// are tracking waypoints rather than lifecycle states). This endpoint
+// enforces the typed Created→…→Delivered lifecycle and writes both a
+// tracking-event row and a typed audit-log row inside one transaction.
+const TransitionBody = z.object({
+  toStatus: z.enum(FSM_ORDER_STATUSES),
+  reason: z.string().trim().max(500).optional(),
+});
+
+router.post("/orders/:orderId/transition", requireAuth, async (req, res) => {
+  try {
+    const businessId = (req as any).businessId;
+    const userId = (req as any).userId;
+    const orderId = req.params.orderId as string;
+
+    // Wire format follows the spec: snake_case keys (`current_status`,
+    // `event_id`). The FSM module stays camelCase internally — we serialize
+    // at the route boundary so the public contract is exactly what was
+    // requested without polluting the TS types.
+    const parse = TransitionBody.safeParse(req.body);
+    if (!parse.success) {
+      res.status(400).json({
+        success: false,
+        current_status: null,
+        message: "Invalid input",
+        event_id: null,
+        details: parse.error.issues,
+      });
+      return;
+    }
+
+    const result = await transitionOrder({
+      orderId,
+      businessId,
+      toStatus: parse.data.toStatus as OrderFsmStatus,
+      updatedBy: userId,
+      reason: parse.data.reason ?? null,
+    });
+
+    if (!result.success) {
+      // Map FSM failure codes onto HTTP statuses. 422 for "request understood
+      // but the state machine refused it" reads more accurately than 400,
+      // which we reserve for malformed input.
+      const statusCode =
+        result.code === "not_found"
+          ? 404
+          : result.code === "unknown_status"
+            ? 400
+            : 422;
+      res.status(statusCode).json({
+        success: false,
+        current_status: result.currentStatus,
+        message: result.message,
+        event_id: null,
+        code: result.code,
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      current_status: result.currentStatus,
+      message: result.message,
+      event_id: result.eventId,
+    });
+  } catch (err) {
+    if (err instanceof ConcurrentTransitionError) {
+      // Another writer beat us between read and update — caller should
+      // re-fetch and retry with the latest state.
+      res.status(409).json({
+        success: false,
+        current_status: null,
+        message: "Order was modified by another request. Please retry.",
+        event_id: null,
+        code: "conflict",
+      });
+      return;
+    }
+    req.log.error({ err }, "Failed to transition order");
+    res.status(500).json({
+      success: false,
+      current_status: null,
+      message: "Internal server error",
+      event_id: null,
+    });
   }
 });
 
