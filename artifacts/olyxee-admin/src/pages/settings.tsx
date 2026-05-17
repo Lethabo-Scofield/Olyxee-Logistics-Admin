@@ -116,8 +116,19 @@ function normalizeHex(raw: string): string | null {
 
 // ─── Logo upload tile ─────────────────────────────────────────────────────────
 function LogoUpload({
-  value, onFile, onRemove,
-}: { value: string; onFile: (file: File) => void; onRemove: () => void }) {
+  value, onFile, onRemove, businessName, variant = "logo",
+}: {
+  value: string;
+  onFile: (file: File) => void;
+  onRemove: () => void;
+  // Brand name shown beside the preview, mirroring how the logo will appear
+  // in the sidebar / browser tab (image + business name).
+  businessName?: string;
+  // "logo" → wide preview tile. "favicon" → small square + tab mockup so
+  // the user sees roughly how browsers will render it.
+  variant?: "logo" | "favicon";
+}) {
+  const isFavicon = variant === "favicon";
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [previewError, setPreviewError] = useState(false);
@@ -146,18 +157,46 @@ function LogoUpload({
 
       {value && !previewError ? (
         <div className="flex items-stretch gap-3 border border-border bg-card p-3">
-          <div className="flex items-center justify-center bg-muted/50 border border-border flex-shrink-0 h-20 w-32">
+          {/* Preview thumbnail — square for favicon (roughly how a tab shows
+              it), wide for logo (roughly how the sidebar shows it). */}
+          <div
+            className={cn(
+              "flex items-center justify-center bg-muted/50 border border-border flex-shrink-0",
+              isFavicon ? "h-12 w-12" : "h-20 w-32",
+            )}
+          >
             <img
               src={value}
-              alt="Logo preview"
+              alt={isFavicon ? "Favicon preview" : "Logo preview"}
               className="object-contain max-h-full max-w-full"
               onError={() => setPreviewError(true)}
             />
           </div>
+
           <div className="flex-1 min-w-0 flex flex-col justify-center gap-2">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Eye className="h-3.5 w-3.5" />
-              Logo in use
+            {/* Live "image + business name" mockup so the user sees what
+                customers + browser tabs will actually render. Falls back to
+                a helpful hint when the business name hasn't been set yet. */}
+            {businessName ? (
+              isFavicon ? (
+                // Mini browser-tab mockup
+                <div className="inline-flex items-center gap-1.5 self-start max-w-full border border-border bg-background/60 pl-1.5 pr-2.5 py-1">
+                  <img src={value} alt="" aria-hidden="true" className="h-3.5 w-3.5 object-contain flex-shrink-0" />
+                  <span className="text-xs font-medium truncate">{businessName}</span>
+                </div>
+              ) : (
+                <span className="text-sm font-semibold truncate" title={businessName}>
+                  {businessName}
+                </span>
+              )
+            ) : (
+              <span className="text-xs text-muted-foreground italic">
+                Add a business name above to see it next to the {isFavicon ? "favicon" : "logo"}.
+              </span>
+            )}
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <Eye className="h-3 w-3" />
+              {isFavicon ? "Favicon in use" : "Logo in use"}
             </div>
             <div className="flex gap-2">
               <Button type="button" variant="outline" size="sm" onClick={() => inputRef.current?.click()}>
@@ -208,7 +247,7 @@ function LogoUpload({
                 <Upload className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
               </div>
               <p className="text-sm font-medium">
-                Drop your logo here, or <span className="text-primary">browse</span>
+                Drop {isFavicon ? "a favicon" : businessName ? `${businessName}'s logo` : "your logo"} here, or <span className="text-primary">browse</span>
               </p>
               <p className="text-xs text-muted-foreground">PNG, SVG, or JPEG</p>
             </>
@@ -507,6 +546,8 @@ export default function SettingsPage() {
           <section className="space-y-3">
             <Label className="text-sm font-medium">Logo</Label>
             <LogoUpload
+              variant="logo"
+              businessName={form.businessName}
               value={form.logoUrl}
               onFile={handleLogoPicked}
               onRemove={() => setForm(f => ({ ...f, logoUrl: "" }))}
@@ -517,6 +558,8 @@ export default function SettingsPage() {
           <section className="space-y-3">
             <Label className="text-sm font-medium">Favicon</Label>
             <LogoUpload
+              variant="favicon"
+              businessName={form.businessName}
               value={form.faviconUrl}
               onFile={handleFaviconPicked}
               onRemove={() => setForm(f => ({ ...f, faviconUrl: "" }))}
