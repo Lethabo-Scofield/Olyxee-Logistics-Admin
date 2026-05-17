@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Moon, Sun, Check, AlertCircle, Upload, X, Eye, Loader2, Pipette, Shuffle,
+  Moon, Sun, Check, AlertCircle, AlertTriangle, Upload, X, Eye, Loader2, Pipette, Shuffle,
   Building2, Palette, Mail, SunMoon, RotateCcw, History,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -253,6 +253,22 @@ function LogoUpload({
 }
 
 // ─── Brand color picker ──────────────────────────────────────────────────────
+// Compute the WCAG contrast ratio of white text on a given hex background so we
+// can warn the admin if their button labels would be unreadable. 4.5:1 is the
+// AA threshold for normal text; we treat ≥4.5 as "good", 3-4.5 as "okay for
+// large text only", and below 3 as a real readability problem.
+function whiteContrastOn(hex: string): number {
+  const n = normalizeHex(hex);
+  if (!n) return 21;
+  const r = parseInt(n.slice(1, 3), 16) / 255;
+  const g = parseInt(n.slice(3, 5), 16) / 255;
+  const b = parseInt(n.slice(5, 7), 16) / 255;
+  const lin = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+  const L = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  // L_white = 1, so ratio = (1 + 0.05) / (L + 0.05).
+  return 1.05 / (L + 0.05);
+}
+
 function BrandColorPicker({
   value,
   onChange,
@@ -269,7 +285,7 @@ function BrandColorPicker({
     setHexError(false);
   }, [value]);
 
-  const presetMatch = PRESET_COLORS.some(
+  const presetMatch = PRESET_COLORS.find(
     (c) => c.hex.toLowerCase() === value.toLowerCase(),
   );
 
@@ -293,127 +309,158 @@ function BrandColorPicker({
     onChange(hslToHex(h, s, l));
   };
 
+  const contrast = whiteContrastOn(value);
+  const contrastTier: "good" | "okay" | "bad" =
+    contrast >= 4.5 ? "good" : contrast >= 3 ? "okay" : "bad";
+  const CONTRAST_COPY: Record<typeof contrastTier, { label: string; tone: string }> = {
+    good: { label: "White text reads clearly on this color.", tone: "text-emerald-700" },
+    okay: { label: "White text works for large headings only — pick a darker shade for buttons.", tone: "text-amber-700" },
+    bad: { label: "White text is hard to read on this color. Try something darker.", tone: "text-rose-700" },
+  };
+
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-xs text-muted-foreground">
-          Tap a preset, use the spectrum, or type a hex.
-        </p>
-        <button
-          type="button"
-          onClick={surpriseMe}
-          className="text-[11px] text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
-        >
-          <Shuffle className="h-3 w-3" /> Surprise me
-        </button>
-      </div>
-
-      <div className="grid grid-cols-7 gap-2">
-        {PRESET_COLORS.map((c) => {
-          const active = value.toLowerCase() === c.hex.toLowerCase();
-          return (
-            <button
-              key={c.hex}
-              type="button"
-              title={c.label}
-              onClick={() => onChange(c.hex)}
-              className={cn(
-                "relative aspect-square w-full flex items-center justify-center transition-transform duration-200 ease-out",
-                "ring-offset-2 ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                active && "ring-2 ring-foreground scale-[0.94]",
-              )}
-              style={{ backgroundColor: c.hex }}
-              aria-pressed={active}
-            >
-              {active && <Check className="h-4 w-4 text-white drop-shadow" aria-hidden="true" />}
-              <span className="sr-only">{c.label}</span>
-            </button>
-          );
-        })}
-
-        <button
-          type="button"
-          title="Pick a custom color"
-          onClick={() => nativeRef.current?.click()}
-          className={cn(
-            "relative aspect-square w-full flex items-center justify-center transition-transform duration-200 ease-out",
-            "ring-offset-2 ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            "[background:conic-gradient(from_0deg,#ef4444,#f59e0b,#eab308,#22c55e,#06b6d4,#3b82f6,#8b5cf6,#ec4899,#ef4444)]",
-            !presetMatch && "ring-2 ring-foreground scale-[0.94]",
-          )}
-          aria-label="Pick a custom color"
-        >
-          {!presetMatch ? (
-            <span
-              className="h-4 w-4 border-2 border-white shadow"
-              style={{ backgroundColor: value }}
-              aria-hidden="true"
-            />
-          ) : (
-            <Pipette className="h-4 w-4 text-white drop-shadow" aria-hidden="true" />
-          )}
-        </button>
-      </div>
-
-      <input
-        ref={nativeRef}
-        type="color"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="sr-only"
-        aria-hidden="true"
-        tabIndex={-1}
-      />
-
-      <div className="flex items-center gap-2 pt-1">
-        <div
-          className="h-9 w-9 border border-border flex-shrink-0"
-          style={{ backgroundColor: hexError ? "transparent" : (normalizeHex(hexDraft) ?? value) }}
-        />
-        <div className="flex-1 relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground select-none pointer-events-none">
-            #
-          </span>
-          <Input
-            value={hexDraft.replace(/^#/, "")}
-            onChange={(e) => {
-              const next = e.target.value;
-              setHexDraft(next);
-              const norm = normalizeHex(next);
-              if (norm) {
-                setHexError(false);
-                onChange(norm);
-              } else if (next.trim() === "") {
-                setHexError(false);
-              } else {
-                setHexError(true);
-              }
-            }}
-            onBlur={(e) => commitHex(e.target.value)}
-            placeholder="2563eb"
-            maxLength={7}
-            spellCheck={false}
-            className={cn("pl-7 h-9 font-mono uppercase", hexError && "border-destructive focus-visible:ring-destructive")}
-            aria-invalid={hexError}
-          />
+    <div className="space-y-4">
+      {/* Step 1: Named presets — bigger tiles with the name visible so the
+          choice feels like picking a brand mood, not guessing at swatches. */}
+      <div className="space-y-2">
+        <p className="text-xs font-medium text-muted-foreground">Quick picks</p>
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+          {PRESET_COLORS.map((c) => {
+            const active = value.toLowerCase() === c.hex.toLowerCase();
+            return (
+              <button
+                key={c.hex}
+                type="button"
+                onClick={() => onChange(c.hex)}
+                aria-pressed={active}
+                className={cn(
+                  "group relative flex flex-col items-stretch border transition-all text-left",
+                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+                  active
+                    ? "border-foreground"
+                    : "border-border hover:border-muted-foreground/60",
+                )}
+              >
+                <div
+                  className="h-12 w-full flex items-center justify-center"
+                  style={{ backgroundColor: c.hex }}
+                >
+                  {active && <Check className="h-4 w-4 text-white drop-shadow" aria-hidden="true" />}
+                </div>
+                <div className="px-2 py-1.5 flex items-center justify-between gap-1 bg-background">
+                  <span className="text-[11px] font-medium truncate">{c.label}</span>
+                  {active && (
+                    <span className="text-[9px] uppercase tracking-wider text-muted-foreground">In use</span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-9 gap-1.5"
-          onClick={() => nativeRef.current?.click()}
-        >
-          <Pipette className="h-3.5 w-3.5" />
-          Spectrum
-        </Button>
       </div>
 
-      {hexError && (
-        <p className="text-xs text-destructive">
-          Enter a valid hex like <code>2563eb</code> or <code>#abc</code>.
+      {/* Step 2: Custom color — one tidy row instead of three stacked controls.
+          The big swatch on the left is the "current pick" indicator. */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-medium text-muted-foreground">
+            Or use your exact brand color
+          </p>
+          <button
+            type="button"
+            onClick={surpriseMe}
+            className="text-[11px] text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+          >
+            <Shuffle className="h-3 w-3" /> Surprise me
+          </button>
+        </div>
+
+        <div className="flex items-stretch gap-2">
+          <button
+            type="button"
+            onClick={() => nativeRef.current?.click()}
+            className="h-10 w-10 border border-border flex-shrink-0 relative group focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            style={{ backgroundColor: hexError ? "transparent" : (normalizeHex(hexDraft) ?? value) }}
+            aria-label="Open color spectrum"
+            title="Open color spectrum"
+          >
+            <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 bg-black/30 transition-opacity">
+              <Pipette className="h-4 w-4 text-white" aria-hidden="true" />
+            </span>
+          </button>
+
+          <div className="flex-1 relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground select-none pointer-events-none">
+              #
+            </span>
+            <Input
+              value={hexDraft.replace(/^#/, "")}
+              onChange={(e) => {
+                const next = e.target.value;
+                setHexDraft(next);
+                const norm = normalizeHex(next);
+                if (norm) {
+                  setHexError(false);
+                  onChange(norm);
+                } else if (next.trim() === "") {
+                  setHexError(false);
+                } else {
+                  setHexError(true);
+                }
+              }}
+              onBlur={(e) => commitHex(e.target.value)}
+              placeholder="2563eb"
+              maxLength={7}
+              spellCheck={false}
+              className={cn("pl-7 h-10 font-mono uppercase", hexError && "border-destructive focus-visible:ring-destructive")}
+              aria-invalid={hexError}
+            />
+          </div>
+
+          {!presetMatch && (
+            <span className="inline-flex items-center px-2 text-[10px] uppercase tracking-wider text-muted-foreground bg-muted/40 border border-border">
+              Custom
+            </span>
+          )}
+        </div>
+
+        <input
+          ref={nativeRef}
+          type="color"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="sr-only"
+          aria-hidden="true"
+          tabIndex={-1}
+        />
+
+        {hexError && (
+          <p className="text-xs text-destructive">
+            Enter a valid hex like <code>2563eb</code> or <code>#abc</code>.
+          </p>
+        )}
+      </div>
+
+      {/* Step 3: Plain-English readability check — tells the admin whether
+          their button text will actually be legible without making them
+          learn what "WCAG 4.5:1" means. */}
+      <div
+        className={cn(
+          "flex items-start gap-2 px-3 py-2 border text-xs",
+          contrastTier === "good" && "border-emerald-200 bg-emerald-50",
+          contrastTier === "okay" && "border-amber-200 bg-amber-50",
+          contrastTier === "bad" && "border-rose-200 bg-rose-50",
+        )}
+      >
+        {contrastTier === "good" ? (
+          <Check className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-emerald-700" aria-hidden="true" />
+        ) : (
+          <AlertTriangle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" aria-hidden="true" />
+        )}
+        <p className={cn("flex-1", CONTRAST_COPY[contrastTier].tone)}>
+          {CONTRAST_COPY[contrastTier].label}
         </p>
-      )}
+      </div>
     </div>
   );
 }
@@ -637,31 +684,68 @@ function BrowserTabPreview({ faviconUrl, businessName }: { faviconUrl: string; b
   );
 }
 
-// Shows the color on the same surfaces it'll actually drive (button + status
-// chip) so the user can sanity-check contrast at a glance.
+// A tiny app-shell mockup that shows the color on every surface it actually
+// drives in this admin: active sidebar item, primary button, status badge,
+// and inline link. Lets the user judge the brand at a glance, in context,
+// instead of staring at loose chips.
 function BrandColorPreview({ color }: { color: string }) {
   return (
     <PreviewFrame label="Where this color shows up">
-      <div className="flex flex-wrap items-center gap-3">
-        <span
-          className="inline-flex items-center justify-center h-9 px-4 text-sm font-medium text-white"
-          style={{ background: color }}
-        >
-          Primary button
-        </span>
-        <span
-          className="inline-flex items-center gap-1.5 h-7 px-2.5 text-xs font-medium border"
-          style={{ borderColor: color, color }}
-        >
-          <span className="h-1.5 w-1.5" style={{ background: color }} aria-hidden="true" />
-          Active status
-        </span>
-        <span
-          className="text-sm font-medium underline underline-offset-2"
-          style={{ color }}
-        >
-          A link
-        </span>
+      <div className="border border-border bg-background overflow-hidden">
+        <div className="flex min-h-[148px]">
+          {/* Faux sidebar */}
+          <div className="w-24 bg-muted/40 border-r border-border flex flex-col py-2 gap-0.5">
+            <div className="h-6 mx-2 mb-2 bg-foreground/10" aria-hidden="true" />
+            <div className="px-2 py-1.5 text-[10px] text-muted-foreground">Dashboard</div>
+            {/* Active item — uses the brand color */}
+            <div
+              className="relative px-2 py-1.5 text-[10px] font-semibold text-white"
+              style={{ background: color }}
+            >
+              Orders
+            </div>
+            <div className="px-2 py-1.5 text-[10px] text-muted-foreground">Customers</div>
+            <div className="px-2 py-1.5 text-[10px] text-muted-foreground">Settings</div>
+          </div>
+
+          {/* Faux content */}
+          <div className="flex-1 p-3 space-y-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="space-y-1">
+                <div className="h-2 w-20 bg-foreground/70" aria-hidden="true" />
+                <div className="h-1.5 w-28 bg-foreground/20" aria-hidden="true" />
+              </div>
+              <span
+                className="inline-flex items-center justify-center h-7 px-3 text-[11px] font-medium text-white"
+                style={{ background: color }}
+              >
+                New order
+              </span>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 px-2 py-1.5 border border-border bg-background">
+                <div className="h-1.5 w-12 bg-foreground/60" aria-hidden="true" />
+                <span
+                  className="ml-auto inline-flex items-center gap-1 h-5 px-1.5 text-[9px] font-semibold uppercase tracking-wider border"
+                  style={{ borderColor: color, color }}
+                >
+                  <span className="h-1 w-1" style={{ background: color }} aria-hidden="true" />
+                  Active
+                </span>
+              </div>
+              <div className="flex items-center gap-2 px-2 py-1.5 border border-border bg-background">
+                <div className="h-1.5 w-16 bg-foreground/40" aria-hidden="true" />
+                <span
+                  className="ml-auto text-[10px] font-medium underline underline-offset-2"
+                  style={{ color }}
+                >
+                  View
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </PreviewFrame>
   );
