@@ -123,7 +123,13 @@ export function AuthLayout({ children }: { children: ReactNode }) {
       </div>
 
       {/* Right: form pane */}
-      <div className="flex items-center justify-center px-4 py-10">
+      <div className="relative flex items-center justify-center px-4 py-10">
+        <img
+          src={`${import.meta.env.BASE_URL}logo.svg`}
+          alt="Olyxee"
+          className="absolute top-6 left-6 h-8 w-auto"
+          draggable={false}
+        />
         <div className="w-full max-w-[420px]">{children}</div>
       </div>
     </div>
