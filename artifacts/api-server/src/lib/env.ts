@@ -16,12 +16,6 @@ const REQUIRED_ALWAYS: EnvCheck[] = [
 
 const REQUIRED_IN_PRODUCTION: EnvCheck[] = [
   {
-    name: "ALLOWED_ORIGINS",
-    required: true,
-    description:
-      "Comma-separated list of origins allowed to call the API (e.g. https://admin.example.com).",
-  },
-  {
     name: "SESSION_SECRET",
     required: true,
     description: "Long random string (>=16 chars) used to sign session cookies.",
@@ -29,6 +23,12 @@ const REQUIRED_IN_PRODUCTION: EnvCheck[] = [
 ];
 
 const RECOMMENDED: EnvCheck[] = [
+  {
+    name: "ALLOWED_ORIGINS",
+    required: false,
+    description:
+      "Comma-separated list of origins allowed to call the API cross-origin (e.g. https://admin.example.com). Not needed when the SPA and API are served from the same domain.",
+  },
   {
     name: "RESEND_API_KEY",
     required: false,
