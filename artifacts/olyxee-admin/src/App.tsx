@@ -16,6 +16,7 @@ import OrdersPage from "@/pages/orders";
 import OrderDetailPage from "@/pages/order-detail";
 import AuditLogsPage from "@/pages/audit-logs";
 import SettingsPage from "@/pages/settings";
+import ProfilePage from "@/pages/profile";
 import NotFound from "@/pages/not-found";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -104,6 +105,7 @@ function AppRoutes() {
       <Route path="/orders/:id" component={() => <Protected component={OrderDetailPage} />} />
       <Route path="/audit-logs" component={() => <Protected component={AuditLogsPage} />} />
       <Route path="/settings" component={() => <Protected component={SettingsPage} />} />
+      <Route path="/profile" component={() => <Protected component={ProfilePage} />} />
       <Route component={NotFound} />
     </Switch>
   );

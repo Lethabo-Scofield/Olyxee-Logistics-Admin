@@ -12,7 +12,7 @@ import { useAuth } from "@/contexts/auth-context";
 
 function UserRow() {
   const { user, signOut } = useAuth();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
 
   // AuthUser exposes `name` + `email` directly (set by the auth context from
   // /auth/me). The previous `user_metadata` shape was a leftover from an
@@ -20,20 +20,34 @@ function UserRow() {
   const fullName = user?.name || user?.email || "User";
   const email = user?.email ?? "";
   const initial = (fullName || "U").charAt(0).toUpperCase();
+  const isOnProfile = location === "/profile";
 
   return (
     <div className="flex items-center gap-2.5 px-4 py-3">
-      <Avatar className="h-7 w-7 flex-shrink-0">
-        <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground text-xs">
-          {initial}
-        </AvatarFallback>
-      </Avatar>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium truncate">{fullName}</p>
-        {email ? (
-          <p className="text-xs text-sidebar-foreground/50 truncate">{email}</p>
-        ) : null}
-      </div>
+      {/* Avatar + name double as the link to the profile page so the user
+          can click their name in the sidebar to manage their account. */}
+      <Link
+        href="/profile"
+        className={`flex items-center gap-2.5 flex-1 min-w-0 -mx-1 px-1 py-0.5 transition-colors ${
+          isOnProfile
+            ? "text-sidebar-foreground"
+            : "text-sidebar-foreground hover:text-sidebar-foreground"
+        } hover:bg-sidebar-accent/50`}
+        title="Edit your profile"
+        data-testid="link-profile"
+      >
+        <Avatar className="h-7 w-7 flex-shrink-0">
+          <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground text-xs">
+            {initial}
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-medium truncate">{fullName}</p>
+          {email ? (
+            <p className="text-xs text-sidebar-foreground/50 truncate">{email}</p>
+          ) : null}
+        </div>
+      </Link>
       <button
         type="button"
         onClick={async () => {
