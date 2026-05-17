@@ -9,9 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/status-badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   ArrowLeft, Copy, Check, Mail, RefreshCw, MapPin, ExternalLink,
-  House, PackageX, ArrowRight, Sparkles,
+  House, PackageX, ArrowRight, Sparkles, ChevronDown,
 } from "lucide-react";
 import { EmptyState } from "@/components/page-loader";
 import { toast } from "sonner";
@@ -531,42 +532,64 @@ export default function OrderDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Email history */}
+          {/* Email history — collapsed by default so it doesn't compete with
+              the main status-update flow above. Operators rarely need it;
+              when they do, the count makes it discoverable and one click
+              opens it. */}
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Email History</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {!order.emailNotifications?.length ? (
-                <p className="text-sm text-muted-foreground">No emails sent yet.</p>
-              ) : (
-                order.emailNotifications.map((notif) => (
-                  <div
-                    key={notif.id}
-                    className="flex items-start justify-between gap-3 p-3 border bg-muted/20"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{notif.subject}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">To: {notif.customerEmail}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(notif.createdAt), "MMM d, yyyy · HH:mm")}
-                      </p>
-                    </div>
-                    <span
-                      className={`text-xs font-semibold px-2 py-0.5 flex-shrink-0 border ${
-                        notif.status === "sent"
-                          ? "text-green-700 border-green-200 bg-green-50"
-                          : notif.status === "failed"
-                          ? "text-red-700 border-red-200 bg-red-50"
-                          : "text-muted-foreground border-border bg-muted"
-                      }`}
-                    >
-                      {notif.status}
+            <Collapsible>
+              <CollapsibleTrigger asChild>
+                <button
+                  type="button"
+                  className="group w-full flex items-center justify-between gap-3 px-6 py-4 text-left hover:bg-muted/30 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  aria-label="Toggle email history"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="text-base font-semibold">Email History</span>
+                    <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 border border-border">
+                      {order.emailNotifications?.length ?? 0}
                     </span>
                   </div>
-                ))
-              )}
-            </CardContent>
+                  <ChevronDown
+                    className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180"
+                  />
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <CardContent className="space-y-2 pt-0">
+                  {!order.emailNotifications?.length ? (
+                    <p className="text-sm text-muted-foreground">No emails sent yet.</p>
+                  ) : (
+                    order.emailNotifications.map((notif) => (
+                      <div
+                        key={notif.id}
+                        className="flex items-start justify-between gap-3 p-3 border bg-muted/20"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{notif.subject}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">To: {notif.customerEmail}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(notif.createdAt), "MMM d, yyyy · HH:mm")}
+                          </p>
+                        </div>
+                        <span
+                          className={`text-xs font-semibold px-2 py-0.5 flex-shrink-0 border ${
+                            notif.status === "sent"
+                              ? "text-green-700 border-green-200 bg-green-50"
+                              : notif.status === "failed"
+                              ? "text-red-700 border-red-200 bg-red-50"
+                              : "text-muted-foreground border-border bg-muted"
+                          }`}
+                        >
+                          {notif.status}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </CollapsibleContent>
+            </Collapsible>
           </Card>
         </div>
 
