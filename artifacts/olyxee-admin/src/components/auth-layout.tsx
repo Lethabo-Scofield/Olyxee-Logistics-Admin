@@ -3,6 +3,7 @@ import slide1 from "@assets/image_1778124608952.png";
 import slide2 from "@assets/image_1778124623027.png";
 import slide3 from "@assets/image_1778124632624.png";
 import bgImage from "@assets/image_1778124687840.png";
+import olyxeeLogo from "@assets/Olyxee_Black_-removebg-preview_-_Copy_1778978524027.png";
 
 type Slide = {
   src: string;
@@ -125,9 +126,9 @@ export function AuthLayout({ children }: { children: ReactNode }) {
       {/* Right: form pane */}
       <div className="relative flex items-center justify-center px-4 py-10">
         <img
-          src={`${import.meta.env.BASE_URL}logo.svg`}
+          src={olyxeeLogo}
           alt="Olyxee"
-          className="absolute top-6 left-6 h-8 w-auto"
+          className="absolute top-6 left-6 h-10 w-auto"
           draggable={false}
         />
         <div className="w-full max-w-[420px]">{children}</div>
