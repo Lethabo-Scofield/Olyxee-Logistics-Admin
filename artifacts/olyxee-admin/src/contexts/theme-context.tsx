@@ -133,6 +133,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     applyFavicon(settings.faviconUrl);
   }, [settings.faviconUrl]);
 
+  // Keep the browser tab title in sync with the business name, exactly the
+  // way the favicon follows the uploaded image. Falls back to "Olyxee Admin"
+  // when the field is blank so the tab never shows an empty title.
+  useEffect(() => {
+    const name = settings.businessName.trim() || "Olyxee Admin";
+    document.title = `${name} · Logistics Operations Console`;
+  }, [settings.businessName]);
+
   const update = useCallback((partial: Partial<ThemeSettings>) => {
     setSettings(prev => {
       const next = { ...prev, ...partial };
