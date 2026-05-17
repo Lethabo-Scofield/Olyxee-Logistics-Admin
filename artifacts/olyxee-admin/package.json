@@ -76,7 +76,5 @@
     "wouter": "^3.3.5",
     "zod": "catalog:"
   },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.45.0"
-  }
+  "dependencies": {}
 }

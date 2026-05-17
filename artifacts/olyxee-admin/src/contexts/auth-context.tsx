@@ -1,151 +1,133 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type ReactNode,
 } from "react";
-import type { Session, User } from "@supabase/supabase-js";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import { setAuthTokenGetter } from "@workspace/api-client-react";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  role: "owner" | "admin" | "staff";
+  businessId: string;
+}
+
 interface AuthContextValue {
   status: AuthStatus;
-  user: User | null;
-  session: Session | null;
-  isConfigured: boolean;
+  user: AuthUser | null;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUp: (
-    email: string,
-    password: string,
-    fullName?: string,
-    businessName?: string,
-  ) => Promise<{ error: string | null; needsEmailConfirmation: boolean }>;
+  signUp: (args: {
+    email: string;
+    password: string;
+    fullName: string;
+    businessName: string;
+  }) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
-  checkEmailExists: (email: string) => Promise<{ exists: boolean; fallback?: boolean; error: string | null }>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [status, setStatus] = useState<AuthStatus>("loading");
-  const sessionRef = useRef<Session | null>(null);
+const API_BASE = `${import.meta.env.BASE_URL.replace(/\/+$/, "")}/api`.replace(
+  /\/{2,}/g,
+  "/",
+);
 
-  useEffect(() => {
-    sessionRef.current = session;
-  }, [session]);
-
-  useEffect(() => {
-    // Wire the API client so every request to the backend carries the
-    // current Supabase access token. Reads from the ref so we always
-    // forward the freshest token after refreshes.
-    setAuthTokenGetter(() => sessionRef.current?.access_token ?? null);
-    return () => setAuthTokenGetter(null);
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-
-    if (!isSupabaseConfigured) {
-      setStatus("unauthenticated");
-      return () => {
-        active = false;
-      };
+async function postJson<T>(
+  path: string,
+  body?: unknown,
+): Promise<{ ok: true; data: T } | { ok: false; error: string; status: number }> {
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      method: "POST",
+      credentials: "include",
+      headers: body ? { "content-type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const ct = res.headers.get("content-type") ?? "";
+    const isJson = ct.includes("application/json");
+    const payload = isJson ? await res.json().catch(() => null) : null;
+    if (!res.ok) {
+      const err =
+        (payload && typeof payload === "object" && "error" in payload
+          ? String((payload as { error: unknown }).error)
+          : null) ?? `Request failed (${res.status})`;
+      return { ok: false, error: err, status: res.status };
     }
-
-    supabase.auth.getSession().then(({ data }) => {
-      if (!active) return;
-      setSession(data.session);
-      setStatus(data.session ? "authenticated" : "unauthenticated");
-    });
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
-      if (!active) return;
-      setSession(next);
-      setStatus(next ? "authenticated" : "unauthenticated");
-    });
-
-    return () => {
-      active = false;
-      sub.subscription.unsubscribe();
+    return { ok: true, data: (payload ?? {}) as T };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Network error",
+      status: 0,
     };
+  }
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [status, setStatus] = useState<AuthStatus>("loading");
+
+  const refresh = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/me`, {
+        credentials: "include",
+      });
+      if (res.ok) {
+        const data = (await res.json()) as { user: AuthUser };
+        setUser(data.user);
+        setStatus("authenticated");
+        return;
+      }
+    } catch {
+      // fall through
+    }
+    setUser(null);
+    setStatus("unauthenticated");
   }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       status,
-      user: session?.user ?? null,
-      session,
-      isConfigured: isSupabaseConfigured,
+      user,
       signIn: async (email, password) => {
-        const { error } = await supabase.auth.signInWithPassword({
+        const result = await postJson<{ user: AuthUser }>("/auth/login", {
           email,
           password,
         });
-        return { error: error?.message ?? null };
+        if (!result.ok) return { error: result.error };
+        setUser(result.data.user);
+        setStatus("authenticated");
+        return { error: null };
       },
-      signUp: async (email, password, fullName, businessName) => {
-        // The API server reads `full_name` and `business_name` from the
-        // Supabase user metadata when provisioning the businesses + users
-        // rows on first authenticated request. Both are optional, so only
-        // forward what the caller actually supplied.
-        const meta: Record<string, string> = {};
-        if (fullName) meta.full_name = fullName;
-        if (businessName) meta.business_name = businessName;
-        const { data, error } = await supabase.auth.signUp({
+      signUp: async ({ email, password, fullName, businessName }) => {
+        const result = await postJson<{ user: AuthUser }>("/auth/signup", {
           email,
           password,
-          options: {
-            data: Object.keys(meta).length > 0 ? meta : undefined,
-            emailRedirectTo:
-              typeof window !== "undefined"
-                ? `${window.location.origin}${import.meta.env.BASE_URL ?? "/"}login`
-                : undefined,
-          },
+          fullName,
+          businessName,
         });
-        return {
-          error: error?.message ?? null,
-          // When email confirmations are enabled in Supabase, sign-up returns
-          // a user without an active session.
-          needsEmailConfirmation: !error && !data.session,
-        };
+        if (!result.ok) return { error: result.error };
+        setUser(result.data.user);
+        setStatus("authenticated");
+        return { error: null };
       },
       signOut: async () => {
-        await supabase.auth.signOut();
-      },
-      checkEmailExists: async (email) => {
-        try {
-          const base = import.meta.env.BASE_URL ?? "/";
-          const resp = await fetch(`${base}api/auth/check-email`.replace(/\/+/g, "/"), {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ email }),
-          });
-          if (!resp.ok) {
-            // No API backend reachable (e.g. SPA-only deploy on Vercel where
-            // /api routes get caught by the SPA fallback and return 405/404).
-            // Treat as "can't enumerate" so the UI shows the sign-in form
-            // with a hint to switch to "create account" if needed.
-            return { exists: false, fallback: true, error: null };
-          }
-          const ct = resp.headers.get("content-type") ?? "";
-          if (!ct.includes("application/json")) {
-            return { exists: false, fallback: true, error: null };
-          }
-          const data = (await resp.json()) as { exists: boolean; fallback?: boolean };
-          return { exists: !!data.exists, fallback: data.fallback, error: null };
-        } catch {
-          // Network error / no backend — same fallback behavior.
-          return { exists: false, fallback: true, error: null };
-        }
+        await postJson("/auth/logout");
+        setUser(null);
+        setStatus("unauthenticated");
       },
     }),
-    [status, session],
+    [status, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
