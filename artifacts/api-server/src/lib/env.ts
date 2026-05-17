@@ -34,6 +34,12 @@ const RECOMMENDED: EnvCheck[] = [
     required: false,
     description: "Resend API key — order status emails will be skipped without it.",
   },
+  {
+    name: "EMAIL_FROM_ADDRESS",
+    required: false,
+    description:
+      "Verified sender address on your own domain (e.g. notifications@yourdomain.com). Required for outbound email; the business name is used as the display name and the business's support email as Reply-To.",
+  },
 ];
 
 export function validateEnv(): void {
