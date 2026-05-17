@@ -29,7 +29,10 @@ const CHOICES: Record<string, StatusChoices | null> = {
   "In transit":       { primary: "Out for delivery", exceptions: ["Delayed", "Cancelled"] },
   "Delayed":          { primary: "In transit",       exceptions: ["Failed delivery", "Cancelled"] },
   "Out for delivery": { primary: "Delivered",        exceptions: ["Failed delivery", "Cancelled"] },
-  "Failed delivery":  { primary: "Driver assigned",  exceptions: ["Delayed", "Cancelled"] },
+  // Failed delivery is a recovery point, not a dead end — the admin needs the
+  // full retry menu: try again today (primary), reassign, send back to the
+  // hub, mark as waiting on the customer, or cancel.
+  "Failed delivery":  { primary: "Out for delivery", exceptions: ["Driver assigned", "In transit", "Delayed", "Cancelled"] },
   "Delivered":        null,
   "Cancelled":        null,
 };
