@@ -16,7 +16,8 @@ import { Plus, Search, ArrowRight, Package, Pencil, Mail } from "lucide-react";
 import { EmptyState } from "@/components/page-loader";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ORDER_STATUSES, statusChoices, isTerminal } from "@/lib/order-statuses";
+import { ORDER_STATUSES, statusChoices, isTerminal, suggestedMessages } from "@/lib/order-statuses";
+import { Sparkles } from "lucide-react";
 
 function generateOrderReference(): string {
   const d = new Date();
@@ -240,6 +241,24 @@ function QuickUpdateSheet({ order, onSuccess }: QuickUpdateSheetProps) {
               placeholder="e.g. Your parcel has left our Johannesburg warehouse."
               rows={3}
             />
+            {form.status && suggestedMessages(form.status).length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
+                  <Sparkles className="h-3 w-3" /> Suggested:
+                </span>
+                {suggestedMessages(form.status).map((msg, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setForm(f => ({ ...f, message: msg }))}
+                    className="text-[11px] px-2 py-1 border border-border bg-muted/40 hover:bg-muted transition-colors text-foreground/80 hover:text-foreground"
+                    title={msg}
+                  >
+                    {msg.length > 40 ? msg.slice(0, 40) + "…" : msg}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">

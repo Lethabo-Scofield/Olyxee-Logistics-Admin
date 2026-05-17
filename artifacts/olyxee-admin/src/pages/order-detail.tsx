@@ -11,40 +11,107 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/status-badge";
 import {
   ArrowLeft, Copy, Check, Mail, RefreshCw, MapPin, ExternalLink,
-  ClipboardList, Settings2, UserCheck, Truck, AlertTriangle,
-  Navigation, House, PackageX, Ban, Package,
+  House, PackageX, ArrowRight, Sparkles,
 } from "lucide-react";
 import { EmptyState } from "@/components/page-loader";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { statusChoices, isTerminal } from "@/lib/order-statuses";
+import {
+  statusChoices, isTerminal, getStatusVisual, suggestedMessages, statusCopy,
+} from "@/lib/order-statuses";
 
-const STATUS_ICON_CONFIG: Record<string, {
-  icon: React.ElementType;
-  bg: string;
-  border: string;
-  iconColor: string;
-  label: string;
-}> = {
-  "Order received":   { icon: ClipboardList, bg: "bg-sky-50",    border: "border-sky-300",   iconColor: "text-sky-600",   label: "Order Received" },
-  "Processing":       { icon: Settings2,     bg: "bg-violet-50", border: "border-violet-300", iconColor: "text-violet-600",label: "Processing" },
-  "Driver assigned":  { icon: UserCheck,     bg: "bg-indigo-50", border: "border-indigo-300", iconColor: "text-indigo-600",label: "Driver Assigned" },
-  "In transit":       { icon: Truck,         bg: "bg-blue-50",   border: "border-blue-300",   iconColor: "text-blue-600",  label: "In Transit" },
-  "Delayed":          { icon: AlertTriangle, bg: "bg-amber-50",  border: "border-amber-300",  iconColor: "text-amber-600", label: "Delayed" },
-  "Out for delivery": { icon: Navigation,    bg: "bg-orange-50", border: "border-orange-300", iconColor: "text-orange-600",label: "Out for Delivery" },
-  "Delivered":        { icon: House,         bg: "bg-green-50",  border: "border-green-400",  iconColor: "text-green-600", label: "Delivered" },
-  "Failed delivery":  { icon: PackageX,      bg: "bg-red-50",    border: "border-red-300",    iconColor: "text-red-600",   label: "Failed Delivery" },
-  "Cancelled":        { icon: Ban,           bg: "bg-gray-100",  border: "border-gray-300",   iconColor: "text-gray-500",  label: "Cancelled" },
-};
+const getStatusConfig = getStatusVisual;
 
-function getStatusConfig(status: string) {
-  return STATUS_ICON_CONFIG[status] ?? {
-    icon: Package,
-    bg: "bg-muted",
-    border: "border-border",
-    iconColor: "text-muted-foreground",
-    label: status,
-  };
+// Inline status pill — used in the Step 1 current → new flow + the select.
+function StatusChip({ status, subtle = false, inline = false }: {
+  status: string;
+  subtle?: boolean;
+  inline?: boolean;
+}) {
+  const cfg = getStatusVisual(status);
+  const Icon = cfg.icon;
+  if (inline) {
+    return (
+      <span className="flex items-center gap-2 min-w-0">
+        <span className={`flex h-5 w-5 items-center justify-center ${cfg.bg} ${cfg.border} border flex-shrink-0`}>
+          <Icon className={`h-3 w-3 ${cfg.iconColor}`} />
+        </span>
+        <span className="text-sm truncate">{cfg.label}</span>
+      </span>
+    );
+  }
+  return (
+    <div className={`flex items-center gap-2 px-3 py-2 border ${
+      subtle ? "bg-muted/30 border-border" : `${cfg.bg} ${cfg.border}`
+    }`}>
+      <span className={`flex h-6 w-6 items-center justify-center ${
+        subtle ? "bg-background border" : `${cfg.bg} ${cfg.border} border`
+      } flex-shrink-0`}>
+        <Icon className={`h-3.5 w-3.5 ${subtle ? "text-muted-foreground" : cfg.iconColor}`} />
+      </span>
+      <div className="min-w-0">
+        <p className="text-[9px] uppercase tracking-wider text-muted-foreground leading-none mb-0.5">
+          {subtle ? "From" : "To"}
+        </p>
+        <p className={`text-xs font-semibold leading-none truncate ${subtle ? "text-muted-foreground" : ""}`}>
+          {cfg.label}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function EmailPreview({ customerName, customerEmail, status, message, trackingId }: {
+  customerName: string;
+  customerEmail: string;
+  status: string;
+  message: string;
+  trackingId: string;
+}) {
+  const cfg = getStatusVisual(status);
+  // statusCopy is imported from the shared @workspace/order-statuses lib so
+  // this preview ALWAYS matches the actual outgoing email body — even if the
+  // server-side wording is changed later.
+  const copy = statusCopy(status);
+  const firstName = customerName.split(" ")[0] || customerName;
+
+  return (
+    <div className="border bg-muted/20">
+      {/* Email header bar (fake inbox row) */}
+      <div className="px-3 py-2 border-b bg-background flex items-center gap-2 text-[11px] text-muted-foreground">
+        <Mail className="h-3 w-3" />
+        <span className="truncate">To: <span className="font-medium text-foreground">{customerEmail || "—"}</span></span>
+        <span className="ml-auto font-medium text-foreground/70">Preview</span>
+      </div>
+      {/* Email body preview */}
+      <div className="p-4 bg-white text-black">
+        <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-2">
+          {cfg.label.toUpperCase()}
+        </p>
+        <h3 className="text-base font-bold leading-tight mb-1">{copy.headline}</h3>
+        <p className="text-xs text-zinc-600 leading-relaxed">
+          Hi {firstName}, {copy.intro}
+        </p>
+        {message.trim() && (
+          <div className="mt-3 pl-3 border-l-2 bg-zinc-50 py-2 pr-2" style={{ borderColor: "#a1a1aa" }}>
+            <p className="text-[9px] uppercase tracking-wider text-zinc-500 font-semibold mb-0.5">
+              A note from our team
+            </p>
+            <p className="text-xs text-zinc-800 whitespace-pre-wrap">{message.trim()}</p>
+          </div>
+        )}
+        <div className="mt-3 flex items-center justify-between gap-2 pt-3 border-t border-zinc-100">
+          <div className="min-w-0">
+            <p className="text-[9px] uppercase tracking-wider text-zinc-500 font-semibold leading-none">Tracking</p>
+            <p className="text-[11px] font-mono font-semibold truncate">{trackingId}</p>
+          </div>
+          <span className="text-[10px] px-2 py-1 bg-zinc-900 text-white font-semibold flex-shrink-0">
+            Track your order →
+          </span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function CopyButton({ text }: { text: string }) {
@@ -56,9 +123,11 @@ function CopyButton({ text }: { text: string }) {
   };
   return (
     <button
+      type="button"
       onClick={copy}
       className="ml-1 p-1 text-muted-foreground hover:text-foreground transition-colors"
-      title="Copy"
+      title={copied ? "Copied" : "Copy"}
+      aria-label={copied ? "Copied to clipboard" : "Copy to clipboard"}
     >
       {copied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
     </button>
@@ -190,97 +259,151 @@ export default function OrderDetailPage() {
           {/* ★ UPDATE STATUS — hero card */}
           <Card className="border-2 border-primary/20">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Mail className="h-4 w-4 text-primary" />
-                Update Order Status
-              </CardTitle>
-              <p className="text-xs text-muted-foreground">
-                Changing the status saves a tracking event and automatically emails the customer.
+              <CardTitle className="text-base">Update Order Status</CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                Pick the next status. We'll log the change and email{" "}
+                <span className="font-medium text-foreground">{order.customer?.fullName ?? "the customer"}</span> automatically.
               </p>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleStatusUpdate} className="space-y-4">
-                <div className="space-y-2">
-                  <Label>New Status <span className="text-destructive">*</span></Label>
-                  {isTerminal(order.currentStatus) ? (
-                    <p className="text-sm text-muted-foreground border px-3 py-2 bg-muted/40">
-                      This order is <span className="font-semibold">{order.currentStatus}</span> — no further status changes are possible.
-                    </p>
-                  ) : (() => {
-                    const choices = statusChoices(order.currentStatus);
-                    if (!choices) return null;
-                    return (
-                      <Select
-                        value={statusForm.status}
-                        onValueChange={v => setStatusForm(f => ({ ...f, status: v }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Choose next status..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            <SelectLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Next step</SelectLabel>
-                            <SelectItem value={choices.primary}>
-                              <span className="flex items-center gap-2">
-                                <span className="text-primary font-bold">→</span> {choices.primary}
-                              </span>
-                            </SelectItem>
-                          </SelectGroup>
-                          <SelectSeparator />
-                          <SelectGroup>
-                            <SelectLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Exceptions</SelectLabel>
-                            {choices.exceptions.map(s => (
-                              <SelectItem key={s} value={s}>
-                                <span className="flex items-center gap-2">
-                                  <span className={s === "Cancelled" ? "text-red-500 font-bold" : "text-amber-500 font-bold"}>
-                                    {s === "Cancelled" ? "✕" : "⚠"}
-                                  </span>
-                                  {s}
-                                </span>
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                    );
-                  })()}
+              {isTerminal(order.currentStatus) ? (
+                <div className="border bg-muted/40 px-4 py-6 text-center">
+                  <p className="text-sm">
+                    This order is <span className="font-semibold">{order.currentStatus}</span>.
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    No further status changes are possible.
+                  </p>
                 </div>
-
-                <div className="grid sm:grid-cols-2 gap-4">
+              ) : (
+                <form onSubmit={handleStatusUpdate} className="space-y-5">
+                  {/* Step 1: pick the next status — visual current → new */}
                   <div className="space-y-2">
-                    <Label>
-                      Message{" "}
-                      <span className="text-muted-foreground font-normal text-xs">(in customer email)</span>
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Step 1 · Choose the next status
                     </Label>
+
+                    <div className="flex items-stretch gap-2">
+                      {/* Current */}
+                      <StatusChip status={order.currentStatus} subtle />
+                      <div className="flex items-center text-muted-foreground/50">
+                        <ArrowRight className="h-4 w-4" />
+                      </div>
+                      {/* New */}
+                      <div className="flex-1 min-w-0">
+                        {(() => {
+                          const choices = statusChoices(order.currentStatus);
+                          if (!choices) return null;
+                          return (
+                            <Select
+                              value={statusForm.status}
+                              onValueChange={v => setStatusForm(f => ({ ...f, status: v, message: "" }))}
+                            >
+                              <SelectTrigger className="h-auto py-2">
+                                {statusForm.status
+                                  ? <StatusChip status={statusForm.status} inline />
+                                  : <span className="text-muted-foreground text-sm">Pick the new status...</span>}
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectGroup>
+                                  <SelectLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Next step (recommended)</SelectLabel>
+                                  <SelectItem value={choices.primary}>
+                                    <StatusChip status={choices.primary} inline />
+                                  </SelectItem>
+                                </SelectGroup>
+                                <SelectSeparator />
+                                <SelectGroup>
+                                  <SelectLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Exceptions</SelectLabel>
+                                  {choices.exceptions.map(s => (
+                                    <SelectItem key={s} value={s}>
+                                      <StatusChip status={s} inline />
+                                    </SelectItem>
+                                  ))}
+                                </SelectGroup>
+                              </SelectContent>
+                            </Select>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Step 2: optional note + location */}
+                  <div className="space-y-3">
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Step 2 · Add a note <span className="font-normal normal-case text-muted-foreground/70">(optional, shown in the email)</span>
+                    </Label>
+
                     <Textarea
                       value={statusForm.message}
                       onChange={e => setStatusForm(f => ({ ...f, message: e.target.value }))}
-                      placeholder="e.g. Your parcel has left our warehouse."
-                      rows={3}
+                      placeholder="Write a short note to the customer..."
+                      rows={2}
                     />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>
-                      Location{" "}
-                      <span className="text-muted-foreground font-normal text-xs">(optional)</span>
-                    </Label>
-                    <Input
-                      value={statusForm.location}
-                      onChange={e => setStatusForm(f => ({ ...f, location: e.target.value }))}
-                      placeholder="e.g. Johannesburg Hub"
-                    />
-                  </div>
-                </div>
 
-                <Button
-                  type="submit"
-                  disabled={!statusForm.status || updateStatusMutation.isPending}
-                  className="gap-2 w-full sm:w-auto"
-                >
-                  <Mail className="h-4 w-4" />
-                  {updateStatusMutation.isPending ? "Saving..." : "Save & Send Email to Customer"}
-                </Button>
-              </form>
+                    {/* Suggested message chips */}
+                    {statusForm.status && suggestedMessages(statusForm.status).length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
+                          <Sparkles className="h-3 w-3" /> Suggested:
+                        </span>
+                        {suggestedMessages(statusForm.status).map((msg, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setStatusForm(f => ({ ...f, message: msg }))}
+                            className="text-[11px] px-2 py-1 border border-border bg-muted/40 hover:bg-muted text-foreground/80 hover:text-foreground transition-colors text-left max-w-full truncate"
+                            title={msg}
+                          >
+                            {msg.length > 50 ? msg.slice(0, 50) + "…" : msg}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-normal text-muted-foreground">
+                        Location <span className="text-muted-foreground/70">(optional, shown in timeline only)</span>
+                      </Label>
+                      <Input
+                        value={statusForm.location}
+                        onChange={e => setStatusForm(f => ({ ...f, location: e.target.value }))}
+                        placeholder="e.g. Johannesburg Hub"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Step 3: email preview */}
+                  {statusForm.status && (
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Step 3 · What the customer will receive
+                      </Label>
+                      <EmailPreview
+                        customerName={order.customer?.fullName ?? "Customer"}
+                        customerEmail={order.customer?.email ?? ""}
+                        status={statusForm.status}
+                        message={statusForm.message}
+                        trackingId={order.trackingId}
+                      />
+                    </div>
+                  )}
+
+                  <Button
+                    type="submit"
+                    disabled={!statusForm.status || updateStatusMutation.isPending}
+                    className="gap-2 w-full"
+                    size="lg"
+                  >
+                    <Mail className="h-4 w-4" />
+                    {updateStatusMutation.isPending
+                      ? "Saving & sending..."
+                      : statusForm.status
+                      ? `Save & email ${order.customer?.fullName?.split(" ")[0] ?? "customer"}`
+                      : "Save & send email"}
+                  </Button>
+                </form>
+              )}
             </CardContent>
           </Card>
 
