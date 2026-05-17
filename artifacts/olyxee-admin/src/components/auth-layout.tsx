@@ -73,14 +73,7 @@ export function AuthLayout({ children }: { children: ReactNode }) {
           </div>
         ))}
 
-        <div className="relative z-10 flex h-full flex-col justify-between p-10 text-white">
-          <img
-            src={`${import.meta.env.BASE_URL}logo.svg`}
-            alt="Olyxee"
-            className="h-8 w-auto"
-            draggable={false}
-          />
-
+        <div className="relative z-10 flex h-full flex-col justify-end p-10 text-white">
           <div className="max-w-md">
             <div className="relative h-[140px]">
               {SLIDES.map((slide, i) => (
