@@ -4,6 +4,7 @@ export interface ThemeSettings {
   isDark: boolean;
   primaryColor: string;
   logoUrl: string;
+  faviconUrl: string;
   businessName: string;
 }
 
@@ -11,6 +12,7 @@ interface ThemeContextValue extends ThemeSettings {
   setIsDark: (v: boolean) => void;
   setPrimaryColor: (hex: string) => void;
   setLogoUrl: (url: string) => void;
+  setFaviconUrl: (url: string) => void;
   setBusinessName: (name: string) => void;
   saveSettings: (partial: Partial<ThemeSettings>) => void;
 }
@@ -21,6 +23,7 @@ const DEFAULTS: ThemeSettings = {
   isDark: false,
   primaryColor: "#2b2b2b",
   logoUrl: "",
+  faviconUrl: "",
   businessName: "",
 };
 
@@ -55,18 +58,31 @@ function applyPrimaryColor(hex: string) {
   root.style.setProperty("--brand-l", `${hsl.l}%`);
 }
 
-function resetFaviconToDefault() {
+// Replace any existing favicon link tags with a single new one. Used both to
+// apply a user-uploaded favicon and to reset back to the bundled default.
+function setFaviconLink(href: string, type?: string) {
   if (typeof document === "undefined") return;
   const head = document.head;
   const existing = head.querySelectorAll(
     'link[rel="icon"], link[rel="shortcut icon"], link[rel="apple-touch-icon"]',
   );
   existing.forEach((el) => el.parentNode?.removeChild(el));
-  const def = document.createElement("link");
-  def.rel = "icon";
-  def.type = "image/png";
-  def.href = `${import.meta.env.BASE_URL}favicon.png`;
-  head.appendChild(def);
+  const link = document.createElement("link");
+  link.rel = "icon";
+  if (type) link.type = type;
+  link.href = href;
+  head.appendChild(link);
+}
+
+function applyFavicon(dataUrl: string) {
+  if (dataUrl) {
+    // Best-effort MIME sniff from the data URL prefix; browsers don't strictly
+    // require it but it makes the served favicon a bit cleaner.
+    const match = /^data:([^;]+);/.exec(dataUrl);
+    setFaviconLink(dataUrl, match?.[1]);
+  } else {
+    setFaviconLink(`${import.meta.env.BASE_URL}favicon.png`, "image/png");
+  }
 }
 
 function loadSettings(): ThemeSettings {
@@ -74,19 +90,8 @@ function loadSettings(): ThemeSettings {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { ...DEFAULTS };
     const parsed = JSON.parse(raw) as Record<string, unknown>;
-
-    // Migration: strip deprecated fields (faviconUrl, businessTagline) and
-    // reset the favicon if a custom one was previously saved. Done once,
-    // here, so users who removed those fields from the simplified Settings
-    // UI don't get a hidden persisted favicon stuck forever.
-    const hadDeprecated = "faviconUrl" in parsed || "businessTagline" in parsed;
-    if (hadDeprecated) {
-      delete parsed.faviconUrl;
-      delete parsed.businessTagline;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
-      resetFaviconToDefault();
-    }
-
+    // Drop any other deprecated fields silently (e.g. businessTagline).
+    delete parsed.businessTagline;
     return { ...DEFAULTS, ...(parsed as Partial<ThemeSettings>) };
   } catch {
     return { ...DEFAULTS };
@@ -98,6 +103,7 @@ const ThemeContext = createContext<ThemeContextValue>({
   setIsDark: () => {},
   setPrimaryColor: () => {},
   setLogoUrl: () => {},
+  setFaviconUrl: () => {},
   setBusinessName: () => {},
   saveSettings: () => {},
 });
@@ -119,6 +125,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     applyPrimaryColor(settings.primaryColor);
   }, [settings.primaryColor]);
 
+  useEffect(() => {
+    applyFavicon(settings.faviconUrl);
+  }, [settings.faviconUrl]);
+
   const update = useCallback((partial: Partial<ThemeSettings>) => {
     setSettings(prev => {
       const next = { ...prev, ...partial };
@@ -132,6 +142,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setIsDark: (v) => update({ isDark: v }),
     setPrimaryColor: (hex) => update({ primaryColor: hex }),
     setLogoUrl: (url) => update({ logoUrl: url }),
+    setFaviconUrl: (url) => update({ faviconUrl: url }),
     setBusinessName: (name) => update({ businessName: name }),
     saveSettings: update,
   };

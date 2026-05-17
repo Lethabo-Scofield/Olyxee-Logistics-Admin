@@ -9,9 +9,12 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-// ─── Logo compression ─────────────────────────────────────────────────────────
+// ─── Logo + favicon compression ───────────────────────────────────────────────
 const LOGO_MAX_DIMENSION = 512;
 const LOGO_JPEG_QUALITY = 0.85;
+// Favicons are tiny in the browser tab, so we downscale aggressively and keep
+// them as PNGs to preserve transparency (icons usually need it).
+const FAVICON_MAX_DIMENSION = 64;
 
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -56,6 +59,29 @@ async function compressLogo(file: File): Promise<string> {
     ctx.drawImage(img, 0, 0, outW, outH);
     if (file.type === "image/png") return canvas.toDataURL("image/png");
     return canvas.toDataURL("image/jpeg", LOGO_JPEG_QUALITY);
+  } finally {
+    revoke();
+  }
+}
+
+async function compressFavicon(file: File): Promise<string> {
+  // SVG favicons are tiny and resolution-independent — pass straight through.
+  if (file.type === "image/svg+xml") return readFileAsDataUrl(file);
+  const { img, revoke } = await loadImage(file);
+  try {
+    const { naturalWidth: w, naturalHeight: h } = img;
+    const scale = Math.min(1, FAVICON_MAX_DIMENSION / Math.max(w, h));
+    const outW = Math.max(1, Math.round(w * scale));
+    const outH = Math.max(1, Math.round(h * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = outW;
+    canvas.height = outH;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas not supported");
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(img, 0, 0, outW, outH);
+    return canvas.toDataURL("image/png");
   } finally {
     revoke();
   }
@@ -183,6 +209,7 @@ export default function SettingsPage() {
   const [form, setForm] = useState({
     businessName: theme.businessName,
     logoUrl: theme.logoUrl,
+    faviconUrl: theme.faviconUrl,
     primaryColor: theme.primaryColor,
   });
 
@@ -190,6 +217,7 @@ export default function SettingsPage() {
     theme.saveSettings({
       businessName: form.businessName,
       logoUrl: form.logoUrl,
+      faviconUrl: form.faviconUrl,
       primaryColor: form.primaryColor,
     });
     toast.success("Settings saved");
@@ -199,6 +227,7 @@ export default function SettingsPage() {
     setForm({
       businessName: theme.businessName,
       logoUrl: theme.logoUrl,
+      faviconUrl: theme.faviconUrl,
       primaryColor: theme.primaryColor,
     });
   };
@@ -212,9 +241,19 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleFaviconPicked(file: File) {
+    try {
+      const dataUrl = await compressFavicon(file);
+      setForm((f) => ({ ...f, faviconUrl: dataUrl }));
+    } catch {
+      toast.error("Could not read that image. Try a different file.");
+    }
+  }
+
   const hasChanges =
     form.businessName !== theme.businessName ||
     form.logoUrl !== theme.logoUrl ||
+    form.faviconUrl !== theme.faviconUrl ||
     form.primaryColor !== theme.primaryColor;
 
   return (
@@ -254,6 +293,19 @@ export default function SettingsPage() {
               onFile={handleLogoPicked}
               onRemove={() => setForm(f => ({ ...f, logoUrl: "" }))}
             />
+          </section>
+
+          {/* ─── Favicon ──────────────────────────────────────────── */}
+          <section className="space-y-3">
+            <Label className="text-sm font-medium">Favicon</Label>
+            <LogoUpload
+              value={form.faviconUrl}
+              onFile={handleFaviconPicked}
+              onRemove={() => setForm(f => ({ ...f, faviconUrl: "" }))}
+            />
+            <p className="text-xs text-muted-foreground">
+              Shown in browser tabs. Square images work best (PNG or SVG).
+            </p>
           </section>
 
           {/* ─── Brand color ──────────────────────────────────────── */}
