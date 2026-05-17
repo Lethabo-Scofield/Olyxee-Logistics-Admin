@@ -492,6 +492,15 @@ components:
         phone:
           type: string
           nullable: true
+        emailGreeting:
+          type: string
+          nullable: true
+        emailSignature:
+          type: string
+          nullable: true
+        emailFooterNote:
+          type: string
+          nullable: true
         onboardingCompleted:
           type: boolean
         createdAt:
@@ -522,6 +531,15 @@ components:
           type: string
         supportEmail:
           type: string
+        emailGreeting:
+          type: string
+          nullable: true
+        emailSignature:
+          type: string
+          nullable: true
+        emailFooterNote:
+          type: string
+          nullable: true
         onboardingCompleted:
           type: boolean
 

@@ -18,6 +18,9 @@ function serialize(business: typeof businessesTable.$inferSelect) {
     employeeCount: business.employeeCount,
     location: business.location,
     phone: business.phone,
+    emailGreeting: business.emailGreeting,
+    emailSignature: business.emailSignature,
+    emailFooterNote: business.emailFooterNote,
     onboardingCompleted: business.onboardingCompleted,
     createdAt: business.createdAt.toISOString(),
   };
@@ -58,6 +61,9 @@ router.put("/business", requireAuth, async (req, res) => {
       });
       if (!existing) return null;
 
+      // Email customization fields use `in` to distinguish "explicitly cleared
+      // by the admin" (null/empty → fall back to defaults in the template) from
+      // "not in payload" (keep existing value).
       const next = {
         name: parse.data.name ?? existing.name,
         industry: parse.data.industry ?? existing.industry,
@@ -66,6 +72,12 @@ router.put("/business", requireAuth, async (req, res) => {
         phone: parse.data.phone ?? existing.phone,
         websiteUrl: parse.data.websiteUrl ?? existing.websiteUrl,
         supportEmail: parse.data.supportEmail ?? existing.supportEmail,
+        emailGreeting: "emailGreeting" in parse.data
+          ? parse.data.emailGreeting ?? null : existing.emailGreeting,
+        emailSignature: "emailSignature" in parse.data
+          ? parse.data.emailSignature ?? null : existing.emailSignature,
+        emailFooterNote: "emailFooterNote" in parse.data
+          ? parse.data.emailFooterNote ?? null : existing.emailFooterNote,
         onboardingCompleted:
           parse.data.onboardingCompleted ?? existing.onboardingCompleted,
       };

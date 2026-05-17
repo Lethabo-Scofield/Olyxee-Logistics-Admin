@@ -324,6 +324,9 @@ router.post("/orders/:orderId/status", requireAuth, async (req, res) => {
         trackingLink,
         businessName: business.name,
         supportEmail: business.supportEmail,
+        emailGreeting: business.emailGreeting,
+        emailSignature: business.emailSignature,
+        emailFooterNote: business.emailFooterNote,
       };
 
       const { subject, body } = buildEmailBody(emailParams);
@@ -412,6 +415,9 @@ router.post("/orders/:orderId/resend-email", requireAuth, async (req, res) => {
       trackingLink,
       businessName: business.name,
       supportEmail: business.supportEmail,
+      emailGreeting: business.emailGreeting,
+      emailSignature: business.emailSignature,
+      emailFooterNote: business.emailFooterNote,
     };
 
     const { subject, body } = buildEmailBody(emailParams);

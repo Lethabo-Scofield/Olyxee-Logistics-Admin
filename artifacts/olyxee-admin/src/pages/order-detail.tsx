@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useParams } from "wouter";
-import { useGetOrder, useUpdateOrderStatus, useResendOrderEmail } from "@workspace/api-client-react";
+import { useGetOrder, useUpdateOrderStatus, useResendOrderEmail, useGetBusiness } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -61,19 +61,40 @@ function StatusChip({ status, subtle = false, inline = false }: {
   );
 }
 
-function EmailPreview({ customerName, customerEmail, status, message, trackingId }: {
+// Substitute {name}/{businessName} placeholders the same way the server
+// template does (see artifacts/api-server/src/lib/email.ts) so the preview
+// stays honest.
+function renderGreetingPreview(template: string | null | undefined, name: string): string {
+  const t = (template ?? "").trim() || "Hi {name},";
+  return t.replace(/\{name\}/gi, name);
+}
+function renderSignaturePreview(template: string | null | undefined, businessName: string): string {
+  // Mirror the server helper exactly (artifacts/api-server/src/lib/email.ts):
+  // default template is "— {businessName}", and {businessName} is replaced with
+  // the literal value (no fallback string) so admin preview never drifts from
+  // what's actually sent.
+  const t = (template ?? "").trim() || "— {businessName}";
+  return t.replace(/\{businessName\}/gi, businessName);
+}
+
+function EmailPreview({
+  customerName, customerEmail, status, message, trackingId,
+  greetingTemplate, signatureTemplate, footerNote, businessName,
+}: {
   customerName: string;
   customerEmail: string;
   status: string;
   message: string;
   trackingId: string;
+  greetingTemplate: string | null | undefined;
+  signatureTemplate: string | null | undefined;
+  footerNote: string | null | undefined;
+  businessName: string;
 }) {
   const cfg = getStatusVisual(status);
-  // statusCopy is imported from the shared @workspace/order-statuses lib so
-  // this preview ALWAYS matches the actual outgoing email body — even if the
-  // server-side wording is changed later.
   const copy = statusCopy(status);
-  const firstName = customerName.split(" ")[0] || customerName;
+  const greeting = renderGreetingPreview(greetingTemplate, customerName || "Customer");
+  const signature = renderSignaturePreview(signatureTemplate, businessName);
 
   return (
     <div className="border bg-muted/20">
@@ -89,9 +110,8 @@ function EmailPreview({ customerName, customerEmail, status, message, trackingId
           {cfg.label.toUpperCase()}
         </p>
         <h3 className="text-base font-bold leading-tight mb-1">{copy.headline}</h3>
-        <p className="text-xs text-zinc-600 leading-relaxed">
-          Hi {firstName}, {copy.intro}
-        </p>
+        <p className="text-xs text-zinc-800 leading-relaxed mb-1">{greeting}</p>
+        <p className="text-xs text-zinc-600 leading-relaxed">{copy.intro}</p>
         {message.trim() && (
           <div className="mt-3 pl-3 border-l-2 bg-zinc-50 py-2 pr-2" style={{ borderColor: "#a1a1aa" }}>
             <p className="text-[9px] uppercase tracking-wider text-zinc-500 font-semibold mb-0.5">
@@ -109,6 +129,12 @@ function EmailPreview({ customerName, customerEmail, status, message, trackingId
             Track your order →
           </span>
         </div>
+        <p className="mt-3 text-xs text-zinc-800 whitespace-pre-wrap leading-relaxed">{signature}</p>
+        {footerNote?.trim() && (
+          <p className="mt-2 text-[11px] text-zinc-500 whitespace-pre-wrap leading-relaxed border-t border-zinc-100 pt-2">
+            {footerNote.trim()}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -137,6 +163,7 @@ function CopyButton({ text }: { text: string }) {
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: order, isLoading, refetch } = useGetOrder(id ?? "");
+  const { data: business } = useGetBusiness();
   const updateStatusMutation = useUpdateOrderStatus();
   const resendMutation = useResendOrderEmail();
 
@@ -385,6 +412,10 @@ export default function OrderDetailPage() {
                         status={statusForm.status}
                         message={statusForm.message}
                         trackingId={order.trackingId}
+                        greetingTemplate={business?.emailGreeting}
+                        signatureTemplate={business?.emailSignature}
+                        footerNote={business?.emailFooterNote}
+                        businessName={business?.name ?? ""}
                       />
                     </div>
                   )}

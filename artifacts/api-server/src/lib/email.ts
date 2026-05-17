@@ -22,6 +22,29 @@ export interface SendStatusEmailParams {
   trackingLink: string;
   businessName: string;
   supportEmail: string;
+  // Admin-customizable copy (from Settings). All optional; sensible defaults
+  // are applied below so an empty value never produces an empty email.
+  //   emailGreeting    — opening line, `{name}` is replaced with customer name.
+  //   emailSignature   — sign-off block, `{businessName}` is replaced.
+  //   emailFooterNote  — single paragraph above the support email line.
+  emailGreeting?: string | null;
+  emailSignature?: string | null;
+  emailFooterNote?: string | null;
+}
+
+// ─── Customization helpers ──────────────────────────────────────────────────
+function renderGreeting(template: string | null | undefined, customerName: string): string {
+  const t = (template ?? "").trim() || "Hi {name},";
+  return t.replace(/\{name\}/gi, customerName);
+}
+
+function renderSignature(template: string | null | undefined, businessName: string): string {
+  const t = (template ?? "").trim() || "— {businessName}";
+  return t.replace(/\{businessName\}/gi, businessName);
+}
+
+function renderFooterNote(template: string | null | undefined): string {
+  return (template ?? "").trim();
 }
 
 // Status copy is now sourced from @workspace/order-statuses so the admin
@@ -59,8 +82,12 @@ function buildSubject(p: SendStatusEmailParams): string {
 
 function buildText(p: SendStatusEmailParams): string {
   const c = copyFor(p.status);
+  const greeting = renderGreeting(p.emailGreeting, p.customerName);
+  const signature = renderSignature(p.emailSignature, p.businessName);
+  const footerNote = renderFooterNote(p.emailFooterNote);
+
   const lines = [
-    `Hi ${p.customerName},`,
+    greeting,
     "",
     c.headline + ".",
     c.intro,
@@ -75,16 +102,19 @@ function buildText(p: SendStatusEmailParams): string {
   if (safeLink) {
     lines.push("", "Track your order:", safeLink);
   }
+  if (footerNote) {
+    lines.push("", footerNote);
+  }
   if (p.supportEmail) {
     lines.push("", `Questions? Reply to this email or contact ${p.supportEmail}.`);
   }
-  lines.push("", `— ${p.businessName}`);
+  lines.push("", signature);
   return lines.join("\n");
 }
 
 function buildHtml(p: SendStatusEmailParams): string {
   const c = copyFor(p.status);
-  const safeName = escapeHtml(p.customerName);
+  // p.customerName is escaped inside renderGreeting() via safeGreeting below.
   const safeBusiness = escapeHtml(p.businessName);
   const safeTracking = escapeHtml(p.trackingId);
   const safeStatus = escapeHtml(p.status);
@@ -93,6 +123,16 @@ function buildHtml(p: SendStatusEmailParams): string {
   // Only http(s) URLs survive `safeTrackingLink`; anything else becomes "".
   const validLink = safeTrackingLink(p.trackingLink);
   const safeLink = validLink ? escapeHtml(validLink) : "";
+
+  // Customizable copy — placeholders substituted before escaping so admins
+  // can edit wording in Settings without writing HTML.
+  const safeGreeting = escapeHtml(renderGreeting(p.emailGreeting, p.customerName));
+  // Signature is multi-line: convert newlines to <br> AFTER escaping.
+  const safeSignature = escapeHtml(renderSignature(p.emailSignature, p.businessName))
+    .replace(/\n/g, "<br />");
+  const safeFooterNote = renderFooterNote(p.emailFooterNote)
+    ? escapeHtml(renderFooterNote(p.emailFooterNote)).replace(/\n/g, "<br />")
+    : "";
 
   return `<!doctype html>
 <html lang="en">
@@ -125,8 +165,11 @@ function buildHtml(p: SendStatusEmailParams): string {
               <h1 style="margin:16px 0 8px;font-size:24px;font-weight:700;color:#18181b;line-height:1.25;">
                 ${escapeHtml(c.headline)}
               </h1>
+              <p style="margin:0 0 8px;font-size:15px;color:#27272a;">
+                ${safeGreeting}
+              </p>
               <p style="margin:0;font-size:15px;color:#52525b;">
-                Hi ${safeName}, ${escapeHtml(c.intro)}
+                ${escapeHtml(c.intro)}
               </p>
             </td>
           </tr>
@@ -163,9 +206,22 @@ function buildHtml(p: SendStatusEmailParams): string {
             </td>
           </tr>
 
+          <!-- Signature -->
+          <tr>
+            <td style="padding:8px 32px 24px;">
+              <p style="margin:0;font-size:14px;color:#27272a;line-height:1.6;">
+                ${safeSignature}
+              </p>
+            </td>
+          </tr>
+
           <!-- Footer -->
           <tr>
             <td style="padding:20px 32px;background:#fafafa;border-top:1px solid #f4f4f5;">
+              ${safeFooterNote ? `
+              <p style="margin:0 0 8px;font-size:13px;color:#52525b;">
+                ${safeFooterNote}
+              </p>` : ""}
               <p style="margin:0 0 4px;font-size:13px;color:#52525b;">
                 Questions about your order?
               </p>

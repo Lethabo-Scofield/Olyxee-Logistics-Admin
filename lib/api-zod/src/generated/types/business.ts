@@ -16,6 +16,9 @@ export interface Business {
   employeeCount?: string | null;
   location?: string | null;
   phone?: string | null;
+  emailGreeting?: string | null;
+  emailSignature?: string | null;
+  emailFooterNote?: string | null;
   onboardingCompleted: boolean;
   createdAt: string;
 }

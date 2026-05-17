@@ -14,5 +14,8 @@ export interface BusinessUpdate {
   phone?: string;
   websiteUrl?: string;
   supportEmail?: string;
+  emailGreeting?: string | null;
+  emailSignature?: string | null;
+  emailFooterNote?: string | null;
   onboardingCompleted?: boolean;
 }

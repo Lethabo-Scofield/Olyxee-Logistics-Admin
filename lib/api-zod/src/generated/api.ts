@@ -29,6 +29,9 @@ export const GetBusinessResponse = zod.object({
   "employeeCount": zod.string().nullish(),
   "location": zod.string().nullish(),
   "phone": zod.string().nullish(),
+  "emailGreeting": zod.string().nullish(),
+  "emailSignature": zod.string().nullish(),
+  "emailFooterNote": zod.string().nullish(),
   "onboardingCompleted": zod.boolean(),
   "createdAt": zod.string()
 })
@@ -45,6 +48,9 @@ export const UpdateBusinessBody = zod.object({
   "phone": zod.string().optional(),
   "websiteUrl": zod.string().optional(),
   "supportEmail": zod.string().optional(),
+  "emailGreeting": zod.string().nullish(),
+  "emailSignature": zod.string().nullish(),
+  "emailFooterNote": zod.string().nullish(),
   "onboardingCompleted": zod.boolean().optional()
 })
 
@@ -58,6 +64,9 @@ export const UpdateBusinessResponse = zod.object({
   "employeeCount": zod.string().nullish(),
   "location": zod.string().nullish(),
   "phone": zod.string().nullish(),
+  "emailGreeting": zod.string().nullish(),
+  "emailSignature": zod.string().nullish(),
+  "emailFooterNote": zod.string().nullish(),
   "onboardingCompleted": zod.boolean(),
   "createdAt": zod.string()
 })

@@ -3,11 +3,13 @@ import { useTheme } from "@/contexts/theme-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  Moon, Sun, Check, AlertCircle, Upload, X, Eye,
+  Moon, Sun, Check, AlertCircle, Upload, X, Eye, Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useGetBusiness, useUpdateBusiness } from "@workspace/api-client-react";
 
 // ─── Logo + favicon compression ───────────────────────────────────────────────
 const LOGO_MAX_DIMENSION = 512;
@@ -339,6 +341,9 @@ export default function SettingsPage() {
             </p>
           </section>
 
+          {/* ─── Customer email wording ──────────────────────────── */}
+          <EmailCustomizationSection />
+
           {/* ─── Appearance ──────────────────────────────────────── */}
           <section className="space-y-3">
             <Label className="text-sm font-medium">Appearance</Label>
@@ -394,6 +399,140 @@ export default function SettingsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// ─── Customer email wording ───────────────────────────────────────────────────
+// Unlike the theme/branding fields above (which live in localStorage), the email
+// wording is persisted server-side on the Business record so the API server can
+// inject it into outgoing customer status emails. We keep it as a self-contained
+// component with its own load/save lifecycle so it doesn't interfere with the
+// sticky "Unsaved changes" bar that's wired to the theme form.
+function EmailCustomizationSection() {
+  const { data: business, isLoading, refetch } = useGetBusiness();
+  const updateMutation = useUpdateBusiness();
+
+  const [form, setForm] = useState({
+    emailGreeting: "",
+    emailSignature: "",
+    emailFooterNote: "",
+  });
+  const [loaded, setLoaded] = useState(false);
+
+  // Hydrate the form once the business data arrives. Empty/null → empty string
+  // so the inputs are always controlled; on save, empty strings are sent as
+  // null so the server falls back to defaults.
+  useEffect(() => {
+    if (business && !loaded) {
+      setForm({
+        emailGreeting: business.emailGreeting ?? "",
+        emailSignature: business.emailSignature ?? "",
+        emailFooterNote: business.emailFooterNote ?? "",
+      });
+      setLoaded(true);
+    }
+  }, [business, loaded]);
+
+  const dirty =
+    loaded &&
+    (form.emailGreeting !== (business?.emailGreeting ?? "") ||
+      form.emailSignature !== (business?.emailSignature ?? "") ||
+      form.emailFooterNote !== (business?.emailFooterNote ?? ""));
+
+  const handleSave = () => {
+    updateMutation.mutate(
+      {
+        data: {
+          emailGreeting: form.emailGreeting.trim() ? form.emailGreeting : null,
+          emailSignature: form.emailSignature.trim() ? form.emailSignature : null,
+          emailFooterNote: form.emailFooterNote.trim() ? form.emailFooterNote : null,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success("Email wording saved");
+          refetch();
+        },
+        onError: () => toast.error("Could not save email wording"),
+      },
+    );
+  };
+
+  return (
+    <section className="space-y-4 border-t pt-8">
+      <div className="space-y-1">
+        <Label className="text-sm font-medium">Customer email wording</Label>
+        <p className="text-xs text-muted-foreground">
+          Customize the greeting, sign-off, and footer note on status emails sent
+          to customers. Use <code className="font-mono text-foreground">{"{name}"}</code> for the
+          customer's name and <code className="font-mono text-foreground">{"{businessName}"}</code> for your business name. Leave blank to use defaults.
+        </p>
+      </div>
+
+      {isLoading && !loaded ? (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+          <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="emailGreeting" className="text-xs font-normal text-muted-foreground">
+              Greeting
+            </Label>
+            <Input
+              id="emailGreeting"
+              value={form.emailGreeting}
+              onChange={(e) => setForm((f) => ({ ...f, emailGreeting: e.target.value }))}
+              placeholder="Hi {name},"
+              className="h-11"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="emailSignature" className="text-xs font-normal text-muted-foreground">
+              Sign-off
+            </Label>
+            <Textarea
+              id="emailSignature"
+              value={form.emailSignature}
+              onChange={(e) => setForm((f) => ({ ...f, emailSignature: e.target.value }))}
+              placeholder={"Best,\nThe {businessName} team"}
+              rows={3}
+            />
+            <p className="text-[11px] text-muted-foreground">Line breaks are preserved.</p>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="emailFooterNote" className="text-xs font-normal text-muted-foreground">
+              Footer note <span className="text-muted-foreground/70">(optional)</span>
+            </Label>
+            <Textarea
+              id="emailFooterNote"
+              value={form.emailFooterNote}
+              onChange={(e) => setForm((f) => ({ ...f, emailFooterNote: e.target.value }))}
+              placeholder="Thanks for shopping with us!"
+              rows={2}
+            />
+          </div>
+
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              onClick={handleSave}
+              disabled={!dirty || updateMutation.isPending}
+              className="gap-1.5"
+            >
+              {updateMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Check className="h-4 w-4" />
+              )}
+              Save email wording
+            </Button>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 
