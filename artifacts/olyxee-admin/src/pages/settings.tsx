@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Moon, Sun, Check, AlertCircle, Upload, X, Eye, Loader2, Pipette, Shuffle,
-  Building2, Palette, Mail, SunMoon, RotateCcw, Sparkles, History,
+  Building2, Palette, Mail, SunMoon, RotateCcw, History,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -667,102 +667,12 @@ function BrandColorPreview({ color }: { color: string }) {
   );
 }
 
-// ─── Live brand preview ───────────────────────────────────────────────────────
-// Senior-dev touch: show the admin EXACTLY where their choices land. The
-// preview renders a mini sidebar (logo + business name on the brand color) and
-// a mini browser tab (favicon + name) using the current form values — so the
-// user sees the result before they hit Save.
-function LivePreview({
-  businessName, businessTagline, logoUrl, faviconUrl, primaryColor,
-}: {
-  businessName: string;
-  businessTagline: string;
-  logoUrl: string;
-  faviconUrl: string;
-  primaryColor: string;
-}) {
-  const name = businessName.trim() || "Your business";
-  return (
-    <SectionShell
-      id="preview"
-      icon={Sparkles}
-      title="Live preview"
-      description="A peek at how your brand will appear to your team and customers."
-    >
-      <div className="px-4 py-5 space-y-5">
-        {/* Sidebar header mockup */}
-        <div>
-          <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2">
-            Sidebar
-          </p>
-          <div className="border border-border bg-background p-3 flex items-center gap-2.5">
-            <div
-              className="h-8 w-8 flex items-center justify-center flex-shrink-0 text-white text-sm font-semibold"
-              style={{ backgroundColor: primaryColor }}
-            >
-              {logoUrl ? (
-                <img src={logoUrl} alt="" className="h-full w-full object-contain" />
-              ) : (
-                name.charAt(0).toUpperCase()
-              )}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold truncate" title={name}>{name}</p>
-              <p className="text-[11px] text-muted-foreground truncate">
-                {businessTagline.trim() || "Logistics workspace"}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Browser tab mockup */}
-        <div>
-          <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2">
-            Browser tab
-          </p>
-          <div className="flex">
-            <div className="inline-flex items-center gap-1.5 max-w-full border border-border border-b-transparent bg-muted/40 pl-2 pr-3 py-1.5">
-              {faviconUrl ? (
-                <img src={faviconUrl} alt="" className="h-3.5 w-3.5 object-contain flex-shrink-0" />
-              ) : (
-                <div className="h-3.5 w-3.5 bg-muted-foreground/30 flex-shrink-0" />
-              )}
-              <span className="text-xs font-medium truncate">{name}</span>
-              <X className="h-3 w-3 text-muted-foreground/60 ml-1 flex-shrink-0" />
-            </div>
-          </div>
-        </div>
-
-        {/* Email status pill mockup */}
-        <div>
-          <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2">
-            Email accent
-          </p>
-          <div className="border border-border bg-background p-3 space-y-2">
-            <p className="text-xs text-muted-foreground">Subject</p>
-            <p className="text-sm font-medium">
-              Your package is on the move — <span className="text-muted-foreground">OLY-7K3-9PQ4</span>
-            </p>
-            <div
-              className="inline-block text-[11px] font-medium text-white px-2 py-1"
-              style={{ backgroundColor: primaryColor }}
-            >
-              In transit
-            </div>
-          </div>
-        </div>
-      </div>
-    </SectionShell>
-  );
-}
-
 // ─── Tab definitions ──────────────────────────────────────────────────────────
 // Each entry drives one TabsTrigger and matches the `id` of one TabsContent
 // below. Order here is the order shown to the user.
 const NAV_ITEMS = [
   { id: "identity", label: "Identity", icon: Building2 },
   { id: "brand", label: "Brand", icon: Palette },
-  { id: "preview", label: "Preview", icon: Sparkles },
   { id: "emails", label: "Emails", icon: Mail },
   { id: "appearance", label: "Appearance", icon: SunMoon },
   { id: "activity", label: "Activity", icon: History },
@@ -1078,17 +988,6 @@ export default function SettingsPage() {
               Reset brand color
             </button>
           </footer>
-        </TabsContent>
-
-        {/* ─── Live preview ─────────────────────────────────────────── */}
-        <TabsContent value="preview" className="mt-6 focus-visible:outline-none">
-          <LivePreview
-            businessName={form.businessName}
-            businessTagline={form.businessTagline}
-            logoUrl={form.logoUrl}
-            faviconUrl={form.faviconUrl}
-            primaryColor={form.primaryColor}
-          />
         </TabsContent>
 
         {/* ─── Customer emails ──────────────────────────────────────── */}
