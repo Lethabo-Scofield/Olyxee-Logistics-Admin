@@ -172,7 +172,6 @@ export type OrderStatusUpdateStatus = typeof OrderStatusUpdateStatus[keyof typeo
 export const OrderStatusUpdateStatus = {
   Order_received: 'Order received',
   Processing: 'Processing',
-  Driver_assigned: 'Driver assigned',
   In_transit: 'In transit',
   Delayed: 'Delayed',
   Out_for_delivery: 'Out for delivery',

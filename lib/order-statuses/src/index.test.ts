@@ -11,11 +11,10 @@ import {
 } from "./index";
 
 describe("ORDER_STATUSES", () => {
-  it("contains the nine canonical statuses", () => {
+  it("contains the eight canonical statuses", () => {
     expect(ORDER_STATUSES).toEqual([
       "Order received",
       "Processing",
-      "Driver assigned",
       "In transit",
       "Delayed",
       "Out for delivery",
@@ -69,9 +68,9 @@ describe("statusChoices", () => {
 });
 
 describe("Failed delivery recovery (regression for the recovery-path fix)", () => {
-  // Before the fix, Failed delivery only offered Driver assigned / Delayed /
-  // Cancelled — which silently removed the "try again today" and "send back
-  // to hub" paths admins actually need. Lock that contract in.
+  // Before the fix, Failed delivery only offered limited recovery paths —
+  // which silently removed the "try again today" and "send back into transit"
+  // paths admins actually need. Lock that contract in.
   const choices = statusChoices("Failed delivery");
 
   it("is not a dead end", () => {
@@ -84,7 +83,6 @@ describe("Failed delivery recovery (regression for the recovery-path fix)", () =
 
   it("exposes the full recovery menu", () => {
     expect(choices?.exceptions).toEqual([
-      "Driver assigned",
       "In transit",
       "Delayed",
       "Cancelled",

@@ -53,7 +53,7 @@ type Bucket = "done" | "active" | "warning" | "pending";
 function bucket(status: string): Bucket {
   if (status === "Delivered") return "done";
   if (status === "Delayed" || status === "Failed delivery") return "warning";
-  if (status === "In transit" || status === "Out for delivery" || status === "Driver assigned") return "active";
+  if (status === "In transit" || status === "Out for delivery") return "active";
   return "pending"; // Order received, Processing, Cancelled
 }
 const BUCKET_BG: Record<Bucket, string> = {

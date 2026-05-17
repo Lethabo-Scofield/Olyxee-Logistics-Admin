@@ -125,7 +125,7 @@ block or a small embedded React/Vue widget.
 ├─────────────────────────────────────────────┤
 │  Timeline                                   │
 │   17 May, 09:12   Out for delivery          │
-│                   Driver: John, Joburg Hub  │
+│                   Joburg Hub                │
 │   16 May, 18:40   In transit                │
 │   16 May, 08:00   Picked up                 │
 │   15 May, 14:22   Order created             │
@@ -201,9 +201,9 @@ Let's walk through a real shipment:
    and a button linking to `https://yourcompany.com/track?code=OLY-7K3-9PQ4`.
 4. **Customer clicks the link** → lands on your `/track` page → sees status
    "Pending pickup" and an empty timeline.
-5. **Your driver picks up the parcel**. You go to the order in Olyxee, hit
-   **Update**, pick "Picked up", add a short message and location.
-   Customer gets a fresh email.
+5. **You collect the parcel**. You go to the order in Olyxee, hit
+   **Update**, move the status forward (e.g. "In transit"), add a short
+   message and location. Customer gets a fresh email.
 6. **Customer refreshes your `/track` page** → sees the new status and a new
    timeline entry. No login, no account, no friction.
 7. **Repeat** for In transit → Out for delivery → Delivered. The last email

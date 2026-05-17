@@ -21,13 +21,13 @@ const SLIDES: Slide[] = [
   },
   {
     src: slide2,
-    alt: "Driver behind the wheel of a delivery truck",
+    alt: "Delivery truck on the open road",
     title: "Move faster with Olyxee",
     body: "Real-time visibility from dispatch to delivery, with audit trails your operations team can trust.",
   },
   {
     src: slide3,
-    alt: "Truck driver smiling from the cab",
+    alt: "Logistics fleet ready for dispatch",
     title: "Built for the road ahead",
     body: "Olyxee gives logistics businesses the tooling they need to scale — without the spreadsheets.",
   },

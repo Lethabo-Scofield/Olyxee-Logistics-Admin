@@ -3,7 +3,6 @@ import { Badge } from "@/components/ui/badge";
 const STATUS_COLORS: Record<string, string> = {
   "Order received": "bg-gray-100 text-gray-700 border-gray-200",
   "Processing": "bg-blue-50 text-blue-700 border-blue-200",
-  "Driver assigned": "bg-sky-100 text-sky-800 border-sky-200",
   "In transit": "bg-indigo-100 text-indigo-800 border-indigo-200",
   "Out for delivery": "bg-violet-100 text-violet-800 border-violet-200",
   "Delivered": "bg-green-100 text-green-800 border-green-200",

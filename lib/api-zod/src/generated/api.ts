@@ -343,7 +343,7 @@ export const UpdateOrderStatusParams = zod.object({
 })
 
 export const UpdateOrderStatusBody = zod.object({
-  "status": zod.enum(['Order received', 'Processing', 'Driver assigned', 'In transit', 'Delayed', 'Out for delivery', 'Delivered', 'Failed delivery', 'Cancelled']),
+  "status": zod.enum(['Order received', 'Processing', 'In transit', 'Delayed', 'Out for delivery', 'Delivered', 'Failed delivery', 'Cancelled']),
   "message": zod.string().optional(),
   "location": zod.string().optional()
 })

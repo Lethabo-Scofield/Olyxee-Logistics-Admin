@@ -6,7 +6,6 @@
 export const ORDER_STATUSES = [
   "Order received",
   "Processing",
-  "Driver assigned",
   "In transit",
   "Delayed",
   "Out for delivery",
@@ -24,15 +23,14 @@ export interface StatusChoices {
 
 const CHOICES: Record<string, StatusChoices | null> = {
   "Order received":   { primary: "Processing",       exceptions: ["Delayed", "Cancelled"] },
-  "Processing":       { primary: "Driver assigned",  exceptions: ["Delayed", "Cancelled"] },
-  "Driver assigned":  { primary: "In transit",       exceptions: ["Delayed", "Cancelled"] },
+  "Processing":       { primary: "In transit",       exceptions: ["Delayed", "Cancelled"] },
   "In transit":       { primary: "Out for delivery", exceptions: ["Delayed", "Cancelled"] },
   "Delayed":          { primary: "In transit",       exceptions: ["Failed delivery", "Cancelled"] },
   "Out for delivery": { primary: "Delivered",        exceptions: ["Failed delivery", "Cancelled"] },
   // Failed delivery is a recovery point, not a dead end — the admin needs the
-  // full retry menu: try again today (primary), reassign, send back to the
-  // hub, mark as waiting on the customer, or cancel.
-  "Failed delivery":  { primary: "Out for delivery", exceptions: ["Driver assigned", "In transit", "Delayed", "Cancelled"] },
+  // full retry menu: try again today (primary), send it back into transit,
+  // mark as waiting on the customer, or cancel.
+  "Failed delivery":  { primary: "Out for delivery", exceptions: ["In transit", "Delayed", "Cancelled"] },
   "Delivered":        null,
   "Cancelled":        null,
 };
@@ -66,12 +64,11 @@ export interface StatusCopy {
 export const STATUS_COPY: Record<string, StatusCopy> = {
   "Order received":   { headline: "We've got your order",          intro: "Thanks for choosing us — we'll start preparing it shortly.",            accent: "#0284c7", tone: "neutral" },
   "Processing":       { headline: "We're preparing your order",    intro: "Your items are being packed and made ready for collection.",            accent: "#7c3aed", tone: "neutral" },
-  "Driver assigned":  { headline: "A driver is on the way",        intro: "A driver has been assigned to collect your package.",                   accent: "#4f46e5", tone: "neutral" },
   "In transit":       { headline: "Your package is on the move",   intro: "It's making its way through our network to you.",                       accent: "#2563eb", tone: "positive" },
   "Delayed":          { headline: "Your delivery is a bit late",   intro: "We're sorry — there's a small delay. We'll keep you posted.",          accent: "#d97706", tone: "warning" },
-  "Out for delivery": { headline: "Out for delivery today",        intro: "A driver is bringing your package to you now.",                         accent: "#ea580c", tone: "positive" },
+  "Out for delivery": { headline: "Out for delivery today",        intro: "Your package is on its way to you now.",                                accent: "#ea580c", tone: "positive" },
   "Delivered":        { headline: "Your package has arrived",      intro: "It's been delivered successfully. Thanks for trusting us!",             accent: "#16a34a", tone: "positive" },
-  "Failed delivery":  { headline: "We couldn't deliver today",     intro: "Our driver wasn't able to complete the delivery. We'll be in touch.",   accent: "#dc2626", tone: "negative" },
+  "Failed delivery":  { headline: "We couldn't deliver today",     intro: "We weren't able to complete the delivery today. We'll be in touch.",    accent: "#dc2626", tone: "negative" },
   "Cancelled":        { headline: "Your order has been cancelled", intro: "If this wasn't expected, please reach out to us.",                      accent: "#6b7280", tone: "negative" },
 };
 
@@ -92,10 +89,6 @@ export const SUGGESTED_MESSAGES: Record<string, string[]> = {
     "We've started preparing your order.",
     "Your items are being packed now.",
   ],
-  "Driver assigned":  [
-    "A driver has been assigned and will collect your package shortly.",
-    "Expect a call from our driver soon.",
-  ],
   "In transit":       [
     "Your package has left our facility.",
     "On its way to the next sorting hub.",
@@ -105,7 +98,7 @@ export const SUGGESTED_MESSAGES: Record<string, string[]> = {
     "Delivery is delayed due to weather. We're working to get it to you.",
   ],
   "Out for delivery": [
-    "Our driver is on the way to you today.",
+    "Your package is on its way to you today.",
     "Expect your delivery within the next few hours.",
   ],
   "Delivered":        [

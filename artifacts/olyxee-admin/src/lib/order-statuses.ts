@@ -5,7 +5,7 @@
 // This file layers on the UI-only bits (lucide icons, tailwind classes) that
 // don't belong in a shared lib.
 import {
-  ClipboardList, Settings2, UserCheck, Truck, AlertTriangle,
+  ClipboardList, Settings2, Truck, AlertTriangle,
   Navigation, House, PackageX, Ban, Package,
 } from "lucide-react";
 
@@ -35,7 +35,6 @@ export interface StatusVisual {
 export const STATUS_VISUALS: Record<string, StatusVisual> = {
   "Order received":   { icon: ClipboardList, bg: "bg-sky-50",    border: "border-sky-300",    iconColor: "text-sky-600",    label: "Order Received" },
   "Processing":       { icon: Settings2,     bg: "bg-violet-50", border: "border-violet-300", iconColor: "text-violet-600", label: "Processing" },
-  "Driver assigned":  { icon: UserCheck,     bg: "bg-indigo-50", border: "border-indigo-300", iconColor: "text-indigo-600", label: "Driver Assigned" },
   "In transit":       { icon: Truck,         bg: "bg-blue-50",   border: "border-blue-300",   iconColor: "text-blue-600",   label: "In Transit" },
   "Delayed":          { icon: AlertTriangle, bg: "bg-amber-50",  border: "border-amber-300",  iconColor: "text-amber-600",  label: "Delayed" },
   "Out for delivery": { icon: Navigation,    bg: "bg-orange-50", border: "border-orange-300", iconColor: "text-orange-600", label: "Out for Delivery" },

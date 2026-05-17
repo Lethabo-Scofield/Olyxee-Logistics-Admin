@@ -799,7 +799,6 @@ components:
           enum:
             - Order received
             - Processing
-            - Driver assigned
             - In transit
             - Delayed
             - Out for delivery
