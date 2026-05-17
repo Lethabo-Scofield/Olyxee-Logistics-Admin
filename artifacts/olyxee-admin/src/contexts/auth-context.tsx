@@ -29,6 +29,14 @@ interface AuthContextValue {
     businessName: string;
   }) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
+  // Update current user's profile. Any field can be omitted. Password change
+  // requires both `currentPassword` and `newPassword`.
+  updateProfile: (args: {
+    name?: string;
+    email?: string;
+    currentPassword?: string;
+    newPassword?: string;
+  }) => Promise<{ error: string | null }>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -38,13 +46,14 @@ const API_BASE = `${import.meta.env.BASE_URL.replace(/\/+$/, "")}/api`.replace(
   "/",
 );
 
-async function postJson<T>(
+async function sendJson<T>(
   path: string,
   body?: unknown,
+  method: "POST" | "PUT" = "POST",
 ): Promise<{ ok: true; data: T } | { ok: false; error: string; status: number }> {
   try {
     const res = await fetch(`${API_BASE}${path}`, {
-      method: "POST",
+      method,
       credentials: "include",
       headers: body ? { "content-type": "application/json" } : undefined,
       body: body ? JSON.stringify(body) : undefined,
@@ -100,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       status,
       user,
       signIn: async (email, password) => {
-        const result = await postJson<{ user: AuthUser }>("/auth/login", {
+        const result = await sendJson<{ user: AuthUser }>("/auth/login", {
           email,
           password,
         });
@@ -110,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error: null };
       },
       signUp: async ({ email, password, fullName, businessName }) => {
-        const result = await postJson<{ user: AuthUser }>("/auth/signup", {
+        const result = await sendJson<{ user: AuthUser }>("/auth/signup", {
           email,
           password,
           fullName,
@@ -122,9 +131,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error: null };
       },
       signOut: async () => {
-        await postJson("/auth/logout");
+        await sendJson("/auth/logout");
         setUser(null);
         setStatus("unauthenticated");
+      },
+      updateProfile: async (args) => {
+        const result = await sendJson<{ user: AuthUser }>("/auth/me", args, "PUT");
+        if (!result.ok) return { error: result.error };
+        // Refresh the local user so the sidebar + anywhere using useAuth
+        // sees the new name/email immediately without a page reload.
+        setUser(result.data.user);
+        return { error: null };
       },
     }),
     [status, user],

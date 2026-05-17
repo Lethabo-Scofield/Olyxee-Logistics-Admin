@@ -14,12 +14,10 @@ function UserRow() {
   const { user, signOut } = useAuth();
   const [, setLocation] = useLocation();
 
-  const meta = (user?.user_metadata ?? {}) as Record<string, unknown>;
-  const fullName =
-    (typeof meta.full_name === "string" && meta.full_name) ||
-    (typeof meta.name === "string" && meta.name) ||
-    user?.email ||
-    "User";
+  // AuthUser exposes `name` + `email` directly (set by the auth context from
+  // /auth/me). The previous `user_metadata` shape was a leftover from an
+  // earlier Supabase implementation and never existed on this type.
+  const fullName = user?.name || user?.email || "User";
   const email = user?.email ?? "";
   const initial = (fullName || "U").charAt(0).toUpperCase();
 

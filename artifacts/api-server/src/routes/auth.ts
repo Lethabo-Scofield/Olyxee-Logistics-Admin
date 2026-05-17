@@ -135,6 +135,107 @@ router.post("/auth/logout", (req, res) => {
   res.json({ ok: true });
 });
 
+// Allow the currently signed-in admin to edit their own profile. Two
+// independent concerns share this endpoint:
+//   1. Update name / email (lightweight — email uniqueness re-checked).
+//   2. Change password — requires `currentPassword` + `newPassword` so a
+//      stolen-session attacker can't silently rotate the password.
+// Any field can be omitted; only what's provided is touched.
+const UpdateMeBody = z
+  .object({
+    name: z.string().trim().min(1).max(120).optional(),
+    email: z.string().trim().toLowerCase().email().optional(),
+    currentPassword: z.string().min(1).max(200).optional(),
+    newPassword: z.string().min(8).max(200).optional(),
+  })
+  .refine(
+    (d) =>
+      // Password change is all-or-nothing.
+      (d.currentPassword == null && d.newPassword == null) ||
+      (d.currentPassword != null && d.newPassword != null),
+    { message: "Both currentPassword and newPassword are required to change password." },
+  );
+
+router.put("/auth/me", async (req, res) => {
+  const token = (req as any).cookies?.[SESSION_COOKIE] as string | undefined;
+  const payload = verifySession(token);
+  if (!payload) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const parsed = UpdateMeBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({
+      error: parsed.error.issues[0]?.message ?? "Invalid input",
+    });
+    return;
+  }
+  const { name, email, currentPassword, newPassword } = parsed.data;
+
+  try {
+    const user = await db.query.usersTable.findFirst({
+      where: eq(usersTable.id, payload.userId),
+    });
+    if (!user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    // Email uniqueness check — only if the email is actually changing.
+    if (email && email !== user.email) {
+      const clash = await db.query.usersTable.findFirst({
+        where: eq(usersTable.email, email),
+      });
+      if (clash) {
+        res.status(409).json({ error: "Another account already uses this email." });
+        return;
+      }
+    }
+
+    // Password change path — verify current password before rotating.
+    let nextPasswordHash: string | undefined;
+    if (currentPassword && newPassword) {
+      if (!user.passwordHash) {
+        res.status(400).json({ error: "This account has no password set." });
+        return;
+      }
+      const ok = await bcrypt.compare(currentPassword, user.passwordHash);
+      if (!ok) {
+        res.status(400).json({ error: "Current password is incorrect." });
+        return;
+      }
+      nextPasswordHash = await bcrypt.hash(newPassword, 10);
+    }
+
+    const updated = await db
+      .update(usersTable)
+      .set({
+        name: name ?? user.name,
+        email: email ?? user.email,
+        ...(nextPasswordHash ? { passwordHash: nextPasswordHash } : {}),
+      })
+      .where(eq(usersTable.id, user.id))
+      .returning();
+
+    const u = updated[0]!;
+    res.json({
+      user: {
+        id: u.id,
+        email: u.email,
+        name: u.name,
+        role: u.role,
+        businessId: u.businessId,
+      },
+    });
+  } catch (err) {
+    const e = err as { message?: string; code?: string; detail?: string };
+    console.error("[update_me] failed:", e?.code, e?.message, e?.detail);
+    req.log?.error({ err }, "update_me failed");
+    res.status(500).json({ error: "Could not update profile" });
+  }
+});
+
 router.get("/auth/me", async (req, res) => {
   const token = (req as any).cookies?.[SESSION_COOKIE] as string | undefined;
   const payload = verifySession(token);
