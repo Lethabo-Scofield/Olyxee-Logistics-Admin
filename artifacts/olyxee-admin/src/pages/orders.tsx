@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useListOrders, useListCustomers, useCreateOrder, useUpdateOrderStatus } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -18,11 +18,42 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { ORDER_STATUSES, statusChoices, isTerminal } from "@/lib/order-statuses";
 
+function generateOrderReference(): string {
+  const d = new Date();
+  const yy = String(d.getFullYear()).slice(-2);
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  // 4-char alphanumeric suffix, no ambiguous chars (no 0/O/1/I)
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let suffix = "";
+  for (let i = 0; i < 4; i++) {
+    suffix += alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
+  return `REF-${yy}${mm}${dd}-${suffix}`;
+}
+
 function CreateOrderDialog({ onSuccess }: { onSuccess: () => void }) {
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ customerId: "", orderReference: "", description: "", estimatedDeliveryDate: "" });
+  const [form, setForm] = useState(() => ({
+    customerId: "",
+    orderReference: generateOrderReference(),
+    description: "",
+    estimatedDeliveryDate: "",
+  }));
   const createMutation = useCreateOrder();
   const { data: customers } = useListCustomers({ limit: 100 });
+
+  // Refresh the auto-generated reference each time the dialog opens.
+  React.useEffect(() => {
+    if (open) {
+      setForm({
+        customerId: "",
+        orderReference: generateOrderReference(),
+        description: "",
+        estimatedDeliveryDate: "",
+      });
+    }
+  }, [open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +63,6 @@ function CreateOrderDialog({ onSuccess }: { onSuccess: () => void }) {
         onSuccess: () => {
           toast.success("Order created — tracking ID auto-generated");
           setOpen(false);
-          setForm({ customerId: "", orderReference: "", description: "", estimatedDeliveryDate: "" });
           onSuccess();
         },
         onError: () => toast.error("Failed to create order"),
@@ -63,8 +93,23 @@ function CreateOrderDialog({ onSuccess }: { onSuccess: () => void }) {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Order Reference</Label>
-              <Input value={form.orderReference} onChange={e => setForm(f => ({ ...f, orderReference: e.target.value }))} placeholder="e.g. REF-001" />
+              <div className="flex items-center justify-between">
+                <Label>Order Reference</Label>
+                <button
+                  type="button"
+                  onClick={() => setForm(f => ({ ...f, orderReference: generateOrderReference() }))}
+                  className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                  title="Generate a new reference"
+                >
+                  Regenerate
+                </button>
+              </div>
+              <Input
+                value={form.orderReference}
+                onChange={e => setForm(f => ({ ...f, orderReference: e.target.value }))}
+                placeholder="REF-250517-AB12"
+                className="font-mono text-sm"
+              />
             </div>
             <div className="space-y-2">
               <Label>Est. Delivery Date</Label>
