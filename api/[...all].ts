@@ -3,8 +3,4 @@
 // under /api so the URL paths match.
 import app from "../artifacts/api-server/dist/app.mjs";
 
-export const config = {
-  runtime: "nodejs20.x",
-};
-
 export default app;
