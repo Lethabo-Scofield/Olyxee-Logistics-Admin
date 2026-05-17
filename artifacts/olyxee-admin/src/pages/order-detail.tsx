@@ -447,77 +447,86 @@ export default function OrderDetailPage() {
               {!order.trackingEvents?.length ? (
                 <p className="text-sm text-muted-foreground">No tracking events yet.</p>
               ) : (
-                <div className="relative pl-12">
-                  {/* Vertical line */}
-                  <div className="absolute left-5 top-6 bottom-6 w-px bg-border" />
+                // Clean two-column layout: fixed icon rail (40px) + content.
+                // The vertical connector lives inside the icon column and is
+                // drawn between rows (not under the bubble), so nothing
+                // overlaps and every bubble sits centered on the line.
+                <ol className="space-y-0">
+                  {order.trackingEvents.map((event, idx) => {
+                    const cfg = getStatusConfig(event.status);
+                    const Icon = cfg.icon;
+                    const isLatest = idx === 0;
+                    const isLast = idx === order.trackingEvents!.length - 1;
+                    const isDelivered = event.status === "Delivered";
 
-                  <div className="space-y-6">
-                    {order.trackingEvents.map((event, idx) => {
-                      const cfg = getStatusConfig(event.status);
-                      const Icon = cfg.icon;
-                      const isLatest = idx === 0;
-                      const isDelivered = event.status === "Delivered";
-
-                      return (
-                        <div key={event.id} className="relative">
-                          {/* Icon bubble */}
+                    return (
+                      <li key={event.id} className="flex gap-4">
+                        {/* Icon rail — fixed width keeps every row aligned. */}
+                        <div className="flex flex-col items-center w-10 flex-shrink-0">
                           <div
-                            className={`
-                              absolute -left-7 flex items-center justify-center border-2 transition-all
-                              ${isDelivered ? "h-11 w-11 -left-8" : "h-9 w-9"}
-                              ${isLatest ? `${cfg.bg} ${cfg.border}` : "bg-background border-border"}
-                            `}
+                            className={`h-9 w-9 flex items-center justify-center border-2 ${
+                              isLatest
+                                ? `${cfg.bg} ${cfg.border}`
+                                : "bg-background border-border"
+                            }`}
                           >
                             <Icon
-                              className={`
-                                ${isDelivered ? "h-5 w-5" : "h-4 w-4"}
-                                ${isLatest ? cfg.iconColor : "text-muted-foreground/40"}
-                              `}
+                              className={`h-4 w-4 ${
+                                isLatest ? cfg.iconColor : "text-muted-foreground/50"
+                              }`}
                             />
                           </div>
-
-                          {/* Content */}
-                          <div className={`min-w-0 pt-1.5 ${isDelivered && isLatest ? "pl-2" : ""}`}>
-                            {/* Delivered special banner */}
-                            {isDelivered && isLatest && (
-                              <div className="flex items-center gap-2 mb-2 px-3 py-1.5 bg-green-50 border border-green-200 w-fit">
-                                <House className="h-3.5 w-3.5 text-green-600" />
-                                <span className="text-xs font-semibold text-green-700 tracking-wide uppercase">
-                                  Package received by customer
-                                </span>
-                              </div>
-                            )}
-
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className={`text-sm font-semibold ${isLatest ? "" : "text-muted-foreground"}`}>
-                                {cfg.label}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {format(new Date(event.createdAt), "MMM d, yyyy · HH:mm")}
-                              </span>
-                              {isLatest && (
-                                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground border px-1.5 py-0.5">
-                                  Latest
-                                </span>
-                              )}
-                            </div>
-
-                            {event.message && (
-                              <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                                {event.message}
-                              </p>
-                            )}
-                            {event.location && (
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                                <MapPin className="h-3 w-3" /> {event.location}
-                              </div>
-                            )}
-                          </div>
+                          {/* Connector line — only between rows, never below
+                              the last one, so the rail doesn't dangle. */}
+                          {!isLast && <div className="w-px flex-1 bg-border min-h-[1.5rem]" />}
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
+
+                        {/* Content — bottom padding only when more rows follow. */}
+                        <div className={`min-w-0 flex-1 pt-1 ${isLast ? "" : "pb-6"}`}>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span
+                              className={`text-sm font-semibold ${
+                                isLatest ? "" : "text-muted-foreground"
+                              }`}
+                            >
+                              {cfg.label}
+                            </span>
+                            {isLatest && (
+                              <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground border px-1.5 py-0.5">
+                                Latest
+                              </span>
+                            )}
+                            <span className="text-xs text-muted-foreground ml-auto">
+                              {format(new Date(event.createdAt), "MMM d, yyyy · HH:mm")}
+                            </span>
+                          </div>
+
+                          {/* Delivered confirmation chip — inline, no longer
+                              overlaps the icon column. */}
+                          {isDelivered && isLatest && (
+                            <div className="mt-2 inline-flex items-center gap-2 px-2.5 py-1 bg-green-50 border border-green-200 w-fit">
+                              <House className="h-3.5 w-3.5 text-green-600" />
+                              <span className="text-[11px] font-semibold text-green-700 tracking-wide uppercase">
+                                Package received by customer
+                              </span>
+                            </div>
+                          )}
+
+                          {event.message && (
+                            <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                              {event.message}
+                            </p>
+                          )}
+                          {event.location && (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1.5">
+                              <MapPin className="h-3 w-3" /> {event.location}
+                            </div>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
               )}
             </CardContent>
           </Card>
