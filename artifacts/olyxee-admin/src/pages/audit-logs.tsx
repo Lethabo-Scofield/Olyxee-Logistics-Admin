@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FileText } from "lucide-react";
+import { EmptyState } from "@/components/page-loader";
 import { format } from "date-fns";
 
 const ENTITY_TYPES = ["order", "customer", "user", "business"];
@@ -39,14 +40,14 @@ export default function AuditLogsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">Audit Logs</h1>
-        <p className="text-gray-500 mt-1">Complete history of all actions in your account</p>
+        <h1 className="text-3xl font-bold tracking-tight">Audit Logs</h1>
+        <p className="text-muted-foreground mt-1">Complete history of all actions in your account</p>
       </div>
 
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-600">Filter by entity:</span>
+            <span className="text-sm text-muted-foreground">Filter by entity:</span>
             <Select value={entityType} onValueChange={v => { setEntityType(v); setPage(1); }}>
               <SelectTrigger className="w-[160px]"><SelectValue placeholder="All types" /></SelectTrigger>
               <SelectContent>
@@ -60,10 +61,11 @@ export default function AuditLogsPage() {
           {isLoading ? (
             <div className="p-6 space-y-3">{Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
           ) : !data?.data.length ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <FileText className="h-12 w-12 text-gray-300 mb-4" />
-              <p className="text-gray-500 font-medium">No audit logs found</p>
-            </div>
+            <EmptyState
+              icon={<FileText className="h-12 w-12" />}
+              title="No audit logs found"
+              description="Activity in your account will appear here once it happens."
+            />
           ) : (
             <>
               <Table>
@@ -78,18 +80,18 @@ export default function AuditLogsPage() {
                 </TableHeader>
                 <TableBody>
                   {data.data.map((log) => (
-                    <TableRow key={log.id} className="hover:bg-gray-50">
+                    <TableRow key={log.id} className="hover:bg-muted/40">
                       <TableCell>
                         <span className={`text-xs font-medium px-2 py-1 rounded-full ${getActionBadgeClass(log.action)}`}>
                           {ACTION_LABELS[log.action] ?? log.action}
                         </span>
                       </TableCell>
-                      <TableCell className="text-gray-600 capitalize">{log.entityType}</TableCell>
-                      <TableCell className="font-mono text-xs text-gray-500 max-w-[160px] truncate">{log.entityId ?? "—"}</TableCell>
-                      <TableCell className="text-xs text-gray-500 max-w-[200px] truncate">
+                      <TableCell className="text-muted-foreground capitalize">{log.entityType}</TableCell>
+                      <TableCell className="font-mono text-xs text-muted-foreground max-w-[160px] truncate">{log.entityId ?? "—"}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
                         {log.metadata ? JSON.stringify(log.metadata) : "—"}
                       </TableCell>
-                      <TableCell className="text-sm text-gray-500 whitespace-nowrap">
+                      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                         {format(new Date(log.createdAt), "MMM d, HH:mm")}
                       </TableCell>
                     </TableRow>
@@ -98,7 +100,7 @@ export default function AuditLogsPage() {
               </Table>
               {(data?.total ?? 0) > 30 && (
                 <div className="flex items-center justify-between px-6 py-4 border-t">
-                  <span className="text-sm text-gray-500">Page {page} of {Math.ceil((data?.total ?? 0) / 30)}</span>
+                  <span className="text-sm text-muted-foreground">Page {page} of {Math.ceil((data?.total ?? 0) / 30)}</span>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>Previous</Button>
                     <Button variant="outline" size="sm" disabled={page >= Math.ceil((data?.total ?? 0) / 30)} onClick={() => setPage(p => p + 1)}>Next</Button>

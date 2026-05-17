@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Search, Users } from "lucide-react";
+import { EmptyState } from "@/components/page-loader";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -131,13 +132,11 @@ export default function CustomersPage() {
               ))}
             </div>
           ) : !data?.data.length ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="h-16 w-16 mb-4 opacity-20">
-                <img src={AVATAR} alt="" className="h-full w-full object-cover" />
-              </div>
-              <p className="text-muted-foreground font-medium">No customers found</p>
-              <p className="text-muted-foreground/60 text-sm mt-1">Create your first customer to get started</p>
-            </div>
+            <EmptyState
+              icon={<Users className="h-12 w-12" />}
+              title="No customers found"
+              description="Create your first customer to get started."
+            />
           ) : (
             <>
               <Table>

@@ -14,6 +14,7 @@ import {
   ClipboardList, Settings2, UserCheck, Truck, AlertTriangle,
   Navigation, House, PackageX, Ban, Package,
 } from "lucide-react";
+import { EmptyState } from "@/components/page-loader";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { statusChoices, isTerminal } from "@/lib/order-statuses";
@@ -126,7 +127,20 @@ export default function OrderDetailPage() {
   }
 
   if (!order) {
-    return <div className="text-center py-16 text-muted-foreground">Order not found</div>;
+    return (
+      <EmptyState
+        icon={<PackageX className="h-12 w-12" />}
+        title="Order not found"
+        description="This order may have been deleted or the tracking link is incorrect."
+        action={
+          <Link href="/orders">
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <ArrowLeft className="h-4 w-4" /> Back to orders
+            </Button>
+          </Link>
+        }
+      />
+    );
   }
 
   return (

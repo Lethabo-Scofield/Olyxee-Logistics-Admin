@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PageLoader } from "@/components/page-loader";
 import {
   Select,
   SelectContent,
@@ -110,7 +111,7 @@ export default function OnboardingPage() {
           </div>
 
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading your account…</p>
+            <PageLoader label="Loading your account…" />
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5" data-testid="form-onboarding">
               <div className="space-y-2">

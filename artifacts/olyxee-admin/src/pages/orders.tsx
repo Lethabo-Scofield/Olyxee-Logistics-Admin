@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { StatusBadge } from "@/components/status-badge";
 import { Plus, Search, ArrowRight, Package, Pencil, Mail } from "lucide-react";
+import { EmptyState } from "@/components/page-loader";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ORDER_STATUSES, statusChoices, isTerminal } from "@/lib/order-statuses";
@@ -278,11 +279,11 @@ export default function OrdersPage() {
           {isLoading ? (
             <div className="p-6 space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
           ) : !data?.data.length ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <Package className="h-12 w-12 text-muted-foreground/30 mb-4" />
-              <p className="text-muted-foreground font-medium">No orders found</p>
-              <p className="text-muted-foreground/60 text-sm mt-1">Create your first order to get started</p>
-            </div>
+            <EmptyState
+              icon={<Package className="h-12 w-12" />}
+              title="No orders found"
+              description="Create your first order to get started."
+            />
           ) : (
             <>
               <Table>

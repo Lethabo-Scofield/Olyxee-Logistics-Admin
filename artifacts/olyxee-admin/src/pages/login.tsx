@@ -5,6 +5,7 @@ import { AuthLayout } from "@/components/auth-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 
 type Mode = "signin" | "signup";
 
@@ -177,16 +178,19 @@ export default function LoginPage() {
         <Button
           type="submit"
           disabled={submitting}
-          className="w-full h-11 bg-[hsl(220,20%,10%)] hover:bg-[hsl(220,20%,20%)] text-white font-medium text-[15px]"
+          className="w-full h-11 bg-[hsl(220,20%,10%)] hover:bg-[hsl(220,20%,20%)] text-white font-medium text-[15px] gap-2"
           data-testid={`button-${mode}`}
         >
-          {submitting
-            ? mode === "signin"
-              ? "Signing in…"
-              : "Creating account…"
-            : mode === "signin"
-              ? "Sign in"
-              : "Create account"}
+          {submitting ? (
+            <>
+              <Spinner className="size-4 text-white" />
+              {mode === "signin" ? "Signing in…" : "Creating account…"}
+            </>
+          ) : mode === "signin" ? (
+            "Sign in"
+          ) : (
+            "Create account"
+          )}
         </Button>
       </form>
 
