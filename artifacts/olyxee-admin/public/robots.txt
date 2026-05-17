@@ -1,2 +1,4 @@
+## Olyxee Admin is a private operations console behind authentication.
+## There is no public content to index — tell every crawler to stay out.
 User-agent: *
-Allow: /
+Disallow: /
