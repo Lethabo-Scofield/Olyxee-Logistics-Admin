@@ -28,11 +28,11 @@ function UserRow() {
           can click their name in the sidebar to manage their account. */}
       <Link
         href="/profile"
-        className={`flex items-center gap-2.5 flex-1 min-w-0 -mx-1 px-1 py-0.5 transition-colors ${
+        className={`flex items-center gap-2.5 flex-1 min-w-0 -mx-1 px-1 py-1 transition-colors ${
           isOnProfile
-            ? "text-sidebar-foreground"
-            : "text-sidebar-foreground hover:text-sidebar-foreground"
-        } hover:bg-sidebar-accent/50`}
+            ? "bg-sidebar-accent text-sidebar-accent-foreground"
+            : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+        }`}
         title="Edit your profile"
         data-testid="link-profile"
       >
