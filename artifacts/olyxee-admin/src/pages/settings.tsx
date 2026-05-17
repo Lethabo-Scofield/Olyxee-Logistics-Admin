@@ -9,7 +9,8 @@ import { Moon, Sun, Check, Palette, Building2, Image, AlertCircle, Upload, X } f
 import { toast } from "sonner";
 
 const MAX_LOGO_BYTES = 1024 * 1024; // 1 MB — kept small because we store as a data URL in localStorage.
-const MAX_FAVICON_BYTES = 256 * 1024; // 256 KB
+// Favicons accept any input size and are compressed client-side to 64x64 PNG.
+const FAVICON_OUTPUT_SIZE = 64;
 
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -18,6 +19,40 @@ function readFileAsDataUrl(file: File): Promise<string> {
     reader.onerror = () => reject(reader.error ?? new Error("Read failed"));
     reader.readAsDataURL(file);
   });
+}
+
+// Downscale a raster favicon to a small square PNG so we can store it inline
+// in localStorage and ship it in a <link rel="icon"> tag. SVG and ICO pass
+// through untouched: SVG is already vector and tiny, ICO carries multi-res
+// data that browsers handle natively.
+async function compressFavicon(file: File): Promise<string> {
+  if (file.type === "image/svg+xml" || file.type === "image/x-icon" || file.type === "image/vnd.microsoft.icon") {
+    return readFileAsDataUrl(file);
+  }
+  const sourceUrl = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new window.Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error("Could not load image"));
+      el.src = sourceUrl;
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = FAVICON_OUTPUT_SIZE;
+    canvas.height = FAVICON_OUTPUT_SIZE;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas not supported");
+    // Center-crop to square then draw at target size for crisp favicon.
+    const side = Math.min(img.naturalWidth, img.naturalHeight);
+    const sx = (img.naturalWidth - side) / 2;
+    const sy = (img.naturalHeight - side) / 2;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(img, sx, sy, side, side, 0, 0, FAVICON_OUTPUT_SIZE, FAVICON_OUTPUT_SIZE);
+    return canvas.toDataURL("image/png");
+  } finally {
+    URL.revokeObjectURL(sourceUrl);
+  }
 }
 
 const PRESET_COLORS = [
@@ -66,18 +101,19 @@ export default function SettingsPage() {
       toast.error("Please choose an image file (PNG, JPG, SVG, or ICO).");
       return;
     }
-    const max = kind === "logo" ? MAX_LOGO_BYTES : MAX_FAVICON_BYTES;
-    if (file.size > max) {
-      const limit = kind === "logo" ? "1 MB" : "256 KB";
-      toast.error(`Image is too large — keep it under ${limit}.`);
+    // Logos still have a size limit because they're stored as-is. Favicons
+    // accept any size — we downscale them to 64x64 PNG client-side.
+    if (kind === "logo" && file.size > MAX_LOGO_BYTES) {
+      toast.error("Image is too large — keep it under 1 MB.");
       return;
     }
     try {
-      const dataUrl = await readFileAsDataUrl(file);
       if (kind === "logo") {
+        const dataUrl = await readFileAsDataUrl(file);
         setForm((f) => ({ ...f, logoUrl: dataUrl }));
         setLogoPreviewError(false);
       } else {
+        const dataUrl = await compressFavicon(file);
         setForm((f) => ({ ...f, faviconUrl: dataUrl }));
         // Apply favicon immediately so the user sees the browser tab update,
         // even before they click Save.
