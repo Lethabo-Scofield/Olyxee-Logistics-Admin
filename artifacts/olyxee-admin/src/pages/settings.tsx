@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTheme } from "@/contexts/theme-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Moon, Sun, Check, AlertCircle, Upload, X, Eye, Loader2, Pipette, Shuffle,
+  Building2, Palette, Mail, SunMoon, RotateCcw, Sparkles, ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -99,6 +100,8 @@ const PRESET_COLORS = [
   { label: "Rose", hex: "#e11d48" },
 ];
 
+const DEFAULT_PRIMARY = "#2b2b2b";
+
 // Normalize free-typed hex into "#rrggbb". Returns null for invalid input so
 // we can surface a clear error instead of writing junk into the theme.
 function normalizeHex(raw: string): string | null {
@@ -120,11 +123,7 @@ function LogoUpload({
   value: string;
   onFile: (file: File) => void;
   onRemove: () => void;
-  // Brand name shown beside the preview, mirroring how the logo will appear
-  // in the sidebar / browser tab (image + business name).
   businessName?: string;
-  // "logo" → wide preview tile. "favicon" → small square + tab mockup so
-  // the user sees roughly how browsers will render it.
   variant?: "logo" | "favicon";
 }) {
   const isFavicon = variant === "favicon";
@@ -155,12 +154,10 @@ function LogoUpload({
       />
 
       {value && !previewError ? (
-        <div className="flex items-stretch gap-3 border border-border bg-card p-3">
-          {/* Preview thumbnail — square for favicon (roughly how a tab shows
-              it), wide for logo (roughly how the sidebar shows it). */}
+        <div className="flex items-stretch gap-3 border border-border bg-background p-3">
           <div
             className={cn(
-              "flex items-center justify-center bg-muted/50 border border-border flex-shrink-0",
+              "flex items-center justify-center bg-muted/40 border border-border flex-shrink-0",
               isFavicon ? "h-12 w-12" : "h-20 w-32",
             )}
           >
@@ -173,12 +170,8 @@ function LogoUpload({
           </div>
 
           <div className="flex-1 min-w-0 flex flex-col justify-center gap-2">
-            {/* Live "image + business name" mockup so the user sees what
-                customers + browser tabs will actually render. Falls back to
-                a helpful hint when the business name hasn't been set yet. */}
             {businessName ? (
               isFavicon ? (
-                // Mini browser-tab mockup
                 <div className="inline-flex items-center gap-1.5 self-start max-w-full border border-border bg-background/60 pl-1.5 pr-2.5 py-1">
                   <img src={value} alt="" aria-hidden="true" className="h-3.5 w-3.5 object-contain flex-shrink-0" />
                   <span className="text-xs font-medium truncate">{businessName}</span>
@@ -258,14 +251,6 @@ function LogoUpload({
 }
 
 // ─── Brand color picker ──────────────────────────────────────────────────────
-// Six curated presets cover most brands, but anything outside that palette
-// used to be impossible to pick. Now the user can:
-//   1. Tap a preset (fastest)
-//   2. Tap "Custom" to open the OS-native spectrum picker (full gamut)
-//   3. Type a hex code directly (designers will paste from Figma)
-//   4. Hit "Surprise me" for a tasteful random color when they're stuck
-// All three paths converge on the same `onChange(hex)` so the live preview
-// and Save button just work.
 function BrandColorPicker({
   value,
   onChange,
@@ -277,7 +262,6 @@ function BrandColorPicker({
   const [hexDraft, setHexDraft] = useState(value);
   const [hexError, setHexError] = useState(false);
 
-  // Keep the text field in sync when the user picks via preset / spectrum.
   useEffect(() => {
     setHexDraft(value);
     setHexError(false);
@@ -302,15 +286,17 @@ function BrandColorPicker({
   // don't hand the admin neon yellow or near-black.
   const surpriseMe = () => {
     const h = Math.floor(Math.random() * 360);
-    const s = 55 + Math.floor(Math.random() * 25); // 55-80
-    const l = 38 + Math.floor(Math.random() * 18); // 38-55
+    const s = 55 + Math.floor(Math.random() * 25);
+    const l = 38 + Math.floor(Math.random() * 18);
     onChange(hslToHex(h, s, l));
   };
 
   return (
-    <section className="space-y-3">
-      <div className="flex items-baseline justify-between gap-3">
-        <Label className="text-sm font-medium">Brand color</Label>
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs text-muted-foreground">
+          Tap a preset, use the spectrum, or type a hex.
+        </p>
         <button
           type="button"
           onClick={surpriseMe}
@@ -320,10 +306,6 @@ function BrandColorPicker({
         </button>
       </div>
 
-      {/* Presets + Custom tile.
-          The Custom tile is a real button that triggers a hidden native color
-          input. Native input gives us the full OS spectrum picker (incl.
-          eyedropper on supported browsers) for free — no third-party deps. */}
       <div className="grid grid-cols-7 gap-2">
         {PRESET_COLORS.map((c) => {
           const active = value.toLowerCase() === c.hex.toLowerCase();
@@ -334,9 +316,9 @@ function BrandColorPicker({
               title={c.label}
               onClick={() => onChange(c.hex)}
               className={cn(
-                "relative aspect-square w-full flex items-center justify-center transition-transform",
+                "relative aspect-square w-full flex items-center justify-center transition-transform duration-200 ease-out",
                 "ring-offset-2 ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                active && "ring-2 ring-foreground scale-[0.95]",
+                active && "ring-2 ring-foreground scale-[0.94]",
               )}
               style={{ backgroundColor: c.hex }}
               aria-pressed={active}
@@ -347,24 +329,19 @@ function BrandColorPicker({
           );
         })}
 
-        {/* Custom (spectrum) tile */}
         <button
           type="button"
           title="Pick a custom color"
           onClick={() => nativeRef.current?.click()}
           className={cn(
-            "relative aspect-square w-full flex items-center justify-center transition-transform",
+            "relative aspect-square w-full flex items-center justify-center transition-transform duration-200 ease-out",
             "ring-offset-2 ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            // Rainbow conic gradient so users immediately recognize it as
-            // "pick anything you want".
             "[background:conic-gradient(from_0deg,#ef4444,#f59e0b,#eab308,#22c55e,#06b6d4,#3b82f6,#8b5cf6,#ec4899,#ef4444)]",
-            !presetMatch && "ring-2 ring-foreground scale-[0.95]",
+            !presetMatch && "ring-2 ring-foreground scale-[0.94]",
           )}
           aria-label="Pick a custom color"
         >
           {!presetMatch ? (
-            // Show the active custom swatch as a centered dot so the user
-            // sees their choice without losing the "spectrum" affordance.
             <span
               className="h-4 w-4 border-2 border-white shadow"
               style={{ backgroundColor: value }}
@@ -376,7 +353,6 @@ function BrandColorPicker({
         </button>
       </div>
 
-      {/* Hidden native input — drives the OS spectrum picker. */}
       <input
         ref={nativeRef}
         type="color"
@@ -387,11 +363,9 @@ function BrandColorPicker({
         tabIndex={-1}
       />
 
-      {/* Hex code field — designers paste from Figma; pairs with a live
-          swatch so you see what you're typing before committing. */}
       <div className="flex items-center gap-2 pt-1">
         <div
-          className="h-9 w-9 border flex-shrink-0"
+          className="h-9 w-9 border border-border flex-shrink-0"
           style={{ backgroundColor: hexError ? "transparent" : (normalizeHex(hexDraft) ?? value) }}
         />
         <div className="flex-1 relative">
@@ -433,16 +407,15 @@ function BrandColorPicker({
         </Button>
       </div>
 
-      <p className="text-xs text-muted-foreground">
-        {hexError
-          ? <span className="text-destructive">Enter a valid hex like <code>2563eb</code> or <code>#abc</code>.</span>
-          : "Used for buttons, links, and active states. Tap the rainbow tile or type any hex."}
-      </p>
-    </section>
+      {hexError && (
+        <p className="text-xs text-destructive">
+          Enter a valid hex like <code>2563eb</code> or <code>#abc</code>.
+        </p>
+      )}
+    </div>
   );
 }
 
-// HSL → "#rrggbb" — tiny inline helper, avoids pulling in a color library.
 function hslToHex(h: number, s: number, l: number): string {
   const sN = s / 100;
   const lN = l / 100;
@@ -455,18 +428,351 @@ function hslToHex(h: number, s: number, l: number): string {
   return `#${f(0)}${f(8)}${f(4)}`;
 }
 
+// ─── Section primitives (Apple "Inset Grouped" feel) ──────────────────────────
+// A section is a titled card. Title + description live OUTSIDE the card (small,
+// muted) — content lives INSIDE on a flat surface with hairline dividers
+// between rows. This is the macOS / iOS Settings pattern and keeps the page
+// scannable when you have a lot of fields.
+
+function SectionShell({
+  id, icon: Icon, title, description, action, children,
+}: {
+  id: string;
+  icon: React.ElementType;
+  title: string;
+  description?: React.ReactNode;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section
+      id={id}
+      // scroll-mt accounts for the sticky page header so anchor jumps land
+      // with breathing room above the section title.
+      className="scroll-mt-24 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:duration-500"
+    >
+      <header className="px-1 mb-3 flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 text-foreground">
+            <Icon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+            <h2 className="text-[15px] font-semibold tracking-tight">{title}</h2>
+          </div>
+          {description && (
+            <p className="text-xs text-muted-foreground mt-1 ml-6">{description}</p>
+          )}
+        </div>
+        {action && <div className="flex-shrink-0">{action}</div>}
+      </header>
+
+      <div className="bg-card border border-border divide-y divide-border/70">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+function SectionRow({
+  label, hint, htmlFor, children, align = "stack",
+}: {
+  label?: string;
+  hint?: string;
+  // When provided, threads an explicit label↔control association so screen
+  // readers announce the field name correctly. Falls back to a plain <Label>
+  // when the row's "control" isn't a single input (e.g. logo upload tile).
+  htmlFor?: string;
+  children: React.ReactNode;
+  // "stack" = label above, content below (good for inputs and tiles).
+  // "split" = label left, content right (good for compact toggles).
+  align?: "stack" | "split";
+}) {
+  if (align === "split") {
+    return (
+      <div className="px-4 py-3.5 flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          {label && <p className="text-sm font-medium text-foreground">{label}</p>}
+          {hint && <p className="text-xs text-muted-foreground mt-0.5">{hint}</p>}
+        </div>
+        <div className="flex-shrink-0">{children}</div>
+      </div>
+    );
+  }
+  return (
+    <div className="px-4 py-4 space-y-2">
+      {label && (
+        <Label htmlFor={htmlFor} className="text-sm font-medium text-foreground">
+          {label}
+        </Label>
+      )}
+      {children}
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+    </div>
+  );
+}
+
+// Small "Restore" button surfaced in section headers when that section is
+// dirty. Lets the user revert one section without touching the rest.
+function RestoreButton({ onClick, label = "Restore" }: { onClick: () => void; label?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="text-[11px] text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+      title="Revert this section to saved values"
+    >
+      <RotateCcw className="h-3 w-3" />
+      {label}
+    </button>
+  );
+}
+
+// ─── Live brand preview ───────────────────────────────────────────────────────
+// Senior-dev touch: show the admin EXACTLY where their choices land. The
+// preview renders a mini sidebar (logo + business name on the brand color) and
+// a mini browser tab (favicon + name) using the current form values — so the
+// user sees the result before they hit Save.
+function LivePreview({
+  businessName, logoUrl, faviconUrl, primaryColor,
+}: {
+  businessName: string;
+  logoUrl: string;
+  faviconUrl: string;
+  primaryColor: string;
+}) {
+  const name = businessName.trim() || "Your business";
+  return (
+    <SectionShell
+      id="preview"
+      icon={Sparkles}
+      title="Live preview"
+      description="A peek at how your brand will appear to your team and customers."
+    >
+      <div className="px-4 py-5 space-y-5">
+        {/* Sidebar header mockup */}
+        <div>
+          <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2">
+            Sidebar
+          </p>
+          <div className="border border-border bg-background p-3 flex items-center gap-2.5">
+            <div
+              className="h-8 w-8 flex items-center justify-center flex-shrink-0 text-white text-sm font-semibold"
+              style={{ backgroundColor: primaryColor }}
+            >
+              {logoUrl ? (
+                <img src={logoUrl} alt="" className="h-full w-full object-contain" />
+              ) : (
+                name.charAt(0).toUpperCase()
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold truncate" title={name}>{name}</p>
+              <p className="text-[11px] text-muted-foreground">Logistics workspace</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Browser tab mockup */}
+        <div>
+          <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2">
+            Browser tab
+          </p>
+          <div className="flex">
+            <div className="inline-flex items-center gap-1.5 max-w-full border border-border border-b-transparent bg-muted/40 pl-2 pr-3 py-1.5">
+              {faviconUrl ? (
+                <img src={faviconUrl} alt="" className="h-3.5 w-3.5 object-contain flex-shrink-0" />
+              ) : (
+                <div className="h-3.5 w-3.5 bg-muted-foreground/30 flex-shrink-0" />
+              )}
+              <span className="text-xs font-medium truncate">{name}</span>
+              <X className="h-3 w-3 text-muted-foreground/60 ml-1 flex-shrink-0" />
+            </div>
+          </div>
+        </div>
+
+        {/* Email status pill mockup */}
+        <div>
+          <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2">
+            Email accent
+          </p>
+          <div className="border border-border bg-background p-3 space-y-2">
+            <p className="text-xs text-muted-foreground">Subject</p>
+            <p className="text-sm font-medium">
+              Your package is on the move — <span className="text-muted-foreground">OLY-7K3-9PQ4</span>
+            </p>
+            <div
+              className="inline-block text-[11px] font-medium text-white px-2 py-1"
+              style={{ backgroundColor: primaryColor }}
+            >
+              In transit
+            </div>
+          </div>
+        </div>
+      </div>
+    </SectionShell>
+  );
+}
+
+// ─── Scrollspy hook ───────────────────────────────────────────────────────────
+// Watches each section header and reports the one currently closest to the
+// top of the viewport. Used to highlight the active item in the side nav.
+function useScrollSpy(ids: string[], offset = 96): string | null {
+  const [active, setActive] = useState<string | null>(ids[0] ?? null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const elements = ids
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => el !== null);
+    if (elements.length === 0) return;
+
+    const compute = () => {
+      let current: string | null = null;
+      // Pick the last section whose top has scrolled past the offset. This
+      // matches the visually-active section even when the user is mid-section.
+      for (const el of elements) {
+        const top = el.getBoundingClientRect().top;
+        if (top - offset <= 0) {
+          current = el.id;
+        }
+      }
+      // If we're above the first section, default to the first.
+      if (!current) current = elements[0].id;
+      setActive((prev) => (prev === current ? prev : current));
+    };
+
+    compute();
+    window.addEventListener("scroll", compute, { passive: true });
+    window.addEventListener("resize", compute);
+    return () => {
+      window.removeEventListener("scroll", compute);
+      window.removeEventListener("resize", compute);
+    };
+  }, [ids, offset]);
+
+  return active;
+}
+
+// ─── Side nav ─────────────────────────────────────────────────────────────────
+const NAV_ITEMS = [
+  { id: "identity", label: "Identity", icon: Building2 },
+  { id: "brand", label: "Brand", icon: Palette },
+  { id: "preview", label: "Preview", icon: Sparkles },
+  { id: "emails", label: "Emails", icon: Mail },
+  { id: "appearance", label: "Appearance", icon: SunMoon },
+] as const;
+
+function SideNav({
+  active, dirtyIds,
+}: {
+  active: string | null;
+  // Sections with unsaved changes get a small dot next to their nav label.
+  dirtyIds: ReadonlySet<string>;
+}) {
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
+    e.preventDefault();
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    // Keep the URL hash in sync without re-triggering a hashchange-driven jump.
+    if (window.history.replaceState) {
+      window.history.replaceState(null, "", `#${id}`);
+    }
+  };
+
+  return (
+    <nav aria-label="Settings sections" className="space-y-0.5">
+      {NAV_ITEMS.map((item) => {
+        const Icon = item.icon;
+        const isActive = active === item.id;
+        const isDirty = dirtyIds.has(item.id);
+        return (
+          <a
+            key={item.id}
+            href={`#${item.id}`}
+            onClick={(e) => handleClick(e, item.id)}
+            className={cn(
+              "group flex items-center gap-2.5 px-3 py-2 text-sm transition-colors",
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              isActive
+                ? "bg-muted text-foreground font-medium"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+            )}
+            aria-current={isActive ? "true" : undefined}
+          >
+            <Icon
+              className={cn(
+                "h-4 w-4 transition-colors",
+                isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground",
+              )}
+            />
+            <span className="flex-1 truncate">{item.label}</span>
+            {isDirty && (
+              <span
+                className="h-1.5 w-1.5 bg-amber-500 inline-block"
+                aria-label="Unsaved changes"
+              />
+            )}
+            <ChevronRight
+              className={cn(
+                "h-3.5 w-3.5 transition-all",
+                isActive ? "text-foreground translate-x-0 opacity-100" : "text-muted-foreground/40 -translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-100",
+              )}
+            />
+          </a>
+        );
+      })}
+    </nav>
+  );
+}
+
 // ─── Settings page ────────────────────────────────────────────────────────────
 export default function SettingsPage() {
   const theme = useTheme();
 
-  const [form, setForm] = useState({
-    businessName: theme.businessName,
-    logoUrl: theme.logoUrl,
-    faviconUrl: theme.faviconUrl,
-    primaryColor: theme.primaryColor,
-  });
+  // Local form state for the theme/branding bits. Email wording lives in its
+  // own component because it persists to the server, not localStorage.
+  const initial = useMemo(
+    () => ({
+      businessName: theme.businessName,
+      logoUrl: theme.logoUrl,
+      faviconUrl: theme.faviconUrl,
+      primaryColor: theme.primaryColor,
+    }),
+    // Re-baseline only when the saved theme values change (e.g. after a save).
+    [theme.businessName, theme.logoUrl, theme.faviconUrl, theme.primaryColor],
+  );
 
-  const handleSave = () => {
+  const [form, setForm] = useState(initial);
+
+  // Re-baseline form when saved theme changes from elsewhere (e.g. theme
+  // toggle in the sidebar). Keeps the page in sync without clobbering unsaved
+  // typing because we only reset when the saved snapshot itself shifts.
+  useEffect(() => {
+    setForm(initial);
+  }, [initial]);
+
+  // Which sections are dirty? Drives the side-nav dot indicators and lets us
+  // show a precise "N changes" count in the save bar.
+  const dirty = useMemo(() => {
+    const ids = new Set<string>();
+    if (form.businessName !== initial.businessName) ids.add("identity");
+    if (
+      form.logoUrl !== initial.logoUrl ||
+      form.faviconUrl !== initial.faviconUrl ||
+      form.primaryColor !== initial.primaryColor
+    ) {
+      ids.add("brand");
+    }
+    return ids;
+  }, [form, initial]);
+
+  const hasChanges = dirty.size > 0;
+  const changeCount =
+    (form.businessName !== initial.businessName ? 1 : 0) +
+    (form.logoUrl !== initial.logoUrl ? 1 : 0) +
+    (form.faviconUrl !== initial.faviconUrl ? 1 : 0) +
+    (form.primaryColor !== initial.primaryColor ? 1 : 0);
+
+  const handleSave = useCallback(() => {
     theme.saveSettings({
       businessName: form.businessName,
       logoUrl: form.logoUrl,
@@ -474,16 +780,61 @@ export default function SettingsPage() {
       primaryColor: form.primaryColor,
     });
     toast.success("Settings saved");
-  };
+  }, [theme, form]);
 
-  const handleDiscard = () => {
-    setForm({
-      businessName: theme.businessName,
-      logoUrl: theme.logoUrl,
-      faviconUrl: theme.faviconUrl,
-      primaryColor: theme.primaryColor,
+  const handleDiscard = useCallback(() => {
+    setForm(initial);
+  }, [initial]);
+
+  // Track the email editor's dirty state so the beforeunload guard covers
+  // unsaved email wording too (email persists server-side via its own button,
+  // so it's not in the page-level save bar — but losing typed text on tab
+  // close would still be a bad surprise).
+  const [emailDirty, setEmailDirty] = useState(false);
+  const guardActive = hasChanges || emailDirty;
+
+  // ⌘S / Ctrl+S — power-user shortcut. Browsers reserve this for "Save page",
+  // so we preventDefault and route it to our save handler.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const isSave = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s";
+      if (!isSave) return;
+      e.preventDefault();
+      if (hasChanges) handleSave();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [hasChanges, handleSave]);
+
+  // Soft guard: prompt before navigating away with unsaved theme changes.
+  // The modern browsers ignore custom strings, but they still show the
+  // confirmation dialog when returnValue is set.
+  useEffect(() => {
+    if (!guardActive) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [guardActive]);
+
+  // On first mount, honour a deep-link hash (#brand, #emails, …) so links
+  // from elsewhere can drop the user straight into a section.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const id = window.location.hash.replace(/^#/, "");
+    if (!id) return;
+    // Defer until the section refs are in the DOM.
+    requestAnimationFrame(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: "auto", block: "start" });
     });
-  };
+  }, []);
+
+  // Memoize the IDs so useScrollSpy's effect doesn't rebind window listeners
+  // on every render — fresh array identity each render = listener churn.
+  const spyIds = useMemo(() => NAV_ITEMS.map((n) => n.id), []);
+  const active = useScrollSpy(spyIds);
 
   async function handleLogoPicked(file: File) {
     try {
@@ -503,127 +854,208 @@ export default function SettingsPage() {
     }
   }
 
-  const hasChanges =
-    form.businessName !== theme.businessName ||
-    form.logoUrl !== theme.logoUrl ||
-    form.faviconUrl !== theme.faviconUrl ||
-    form.primaryColor !== theme.primaryColor;
-
   return (
     <div className="min-h-full pb-32">
-      <div className="mx-auto w-full max-w-xl">
-        {/* Page header */}
-        <header className="mb-10 text-center sm:text-left">
-          <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-          <p className="text-muted-foreground mt-1.5 text-[15px]">
-            Make this workspace feel like yours.
-          </p>
-        </header>
+      {/* Page header — kept generous; this is the moment the page "establishes
+          itself" before the content groups begin. */}
+      <header className="mb-8 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-1 motion-safe:duration-500">
+        <h1 className="text-3xl font-semibold tracking-tight">Settings</h1>
+        <p className="text-muted-foreground mt-1.5 text-[15px]">
+          Tune how Olyxee looks for your team and your customers.
+        </p>
+      </header>
 
-        <div className="space-y-10">
-          {/* ─── Business name ─────────────────────────────────────── */}
-          <section className="space-y-2">
-            <Label htmlFor="businessName" className="text-sm font-medium">
-              Business name
-            </Label>
-            <Input
-              id="businessName"
-              value={form.businessName}
-              onChange={e => setForm(f => ({ ...f, businessName: e.target.value }))}
-              placeholder="Your business name"
-              className="h-11"
-            />
-            <p className="text-xs text-muted-foreground">
-              Shown in the sidebar and on customer emails.
+      <div className="grid grid-cols-1 lg:grid-cols-[200px_minmax(0,1fr)] gap-8 lg:gap-12 max-w-4xl">
+        {/* Side nav — sticky on lg+, hidden on smaller screens (the section
+            headers stay scannable on phones without it). */}
+        <aside className="hidden lg:block">
+          <div className="sticky top-6">
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground px-3 mb-2">
+              Sections
             </p>
-          </section>
-
-          {/* ─── Logo ─────────────────────────────────────────────── */}
-          <section className="space-y-3">
-            <Label className="text-sm font-medium">Logo</Label>
-            <LogoUpload
-              variant="logo"
-              businessName={form.businessName}
-              value={form.logoUrl}
-              onFile={handleLogoPicked}
-              onRemove={() => setForm(f => ({ ...f, logoUrl: "" }))}
-            />
-          </section>
-
-          {/* ─── Favicon ──────────────────────────────────────────── */}
-          <section className="space-y-3">
-            <Label className="text-sm font-medium">Favicon</Label>
-            <LogoUpload
-              variant="favicon"
-              businessName={form.businessName}
-              value={form.faviconUrl}
-              onFile={handleFaviconPicked}
-              onRemove={() => setForm(f => ({ ...f, faviconUrl: "" }))}
-            />
-            <p className="text-xs text-muted-foreground">
-              Shown in browser tabs. Square images work best (PNG or SVG).
+            <SideNav active={active} dirtyIds={dirty} />
+            <p className="text-[11px] text-muted-foreground px-3 mt-4 leading-relaxed">
+              Tip: press <kbd className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-[10px] font-medium bg-muted border border-border">⌘S</kbd> to save.
             </p>
-          </section>
+          </div>
+        </aside>
 
-          {/* ─── Brand color ──────────────────────────────────────── */}
-          <BrandColorPicker
-            value={form.primaryColor}
-            onChange={(hex) => setForm(f => ({ ...f, primaryColor: hex }))}
+        {/* Sections */}
+        <div className="space-y-8 min-w-0">
+          {/* ─── Identity ─────────────────────────────────────────────── */}
+          <SectionShell
+            id="identity"
+            icon={Building2}
+            title="Identity"
+            description="The name your team and customers see across Olyxee."
+            action={
+              dirty.has("identity") && (
+                <RestoreButton
+                  onClick={() => setForm((f) => ({ ...f, businessName: initial.businessName }))}
+                />
+              )
+            }
+          >
+            <SectionRow
+              label="Business name"
+              hint="Shown in the sidebar and on every customer email."
+              htmlFor="businessName"
+            >
+              <Input
+                id="businessName"
+                value={form.businessName}
+                onChange={(e) => setForm((f) => ({ ...f, businessName: e.target.value }))}
+                placeholder="Your business name"
+                className="h-11"
+                autoComplete="organization"
+              />
+            </SectionRow>
+          </SectionShell>
+
+          {/* ─── Brand ────────────────────────────────────────────────── */}
+          <SectionShell
+            id="brand"
+            icon={Palette}
+            title="Brand"
+            description="Logo, favicon, and the accent color that ties everything together."
+            action={
+              dirty.has("brand") && (
+                <RestoreButton
+                  onClick={() =>
+                    setForm((f) => ({
+                      ...f,
+                      logoUrl: initial.logoUrl,
+                      faviconUrl: initial.faviconUrl,
+                      primaryColor: initial.primaryColor,
+                    }))
+                  }
+                />
+              )
+            }
+          >
+            <SectionRow label="Logo" hint="Drop in a PNG, SVG, or JPEG. We'll downscale large images automatically.">
+              <LogoUpload
+                variant="logo"
+                businessName={form.businessName}
+                value={form.logoUrl}
+                onFile={handleLogoPicked}
+                onRemove={() => setForm((f) => ({ ...f, logoUrl: "" }))}
+              />
+            </SectionRow>
+
+            <SectionRow label="Favicon" hint="Shown in browser tabs. Square images work best.">
+              <LogoUpload
+                variant="favicon"
+                businessName={form.businessName}
+                value={form.faviconUrl}
+                onFile={handleFaviconPicked}
+                onRemove={() => setForm((f) => ({ ...f, faviconUrl: "" }))}
+              />
+            </SectionRow>
+
+            <SectionRow label="Brand color">
+              <BrandColorPicker
+                value={form.primaryColor}
+                onChange={(hex) => setForm((f) => ({ ...f, primaryColor: hex }))}
+              />
+            </SectionRow>
+          </SectionShell>
+
+          {/* ─── Live preview ─────────────────────────────────────────── */}
+          <LivePreview
+            businessName={form.businessName}
+            logoUrl={form.logoUrl}
+            faviconUrl={form.faviconUrl}
+            primaryColor={form.primaryColor}
           />
 
-          {/* ─── Customer email wording ──────────────────────────── */}
-          <EmailCustomizationSection />
+          {/* ─── Customer emails ──────────────────────────────────────── */}
+          <EmailCustomizationSection
+            businessName={form.businessName || "Olyxee"}
+            onDirtyChange={setEmailDirty}
+          />
 
-          {/* ─── Appearance ──────────────────────────────────────── */}
-          <section className="space-y-3">
-            <Label className="text-sm font-medium">Appearance</Label>
-            <div className="grid grid-cols-2 gap-3">
-              <ThemeOption
-                active={!theme.isDark}
-                onClick={() => theme.setIsDark(false)}
-                icon={Sun}
-                label="Light"
-                bg="bg-white"
-                fg="bg-zinc-900"
-                muted="bg-zinc-200"
-              />
-              <ThemeOption
-                active={theme.isDark}
-                onClick={() => theme.setIsDark(true)}
-                icon={Moon}
-                label="Dark"
-                bg="bg-zinc-900"
-                fg="bg-zinc-200"
-                muted="bg-zinc-700"
-              />
+          {/* ─── Appearance ───────────────────────────────────────────── */}
+          <SectionShell
+            id="appearance"
+            icon={SunMoon}
+            title="Appearance"
+            description="Pick the look that's easier on your eyes."
+          >
+            <div className="p-4">
+              <div className="grid grid-cols-2 gap-3">
+                <ThemeOption
+                  active={!theme.isDark}
+                  onClick={() => theme.setIsDark(false)}
+                  icon={Sun}
+                  label="Light"
+                  bg="bg-white"
+                  fg="bg-zinc-900"
+                  muted="bg-zinc-200"
+                />
+                <ThemeOption
+                  active={theme.isDark}
+                  onClick={() => theme.setIsDark(true)}
+                  icon={Moon}
+                  label="Dark"
+                  bg="bg-zinc-900"
+                  fg="bg-zinc-200"
+                  muted="bg-zinc-700"
+                />
+              </div>
             </div>
-          </section>
+          </SectionShell>
+
+          {/* Footer — quiet restore-defaults escape hatch for the whole page. */}
+          <footer className="px-1 pt-4 text-xs text-muted-foreground flex items-center justify-between">
+            <span>Branding is stored on this device.</span>
+            <button
+              type="button"
+              onClick={() => {
+                setForm((f) => ({ ...f, primaryColor: DEFAULT_PRIMARY }));
+              }}
+              className="hover:text-foreground transition-colors inline-flex items-center gap-1"
+            >
+              <RotateCcw className="h-3 w-3" />
+              Reset brand color
+            </button>
+          </footer>
         </div>
       </div>
 
-      {/* ─── Sticky save bar ───────────────────────────────────────── */}
+      {/* ─── Sticky save bar ───────────────────────────────────────────────
+          Floats above the content with a soft backdrop blur. Slides in only
+          when there are real changes — the empty state would feel like noise. */}
       <div
         className={cn(
-          "fixed bottom-0 left-0 right-0 md:left-56 z-30 border-t bg-background/95 backdrop-blur transition-transform duration-200",
+          "fixed bottom-0 left-0 right-0 md:left-56 z-30 border-t bg-background/85 backdrop-blur-md transition-all duration-300 ease-out",
           hasChanges
-            ? "translate-y-0 border-border shadow-[0_-4px_16px_-8px_rgba(0,0,0,0.1)]"
-            : "translate-y-full border-transparent",
+            ? "translate-y-0 opacity-100 border-border shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.18)]"
+            : "translate-y-full opacity-0 border-transparent pointer-events-none",
         )}
         role="region"
         aria-label="Unsaved changes"
       >
-        <div className="mx-auto max-w-xl px-6 md:px-8 py-3 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-sm">
-            <span className="h-2 w-2 bg-amber-500 inline-block animate-pulse" />
-            <span className="text-foreground font-medium">Unsaved changes</span>
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 text-sm min-w-0">
+            <span className="relative flex h-2 w-2 flex-shrink-0">
+              <span className="absolute inline-flex h-full w-full animate-ping bg-amber-400 opacity-60" />
+              <span className="relative inline-flex h-2 w-2 bg-amber-500" />
+            </span>
+            <span className="text-foreground font-medium truncate">
+              {changeCount === 1 ? "1 unsaved change" : `${changeCount} unsaved changes`}
+            </span>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-shrink-0">
             <Button variant="ghost" size="sm" onClick={handleDiscard}>
               Discard
             </Button>
             <Button size="sm" onClick={handleSave} className="gap-1.5">
               <Check className="h-4 w-4" />
-              Save
+              Save changes
+              <kbd className="hidden sm:inline-flex ml-1 items-center justify-center min-w-[1.25rem] h-4 px-1 text-[10px] font-medium bg-primary-foreground/15 border border-primary-foreground/20 text-primary-foreground/90">
+                ⌘S
+              </kbd>
             </Button>
           </div>
         </div>
@@ -633,12 +1065,19 @@ export default function SettingsPage() {
 }
 
 // ─── Customer email wording ───────────────────────────────────────────────────
-// Unlike the theme/branding fields above (which live in localStorage), the email
-// wording is persisted server-side on the Business record so the API server can
-// inject it into outgoing customer status emails. We keep it as a self-contained
-// component with its own load/save lifecycle so it doesn't interfere with the
-// sticky "Unsaved changes" bar that's wired to the theme form.
-function EmailCustomizationSection() {
+// Lives server-side on the Business record so the API server can inject it
+// into outgoing customer status emails. Self-contained — has its own load /
+// save lifecycle and "Save email wording" button so it doesn't interfere with
+// the page-level "Unsaved changes" bar (which is wired to the theme form).
+function EmailCustomizationSection({
+  businessName,
+  onDirtyChange,
+}: {
+  businessName: string;
+  // Lets the parent extend its beforeunload guard to cover unsaved email
+  // wording. We notify on every transition rather than every keystroke.
+  onDirtyChange?: (dirty: boolean) => void;
+}) {
   const { data: business, isLoading, refetch } = useGetBusiness();
   const updateMutation = useUpdateBusiness();
 
@@ -649,9 +1088,6 @@ function EmailCustomizationSection() {
   });
   const [loaded, setLoaded] = useState(false);
 
-  // Hydrate the form once the business data arrives. Empty/null → empty string
-  // so the inputs are always controlled; on save, empty strings are sent as
-  // null so the server falls back to defaults.
   useEffect(() => {
     if (business && !loaded) {
       setForm({
@@ -668,6 +1104,12 @@ function EmailCustomizationSection() {
     (form.emailGreeting !== (business?.emailGreeting ?? "") ||
       form.emailSignature !== (business?.emailSignature ?? "") ||
       form.emailFooterNote !== (business?.emailFooterNote ?? ""));
+
+  // Surface dirty state to the parent so the page-level beforeunload guard
+  // can fire when email wording has unsaved changes too.
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
 
   const handleSave = () => {
     updateMutation.mutate(
@@ -688,64 +1130,121 @@ function EmailCustomizationSection() {
     );
   };
 
+  const handleReset = () => {
+    setForm({
+      emailGreeting: business?.emailGreeting ?? "",
+      emailSignature: business?.emailSignature ?? "",
+      emailFooterNote: business?.emailFooterNote ?? "",
+    });
+  };
+
+  // Token substitution for the live preview. Mirrors the server-side template
+  // behaviour so the admin sees exactly what the customer would receive.
+  const sub = (s: string) =>
+    s
+      .replace(/\{name\}/g, "Sam")
+      .replace(/\{businessName\}/g, businessName);
+
+  // Defaults intentionally mirror the server-side template helpers in
+  // artifacts/api-server/src/lib/email.ts (renderGreeting / renderSignature /
+  // renderFooterNote). Keeping them in sync is the only way the live preview
+  // tells the truth about what customers will actually receive.
+  const previewGreeting = sub(form.emailGreeting || "Hi {name},");
+  const previewSignature = sub(form.emailSignature || "— {businessName}");
+  const previewFooter = sub(form.emailFooterNote || "");
+
   return (
-    <section className="space-y-4 border-t pt-8">
-      <div className="space-y-1">
-        <Label className="text-sm font-medium">Customer email wording</Label>
-        <p className="text-xs text-muted-foreground">
-          Customize the greeting, sign-off, and footer note on status emails sent
-          to customers. Use <code className="font-mono text-foreground">{"{name}"}</code> for the
-          customer's name and <code className="font-mono text-foreground">{"{businessName}"}</code> for your business name. Leave blank to use defaults.
-        </p>
+    <SectionShell
+      id="emails"
+      icon={Mail}
+      title="Customer emails"
+      description="Customize the greeting, sign-off, and footer on status emails."
+      action={dirty ? <RestoreButton onClick={handleReset} /> : undefined}
+    >
+      {/* Token legend */}
+      <div className="px-4 py-3 bg-muted/30 text-xs text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span>Tokens:</span>
+        <code className="font-mono text-foreground bg-background border border-border px-1.5 py-0.5">{"{name}"}</code>
+        <span className="text-muted-foreground/70">customer's name</span>
+        <code className="font-mono text-foreground bg-background border border-border px-1.5 py-0.5">{"{businessName}"}</code>
+        <span className="text-muted-foreground/70">your business</span>
       </div>
 
       {isLoading && !loaded ? (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+        <div className="px-4 py-6 flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" /> Loading…
         </div>
       ) : (
-        <div className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="emailGreeting" className="text-xs font-normal text-muted-foreground">
-              Greeting
-            </Label>
+        <>
+          <SectionRow
+            label="Greeting"
+            hint="The first line of every status email."
+            htmlFor="emailGreeting"
+          >
             <Input
               id="emailGreeting"
               value={form.emailGreeting}
               onChange={(e) => setForm((f) => ({ ...f, emailGreeting: e.target.value }))}
               placeholder="Hi {name},"
               className="h-11"
+              maxLength={200}
             />
-          </div>
+          </SectionRow>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="emailSignature" className="text-xs font-normal text-muted-foreground">
-              Sign-off
-            </Label>
+          <SectionRow
+            label="Sign-off"
+            hint="Line breaks are preserved."
+            htmlFor="emailSignature"
+          >
             <Textarea
               id="emailSignature"
               value={form.emailSignature}
               onChange={(e) => setForm((f) => ({ ...f, emailSignature: e.target.value }))}
               placeholder={"Best,\nThe {businessName} team"}
               rows={3}
+              maxLength={500}
             />
-            <p className="text-[11px] text-muted-foreground">Line breaks are preserved.</p>
-          </div>
+          </SectionRow>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="emailFooterNote" className="text-xs font-normal text-muted-foreground">
-              Footer note <span className="text-muted-foreground/70">(optional)</span>
-            </Label>
+          <SectionRow
+            label="Footer note"
+            hint="Optional — shown below the sign-off in muted text."
+            htmlFor="emailFooterNote"
+          >
             <Textarea
               id="emailFooterNote"
               value={form.emailFooterNote}
               onChange={(e) => setForm((f) => ({ ...f, emailFooterNote: e.target.value }))}
               placeholder="Thanks for shopping with us!"
               rows={2}
+              maxLength={500}
             />
+          </SectionRow>
+
+          {/* Live email preview — uses real fallbacks + token substitution so
+              the admin sees exactly what the customer will get. */}
+          <div className="px-4 py-4 bg-muted/20 space-y-3">
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+              Preview
+            </p>
+            <div className="border border-border bg-background p-4 text-sm space-y-3">
+              <p className="font-medium">{previewGreeting}</p>
+              <p className="text-muted-foreground">
+                Your package has left our facility and is making its way to you.
+              </p>
+              <p className="whitespace-pre-line text-muted-foreground">{previewSignature}</p>
+              {previewFooter && (
+                <p className="text-xs text-muted-foreground/80 pt-2 border-t border-border/60 whitespace-pre-line">
+                  {previewFooter}
+                </p>
+              )}
+            </div>
           </div>
 
-          <div className="flex justify-end">
+          <div className="px-4 py-3 flex items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground">
+              Saves immediately — separate from the page-level Save.
+            </p>
             <Button
               size="sm"
               onClick={handleSave}
@@ -760,9 +1259,9 @@ function EmailCustomizationSection() {
               Save email wording
             </Button>
           </div>
-        </div>
+        </>
       )}
-    </section>
+    </SectionShell>
   );
 }
 
@@ -784,7 +1283,7 @@ function ThemeOption({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "group relative flex flex-col items-stretch border-2 p-3 transition-all text-left",
+        "group relative flex flex-col items-stretch border-2 p-3 transition-all duration-200 text-left",
         active
           ? "border-primary bg-primary/[0.03]"
           : "border-border hover:border-muted-foreground/50",
