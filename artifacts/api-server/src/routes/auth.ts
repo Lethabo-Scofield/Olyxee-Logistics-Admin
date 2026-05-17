@@ -81,6 +81,10 @@ router.post("/auth/signup", async (req, res) => {
       user: { id: userId, email, name: fullName, role: "owner", businessId },
     });
   } catch (err) {
+    // Use console.error in addition to req.log because pino's async writes
+    // sometimes don't flush before a serverless function freezes.
+    const e = err as { message?: string; code?: string; detail?: string };
+    console.error("[signup] failed:", e?.code, e?.message, e?.detail);
     req.log?.error({ err }, "signup failed");
     res.status(500).json({ error: "Could not create account" });
   }
@@ -119,6 +123,8 @@ router.post("/auth/login", async (req, res) => {
       },
     });
   } catch (err) {
+    const e = err as { message?: string; code?: string; detail?: string };
+    console.error("[login] failed:", e?.code, e?.message, e?.detail);
     req.log?.error({ err }, "login failed");
     res.status(500).json({ error: "Login failed" });
   }

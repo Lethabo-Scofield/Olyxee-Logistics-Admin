@@ -1,0 +1,119 @@
+
+May 17 03:54:13.11
+POST
+---
+logistics.olyxee.com
+/api/auth/signup
+2
+{"level":30,"time":1778982854403,"pid":4,"hostname":"169.254.36.227","req":{"id":5,"method":"POST","url":"/api/auth/signup"},"res":{"statusCode":500},"err":{"type":"Error","message":"failed with status code 500","stack":"Error: failed with status code 500\n at onResFinished (file:///var/task/api/_bundle/app.mjs:30353:45)\n at ServerResponse.onResponseComplete (file:///var/task/api/_bundle/app.mjs:30403:18)\n at ServerResponse.emit (node:events:520:35)\n at /opt/rust/nodejs.js:17:5080\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at /opt/rust/nodejs.js:17:5068\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at e.emit (/opt/rust/nodejs.js:17:5056)\n at onFinish (node:_http_outgoing:1026:10)\n at callback (node:internal/streams/writable:764:21)"},"responseTime":892,"msg":"request errored"}
+May 17 03:53:18.40
+POST
+401
+logistics.olyxee.com
+/api/auth/login
+{"level":30,"time":1778982799129,"pid":4,"hostname":"169.254.36.227","req":{"id":4,"method":"POST","url":"/api/auth/login"},"res":{"statusCode":401},"responseTime":594,"msg":"request completed"}
+May 17 03:52:58.33
+GET
+401
+logistics.olyxee.com
+/api/auth/me
+{"level":30,"time":1778982778760,"pid":4,"hostname":"169.254.36.227","req":{"id":3,"method":"GET","url":"/api/auth/me"},"res":{"statusCode":401},"responseTime":2,"msg":"request completed"}
+May 17 03:52:57.85
+GET
+401
+olyxee-logistics-admin-f3onpw769-olyxee.vercel.app
+/api/auth/me
+{"level":30,"time":1778982777911,"pid":4,"hostname":"169.254.36.227","req":{"id":2,"method":"GET","url":"/api/auth/me"},"res":{"statusCode":401},"responseTime":1,"msg":"request completed"}
+May 17 03:52:56.35
+GET
+401
+olyxee-logistics-admin-f3onpw769-olyxee.vercel.app
+/api/auth/me
+2
+{"level":30,"time":1778982776574,"pid":4,"hostname":"169.254.36.227","req":{"id":1,"method":"GET","url":"/api/auth/me"},"res":{"statusCode":401},"responseTime":17,"msg":"request completed"}
+May 17 03:35:17.41
+POST
+500
+logistics.olyxee.com
+/api/auth/login
+2
+{"level":30,"time":1778981718373,"pid":4,"hostname":"169.254.63.15","req":{"id":2,"method":"POST","url":"/api/auth/login"},"res":{"statusCode":500},"err":{"type":"Error","message":"failed with status code 500","stack":"Error: failed with status code 500\n at onResFinished (file:///var/task/api/_bundle/app.mjs:30353:45)\n at ServerResponse.onResponseComplete (file:///var/task/api/_bundle/app.mjs:30403:18)\n at ServerResponse.emit (node:events:520:35)\n at /opt/rust/nodejs.js:17:5080\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at /opt/rust/nodejs.js:17:5068\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at e.emit (/opt/rust/nodejs.js:17:5056)\n at onFinish (node:_http_outgoing:1026:10)\n at callback (node:internal/streams/writable:764:21)"},"responseTime":537,"msg":"request errored"}
+May 17 03:35:02.85
+POST
+500
+logistics.olyxee.com
+/api/auth/signup
+3
+{"level":30,"time":1778981704180,"pid":4,"hostname":"169.254.63.15","req":{"id":1,"method":"POST","url":"/api/auth/signup"},"res":{"statusCode":500},"err":{"type":"Error","message":"failed with status code 500","stack":"Error: failed with status code 500\n at onResFinished (file:///var/task/api/_bundle/app.mjs:30353:45)\n at ServerResponse.onResponseComplete (file:///var/task/api/_bundle/app.mjs:30403:18)\n at ServerResponse.emit (node:events:520:35)\n at /opt/rust/nodejs.js:17:5080\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at /opt/rust/nodejs.js:17:5068\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at e.emit (/opt/rust/nodejs.js:17:5056)\n at onFinish (node:_http_outgoing:1026:10)\n at callback (node:internal/streams/writable:764:21)"},"responseTime":596,"msg":"request errored"}
+May 17 03:33:19.77
+POST
+500
+logistics.olyxee.com
+/api/auth/signup
+2
+{"level":30,"time":1778981600303,"pid":4,"hostname":"169.254.49.193","req":{"id":5,"method":"POST","url":"/api/auth/signup"},"res":{"statusCode":500},"err":{"type":"Error","message":"failed with status code 500","stack":"Error: failed with status code 500\n at onResFinished (file:///var/task/api/_bundle/app.mjs:30353:45)\n at ServerResponse.onResponseComplete (file:///var/task/api/_bundle/app.mjs:30403:18)\n at ServerResponse.emit (node:events:520:35)\n at /opt/rust/nodejs.js:17:5080\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at /opt/rust/nodejs.js:17:5068\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at e.emit (/opt/rust/nodejs.js:17:5056)\n at onFinish (node:_http_outgoing:1026:10)\n at callback (node:internal/streams/writable:764:21)"},"responseTime":392,"msg":"request errored"}
+May 17 03:33:05.23
+POST
+500
+logistics.olyxee.com
+/api/auth/login
+2
+{"level":30,"time":1778981585960,"pid":4,"hostname":"169.254.49.193","req":{"id":4,"method":"POST","url":"/api/auth/login"},"res":{"statusCode":500},"err":{"type":"Error","message":"failed with status code 500","stack":"Error: failed with status code 500\n at onResFinished (file:///var/task/api/_bundle/app.mjs:30353:45)\n at ServerResponse.onResponseComplete (file:///var/task/api/_bundle/app.mjs:30403:18)\n at ServerResponse.emit (node:events:520:35)\n at /opt/rust/nodejs.js:17:5080\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at /opt/rust/nodejs.js:17:5068\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at e.emit (/opt/rust/nodejs.js:17:5056)\n at onFinish (node:_http_outgoing:1026:10)\n at callback (node:internal/streams/writable:764:21)"},"responseTime":598,"msg":"request errored"}
+May 17 03:33:02.39
+GET
+401
+logistics.olyxee.com
+/api/auth/me
+{"level":30,"time":1778981582820,"pid":4,"hostname":"169.254.49.193","req":{"id":3,"method":"GET","url":"/api/auth/me"},"res":{"statusCode":401},"responseTime":1,"msg":"request completed"}
+May 17 03:32:59.18
+GET
+401
+olyxee-logistics-admin-jc19883k7-olyxee.vercel.app
+/api/auth/me
+2
+{"level":30,"time":1778981579402,"pid":4,"hostname":"169.254.49.193","req":{"id":1,"method":"GET","url":"/api/auth/me"},"res":{"statusCode":401},"responseTime":18,"msg":"request completed"}
+May 17 03:32:59.18
+GET
+401
+olyxee-logistics-admin-jc19883k7-olyxee.vercel.app
+/api/auth/me
+{"level":30,"time":1778981579418,"pid":4,"hostname":"169.254.49.193","req":{"id":2,"method":"GET","url":"/api/auth/me"},"res":{"statusCode":401},"responseTime":1,"msg":"request completed"}
+May 17 03:30:24.17
+POST
+403
+logistics.olyxee.com
+/api/auth/login
+{"level":30,"time":1778981424311,"pid":4,"hostname":"169.254.35.187","req":{"id":4,"method":"POST","url":"/api/auth/login"},"res":{"statusCode":403},"responseTime":1,"msg":"request completed"}
+May 17 03:30:20.47
+GET
+401
+logistics.olyxee.com
+/api/auth/me
+{"level":30,"time":1778981421100,"pid":4,"hostname":"169.254.35.187","req":{"id":3,"method":"GET","url":"/api/auth/me"},"res":{"statusCode":401},"responseTime":1,"msg":"request completed"}
+May 17 03:30:02.07
+GET
+401
+olyxee-logistics-admin-j6fiovrtp-olyxee.vercel.app
+/api/auth/me
+{"level":30,"time":1778981402290,"pid":4,"hostname":"169.254.35.187","req":{"id":2,"method":"GET","url":"/api/auth/me"},"res":{"statusCode":401},"responseTime":1,"msg":"request completed"}
+May 17 03:30:02.03
+GET
+401
+olyxee-logistics-admin-j6fiovrtp-olyxee.vercel.app
+/api/auth/me
+3
+{"level":30,"time":1778981402273,"pid":4,"hostname":"169.254.35.187","req":{"id":1,"method":"GET","url":"/api/auth/me"},"res":{"statusCode":401},"responseTime":22,"msg":"request completed"}
+May 17 03:27:28.06
+GET
+401
+olyxee-logistics-admin-dxnkeqcag-olyxee.vercel.app
+/api/auth/me
+{"level":30,"time":1778981248227,"pid":4,"hostname":"169.254.6.5","req":{"id":2,"method":"GET","url":"/api/auth/me"},"res":{"statusCode":401},"responseTime":1,"msg":"request completed"}
+May 17 03:27:27.94
+GET
+401
+olyxee-logistics-admin-dxnkeqcag-olyxee.vercel.app
+/api/auth/me
+3
+{"level":30,"time":1778981248130,"pid":4,"hostname":"169.254.6.5","req":{"id":1,"method":"GET","url":"/api/auth/me"},"res":{"statusCode":401},"responseTime":22,"msg":"request completed"}
+No more logs to show within selected timeline
