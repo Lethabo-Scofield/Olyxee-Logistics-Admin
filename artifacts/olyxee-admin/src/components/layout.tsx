@@ -77,20 +77,25 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-sidebar text-sidebar-foreground">
-      {/* Logo / Brand */}
-      <div className="flex items-center gap-3 px-5 h-14 border-b border-sidebar-border flex-shrink-0">
+      {/* Logo / Brand — logo (or initial fallback) + company name, always side
+          by side so the brand is named even when a logo is uploaded. */}
+      <div className="flex items-center gap-2.5 px-5 h-14 border-b border-sidebar-border flex-shrink-0 min-w-0">
         {logoUrl ? (
-          <img src={logoUrl} alt={businessName} className="h-7 w-auto object-contain max-w-[120px]" />
+          <img
+            src={logoUrl}
+            alt={businessName}
+            className="h-7 w-auto object-contain max-w-[80px] flex-shrink-0"
+          />
         ) : (
-          <>
-            <div className="h-7 w-7 bg-primary flex items-center justify-center flex-shrink-0">
-              <span className="text-white text-xs font-bold leading-none">
-                {businessName.charAt(0).toUpperCase()}
-              </span>
-            </div>
-            <span className="font-semibold text-sm tracking-tight truncate">{businessName}</span>
-          </>
+          <div className="h-7 w-7 bg-primary flex items-center justify-center flex-shrink-0">
+            <span className="text-white text-xs font-bold leading-none">
+              {businessName.charAt(0).toUpperCase()}
+            </span>
+          </div>
         )}
+        <span className="font-semibold text-sm tracking-tight truncate min-w-0">
+          {businessName}
+        </span>
       </div>
 
       {/* Nav */}
