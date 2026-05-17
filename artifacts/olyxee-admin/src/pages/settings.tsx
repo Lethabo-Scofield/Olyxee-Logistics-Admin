@@ -7,11 +7,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Moon, Sun, Check, AlertCircle, Upload, X, Eye, Loader2, Pipette, Shuffle,
-  Building2, Palette, Mail, SunMoon, RotateCcw, Sparkles,
+  Building2, Palette, Mail, SunMoon, RotateCcw, Sparkles, History,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useGetBusiness, useUpdateBusiness } from "@workspace/api-client-react";
+import { ActivityFeed } from "@/components/activity-feed";
 
 // ─── Logo + favicon compression ───────────────────────────────────────────────
 const LOGO_MAX_DIMENSION = 512;
@@ -623,6 +624,7 @@ const NAV_ITEMS = [
   { id: "preview", label: "Preview", icon: Sparkles },
   { id: "emails", label: "Emails", icon: Mail },
   { id: "appearance", label: "Appearance", icon: SunMoon },
+  { id: "activity", label: "Activity", icon: History },
 ] as const;
 
 // ─── Settings page ────────────────────────────────────────────────────────────
@@ -939,6 +941,17 @@ export default function SettingsPage() {
                 />
               </div>
             </div>
+          </SectionShell>
+        </TabsContent>
+
+        {/* ─── Activity ─────────────────────────────────────────────── */}
+        <TabsContent value="activity" className="mt-6 focus-visible:outline-none">
+          <SectionShell
+            icon={History}
+            title="Activity"
+            description="A plain-English log of what's happened in your account."
+          >
+            <ActivityFeed />
           </SectionShell>
         </TabsContent>
       </Tabs>

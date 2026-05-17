@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
 import {
-  LayoutDashboard, Users, Package, FileText,
+  LayoutDashboard, Users, Package,
   Menu, Moon, Sun, Settings, LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -69,7 +69,6 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/customers", label: "Customers", icon: Users },
   { href: "/orders", label: "Orders", icon: Package },
-  { href: "/audit-logs", label: "Audit Logs", icon: FileText },
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {

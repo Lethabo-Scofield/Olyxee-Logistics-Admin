@@ -14,7 +14,6 @@ import CustomersPage from "@/pages/customers";
 import CustomerDetailPage from "@/pages/customer-detail";
 import OrdersPage from "@/pages/orders";
 import OrderDetailPage from "@/pages/order-detail";
-import AuditLogsPage from "@/pages/audit-logs";
 import SettingsPage from "@/pages/settings";
 import ProfilePage from "@/pages/profile";
 import NotFound from "@/pages/not-found";
@@ -103,7 +102,15 @@ function AppRoutes() {
       <Route path="/customers/:id" component={() => <Protected component={CustomerDetailPage} />} />
       <Route path="/orders" component={() => <Protected component={OrdersPage} />} />
       <Route path="/orders/:id" component={() => <Protected component={OrderDetailPage} />} />
-      <Route path="/audit-logs" component={() => <Protected component={AuditLogsPage} />} />
+      {/* Legacy /audit-logs URL — bounce to the new Settings → Activity tab. */}
+      <Route path="/audit-logs">
+        {() => {
+          if (typeof window !== "undefined") {
+            window.location.replace(`${basePath}/settings#activity`);
+          }
+          return null;
+        }}
+      </Route>
       <Route path="/settings" component={() => <Protected component={SettingsPage} />} />
       <Route path="/profile" component={() => <Protected component={ProfilePage} />} />
       <Route component={NotFound} />
