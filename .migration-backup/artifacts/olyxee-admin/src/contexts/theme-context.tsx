@@ -6,6 +6,8 @@ export interface ThemeSettings {
   logoUrl: string;
   faviconUrl: string;
   businessName: string;
+  // Short tag-line shown under the business name on emails and the customer
+  // tracking page. Kept optional — empty string means "don't render".
   businessTagline: string;
 }
 
@@ -61,12 +63,42 @@ function applyPrimaryColor(hex: string) {
   root.style.setProperty("--brand-l", `${hsl.l}%`);
 }
 
+// Replace any existing favicon link tags with a single new one. Used both to
+// apply a user-uploaded favicon and to reset back to the bundled default.
+function setFaviconLink(href: string, type?: string) {
+  if (typeof document === "undefined") return;
+  const head = document.head;
+  const existing = head.querySelectorAll(
+    'link[rel="icon"], link[rel="shortcut icon"], link[rel="apple-touch-icon"]',
+  );
+  existing.forEach((el) => el.parentNode?.removeChild(el));
+  const link = document.createElement("link");
+  link.rel = "icon";
+  if (type) link.type = type;
+  link.href = href;
+  head.appendChild(link);
+}
+
+function applyFavicon(dataUrl: string) {
+  if (dataUrl) {
+    // Best-effort MIME sniff from the data URL prefix; browsers don't strictly
+    // require it but it makes the served favicon a bit cleaner.
+    const match = /^data:([^;]+);/.exec(dataUrl);
+    setFaviconLink(dataUrl, match?.[1]);
+  } else {
+    setFaviconLink(`${import.meta.env.BASE_URL}favicon.png`, "image/png");
+  }
+}
+
 function loadSettings(): ThemeSettings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return { ...DEFAULTS, ...JSON.parse(raw) };
-  } catch {}
-  return { ...DEFAULTS };
+    if (!raw) return { ...DEFAULTS };
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    return { ...DEFAULTS, ...(parsed as Partial<ThemeSettings>) };
+  } catch {
+    return { ...DEFAULTS };
+  }
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
@@ -79,34 +111,6 @@ const ThemeContext = createContext<ThemeContextValue>({
   setBusinessTagline: () => {},
   saveSettings: () => {},
 });
-
-function applyFavicon(url: string) {
-  if (typeof document === "undefined") return;
-  const head = document.head;
-  // Remove all existing icon links so we replace, not stack.
-  const existing = head.querySelectorAll(
-    'link[rel="icon"], link[rel="shortcut icon"], link[rel="apple-touch-icon"]',
-  );
-  existing.forEach((el) => el.parentNode?.removeChild(el));
-  if (!url) {
-    // Restore default favicon shipped with the app.
-    const def = document.createElement("link");
-    def.rel = "icon";
-    def.type = "image/png";
-    def.href = `${import.meta.env.BASE_URL}favicon.png`;
-    head.appendChild(def);
-    return;
-  }
-  const link = document.createElement("link");
-  link.rel = "icon";
-  // Let the browser sniff the type from the data URL / file.
-  link.href = url;
-  head.appendChild(link);
-  const apple = document.createElement("link");
-  apple.rel = "apple-touch-icon";
-  apple.href = url;
-  head.appendChild(apple);
-}
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<ThemeSettings>(loadSettings);
@@ -128,6 +132,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     applyFavicon(settings.faviconUrl);
   }, [settings.faviconUrl]);
+
+  // Keep the browser tab title in sync with the business name, exactly the
+  // way the favicon follows the uploaded image. Falls back to "Olyxee Admin"
+  // when the field is blank so the tab never shows an empty title.
+  useEffect(() => {
+    const name = settings.businessName.trim() || "Olyxee Admin";
+    document.title = `${name} · Logistics Operations Console`;
+  }, [settings.businessName]);
 
   const update = useCallback((partial: Partial<ThemeSettings>) => {
     setSettings(prev => {

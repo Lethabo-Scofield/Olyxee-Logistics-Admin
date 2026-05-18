@@ -10,14 +10,7 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Enable SSL for hosted Postgres (Supabase, Neon, RDS, etc.). Skip only for
-// explicitly local connections so dev against a local pg server keeps working.
-const dbUrl = process.env.DATABASE_URL;
-const isLocal = /@(localhost|127\.0\.0\.1|::1)/i.test(dbUrl);
-export const pool = new Pool({
-  connectionString: dbUrl,
-  ssl: isLocal ? undefined : { rejectUnauthorized: false },
-});
+export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 export const db = drizzle(pool, { schema });
 
 export * from "./schema";

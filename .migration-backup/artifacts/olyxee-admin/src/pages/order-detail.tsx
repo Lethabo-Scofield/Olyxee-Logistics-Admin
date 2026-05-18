@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useParams } from "wouter";
-import { useGetOrder, useUpdateOrderStatus, useResendOrderEmail } from "@workspace/api-client-react";
+import { useGetOrder, useUpdateOrderStatus, useResendOrderEmail, useGetBusiness } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -9,41 +9,136 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/status-badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   ArrowLeft, Copy, Check, Mail, RefreshCw, MapPin, ExternalLink,
-  ClipboardList, Settings2, UserCheck, Truck, AlertTriangle,
-  Navigation, House, PackageX, Ban, Package,
+  House, PackageX, ArrowRight, Sparkles, ChevronDown,
 } from "lucide-react";
+import { EmptyState } from "@/components/page-loader";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { statusChoices, isTerminal } from "@/lib/order-statuses";
+import {
+  statusChoices, isTerminal, getStatusVisual, suggestedMessages, statusCopy,
+} from "@/lib/order-statuses";
 
-const STATUS_ICON_CONFIG: Record<string, {
-  icon: React.ElementType;
-  bg: string;
-  border: string;
-  iconColor: string;
-  label: string;
-}> = {
-  "Order received":   { icon: ClipboardList, bg: "bg-sky-50",    border: "border-sky-300",   iconColor: "text-sky-600",   label: "Order Received" },
-  "Processing":       { icon: Settings2,     bg: "bg-violet-50", border: "border-violet-300", iconColor: "text-violet-600",label: "Processing" },
-  "Driver assigned":  { icon: UserCheck,     bg: "bg-indigo-50", border: "border-indigo-300", iconColor: "text-indigo-600",label: "Driver Assigned" },
-  "In transit":       { icon: Truck,         bg: "bg-blue-50",   border: "border-blue-300",   iconColor: "text-blue-600",  label: "In Transit" },
-  "Delayed":          { icon: AlertTriangle, bg: "bg-amber-50",  border: "border-amber-300",  iconColor: "text-amber-600", label: "Delayed" },
-  "Out for delivery": { icon: Navigation,    bg: "bg-orange-50", border: "border-orange-300", iconColor: "text-orange-600",label: "Out for Delivery" },
-  "Delivered":        { icon: House,         bg: "bg-green-50",  border: "border-green-400",  iconColor: "text-green-600", label: "Delivered" },
-  "Failed delivery":  { icon: PackageX,      bg: "bg-red-50",    border: "border-red-300",    iconColor: "text-red-600",   label: "Failed Delivery" },
-  "Cancelled":        { icon: Ban,           bg: "bg-gray-100",  border: "border-gray-300",   iconColor: "text-gray-500",  label: "Cancelled" },
-};
+const getStatusConfig = getStatusVisual;
 
-function getStatusConfig(status: string) {
-  return STATUS_ICON_CONFIG[status] ?? {
-    icon: Package,
-    bg: "bg-muted",
-    border: "border-border",
-    iconColor: "text-muted-foreground",
-    label: status,
-  };
+// Inline status pill — used in the Step 1 current → new flow + the select.
+function StatusChip({ status, subtle = false, inline = false }: {
+  status: string;
+  subtle?: boolean;
+  inline?: boolean;
+}) {
+  const cfg = getStatusVisual(status);
+  const Icon = cfg.icon;
+  if (inline) {
+    return (
+      <span className="flex items-center gap-2 min-w-0">
+        <span className={`flex h-5 w-5 items-center justify-center ${cfg.bg} ${cfg.border} border flex-shrink-0`}>
+          <Icon className={`h-3 w-3 ${cfg.iconColor}`} />
+        </span>
+        <span className="text-sm truncate">{cfg.label}</span>
+      </span>
+    );
+  }
+  return (
+    <div className={`flex items-center gap-2 px-3 py-2 border ${
+      subtle ? "bg-muted/30 border-border" : `${cfg.bg} ${cfg.border}`
+    }`}>
+      <span className={`flex h-6 w-6 items-center justify-center ${
+        subtle ? "bg-background border" : `${cfg.bg} ${cfg.border} border`
+      } flex-shrink-0`}>
+        <Icon className={`h-3.5 w-3.5 ${subtle ? "text-muted-foreground" : cfg.iconColor}`} />
+      </span>
+      <div className="min-w-0">
+        <p className="text-[9px] uppercase tracking-wider text-muted-foreground leading-none mb-0.5">
+          {subtle ? "From" : "To"}
+        </p>
+        <p className={`text-xs font-semibold leading-none truncate ${subtle ? "text-muted-foreground" : ""}`}>
+          {cfg.label}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// Substitute {name}/{businessName} placeholders the same way the server
+// template does (see artifacts/api-server/src/lib/email.ts) so the preview
+// stays honest.
+function renderGreetingPreview(template: string | null | undefined, name: string): string {
+  const t = (template ?? "").trim() || "Hi {name},";
+  return t.replace(/\{name\}/gi, name);
+}
+function renderSignaturePreview(template: string | null | undefined, businessName: string): string {
+  // Mirror the server helper exactly (artifacts/api-server/src/lib/email.ts):
+  // default template is "— {businessName}", and {businessName} is replaced with
+  // the literal value (no fallback string) so admin preview never drifts from
+  // what's actually sent.
+  const t = (template ?? "").trim() || "— {businessName}";
+  return t.replace(/\{businessName\}/gi, businessName);
+}
+
+function EmailPreview({
+  customerName, customerEmail, status, message, trackingId,
+  greetingTemplate, signatureTemplate, footerNote, businessName,
+}: {
+  customerName: string;
+  customerEmail: string;
+  status: string;
+  message: string;
+  trackingId: string;
+  greetingTemplate: string | null | undefined;
+  signatureTemplate: string | null | undefined;
+  footerNote: string | null | undefined;
+  businessName: string;
+}) {
+  const cfg = getStatusVisual(status);
+  const copy = statusCopy(status);
+  const greeting = renderGreetingPreview(greetingTemplate, customerName || "Customer");
+  const signature = renderSignaturePreview(signatureTemplate, businessName);
+
+  return (
+    <div className="border bg-muted/20">
+      {/* Email header bar (fake inbox row) */}
+      <div className="px-3 py-2 border-b bg-background flex items-center gap-2 text-[11px] text-muted-foreground">
+        <Mail className="h-3 w-3" />
+        <span className="truncate">To: <span className="font-medium text-foreground">{customerEmail || "—"}</span></span>
+        <span className="ml-auto font-medium text-foreground/70">Preview</span>
+      </div>
+      {/* Email body preview */}
+      <div className="p-4 bg-white text-black">
+        <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-2">
+          {cfg.label.toUpperCase()}
+        </p>
+        <h3 className="text-base font-bold leading-tight mb-1">{copy.headline}</h3>
+        <p className="text-xs text-zinc-800 leading-relaxed mb-1">{greeting}</p>
+        <p className="text-xs text-zinc-600 leading-relaxed">{copy.intro}</p>
+        {message.trim() && (
+          <div className="mt-3 pl-3 border-l-2 bg-zinc-50 py-2 pr-2" style={{ borderColor: "#a1a1aa" }}>
+            <p className="text-[9px] uppercase tracking-wider text-zinc-500 font-semibold mb-0.5">
+              A note from our team
+            </p>
+            <p className="text-xs text-zinc-800 whitespace-pre-wrap">{message.trim()}</p>
+          </div>
+        )}
+        <div className="mt-3 flex items-center justify-between gap-2 pt-3 border-t border-zinc-100">
+          <div className="min-w-0">
+            <p className="text-[9px] uppercase tracking-wider text-zinc-500 font-semibold leading-none">Tracking</p>
+            <p className="text-[11px] font-mono font-semibold truncate">{trackingId}</p>
+          </div>
+          <span className="text-[10px] px-2 py-1 bg-zinc-900 text-white font-semibold flex-shrink-0">
+            Track your order →
+          </span>
+        </div>
+        <p className="mt-3 text-xs text-zinc-800 whitespace-pre-wrap leading-relaxed">{signature}</p>
+        {footerNote?.trim() && (
+          <p className="mt-2 text-[11px] text-zinc-500 whitespace-pre-wrap leading-relaxed border-t border-zinc-100 pt-2">
+            {footerNote.trim()}
+          </p>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function CopyButton({ text }: { text: string }) {
@@ -55,9 +150,11 @@ function CopyButton({ text }: { text: string }) {
   };
   return (
     <button
+      type="button"
       onClick={copy}
       className="ml-1 p-1 text-muted-foreground hover:text-foreground transition-colors"
-      title="Copy"
+      title={copied ? "Copied" : "Copy"}
+      aria-label={copied ? "Copied to clipboard" : "Copy to clipboard"}
     >
       {copied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
     </button>
@@ -67,6 +164,7 @@ function CopyButton({ text }: { text: string }) {
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: order, isLoading, refetch } = useGetOrder(id ?? "");
+  const { data: business } = useGetBusiness();
   const updateStatusMutation = useUpdateOrderStatus();
   const resendMutation = useResendOrderEmail();
 
@@ -126,7 +224,20 @@ export default function OrderDetailPage() {
   }
 
   if (!order) {
-    return <div className="text-center py-16 text-muted-foreground">Order not found</div>;
+    return (
+      <EmptyState
+        icon={<PackageX className="h-12 w-12" />}
+        title="Order not found"
+        description="This order may have been deleted or the tracking link is incorrect."
+        action={
+          <Link href="/orders">
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <ArrowLeft className="h-4 w-4" /> Back to orders
+            </Button>
+          </Link>
+        }
+      />
+    );
   }
 
   return (
@@ -176,97 +287,155 @@ export default function OrderDetailPage() {
           {/* ★ UPDATE STATUS — hero card */}
           <Card className="border-2 border-primary/20">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Mail className="h-4 w-4 text-primary" />
-                Update Order Status
-              </CardTitle>
-              <p className="text-xs text-muted-foreground">
-                Changing the status saves a tracking event and automatically emails the customer.
+              <CardTitle className="text-base">Update Order Status</CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                Pick the next status. We'll log the change and email{" "}
+                <span className="font-medium text-foreground">{order.customer?.fullName ?? "the customer"}</span> automatically.
               </p>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleStatusUpdate} className="space-y-4">
-                <div className="space-y-2">
-                  <Label>New Status <span className="text-destructive">*</span></Label>
-                  {isTerminal(order.currentStatus) ? (
-                    <p className="text-sm text-muted-foreground border px-3 py-2 bg-muted/40">
-                      This order is <span className="font-semibold">{order.currentStatus}</span> — no further status changes are possible.
-                    </p>
-                  ) : (() => {
-                    const choices = statusChoices(order.currentStatus);
-                    if (!choices) return null;
-                    return (
-                      <Select
-                        value={statusForm.status}
-                        onValueChange={v => setStatusForm(f => ({ ...f, status: v }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Choose next status..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            <SelectLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Next step</SelectLabel>
-                            <SelectItem value={choices.primary}>
-                              <span className="flex items-center gap-2">
-                                <span className="text-primary font-bold">→</span> {choices.primary}
-                              </span>
-                            </SelectItem>
-                          </SelectGroup>
-                          <SelectSeparator />
-                          <SelectGroup>
-                            <SelectLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Exceptions</SelectLabel>
-                            {choices.exceptions.map(s => (
-                              <SelectItem key={s} value={s}>
-                                <span className="flex items-center gap-2">
-                                  <span className={s === "Cancelled" ? "text-red-500 font-bold" : "text-amber-500 font-bold"}>
-                                    {s === "Cancelled" ? "✕" : "⚠"}
-                                  </span>
-                                  {s}
-                                </span>
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                    );
-                  })()}
+              {isTerminal(order.currentStatus) ? (
+                <div className="border bg-muted/40 px-4 py-6 text-center">
+                  <p className="text-sm">
+                    This order is <span className="font-semibold">{order.currentStatus}</span>.
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    No further status changes are possible.
+                  </p>
                 </div>
-
-                <div className="grid sm:grid-cols-2 gap-4">
+              ) : (
+                <form onSubmit={handleStatusUpdate} className="space-y-5">
+                  {/* Step 1: pick the next status — visual current → new */}
                   <div className="space-y-2">
-                    <Label>
-                      Message{" "}
-                      <span className="text-muted-foreground font-normal text-xs">(in customer email)</span>
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Step 1 · Choose the next status
                     </Label>
+
+                    <div className="flex items-stretch gap-2">
+                      {/* Current */}
+                      <StatusChip status={order.currentStatus} subtle />
+                      <div className="flex items-center text-muted-foreground/50">
+                        <ArrowRight className="h-4 w-4" />
+                      </div>
+                      {/* New */}
+                      <div className="flex-1 min-w-0">
+                        {(() => {
+                          const choices = statusChoices(order.currentStatus);
+                          if (!choices) return null;
+                          return (
+                            <Select
+                              value={statusForm.status}
+                              onValueChange={v => setStatusForm(f => ({ ...f, status: v, message: "" }))}
+                            >
+                              <SelectTrigger className="h-auto py-2">
+                                {statusForm.status
+                                  ? <StatusChip status={statusForm.status} inline />
+                                  : <span className="text-muted-foreground text-sm">Pick the new status...</span>}
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectGroup>
+                                  <SelectLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Next step (recommended)</SelectLabel>
+                                  <SelectItem value={choices.primary}>
+                                    <StatusChip status={choices.primary} inline />
+                                  </SelectItem>
+                                </SelectGroup>
+                                <SelectSeparator />
+                                <SelectGroup>
+                                  <SelectLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">Exceptions</SelectLabel>
+                                  {choices.exceptions.map(s => (
+                                    <SelectItem key={s} value={s}>
+                                      <StatusChip status={s} inline />
+                                    </SelectItem>
+                                  ))}
+                                </SelectGroup>
+                              </SelectContent>
+                            </Select>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Step 2: optional note + location */}
+                  <div className="space-y-3">
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Step 2 · Add a note <span className="font-normal normal-case text-muted-foreground/70">(optional, shown in the email)</span>
+                    </Label>
+
                     <Textarea
                       value={statusForm.message}
                       onChange={e => setStatusForm(f => ({ ...f, message: e.target.value }))}
-                      placeholder="e.g. Your parcel has left our warehouse."
-                      rows={3}
+                      placeholder="Write a short note to the customer..."
+                      rows={2}
                     />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>
-                      Location{" "}
-                      <span className="text-muted-foreground font-normal text-xs">(optional)</span>
-                    </Label>
-                    <Input
-                      value={statusForm.location}
-                      onChange={e => setStatusForm(f => ({ ...f, location: e.target.value }))}
-                      placeholder="e.g. Johannesburg Hub"
-                    />
-                  </div>
-                </div>
 
-                <Button
-                  type="submit"
-                  disabled={!statusForm.status || updateStatusMutation.isPending}
-                  className="gap-2 w-full sm:w-auto"
-                >
-                  <Mail className="h-4 w-4" />
-                  {updateStatusMutation.isPending ? "Saving..." : "Save & Send Email to Customer"}
-                </Button>
-              </form>
+                    {/* Suggested message chips */}
+                    {statusForm.status && suggestedMessages(statusForm.status).length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
+                          <Sparkles className="h-3 w-3" /> Suggested:
+                        </span>
+                        {suggestedMessages(statusForm.status).map((msg, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setStatusForm(f => ({ ...f, message: msg }))}
+                            className="text-[11px] px-2 py-1 border border-border bg-muted/40 hover:bg-muted text-foreground/80 hover:text-foreground transition-colors text-left max-w-full truncate"
+                            title={msg}
+                          >
+                            {msg.length > 50 ? msg.slice(0, 50) + "…" : msg}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-normal text-muted-foreground">
+                        Location <span className="text-muted-foreground/70">(optional, shown in timeline only)</span>
+                      </Label>
+                      <Input
+                        value={statusForm.location}
+                        onChange={e => setStatusForm(f => ({ ...f, location: e.target.value }))}
+                        placeholder="e.g. Johannesburg Hub"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Step 3: email preview */}
+                  {statusForm.status && (
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Step 3 · What the customer will receive
+                      </Label>
+                      <EmailPreview
+                        customerName={order.customer?.fullName ?? "Customer"}
+                        customerEmail={order.customer?.email ?? ""}
+                        status={statusForm.status}
+                        message={statusForm.message}
+                        trackingId={order.trackingId}
+                        greetingTemplate={business?.emailGreeting}
+                        signatureTemplate={business?.emailSignature}
+                        footerNote={business?.emailFooterNote}
+                        businessName={business?.name ?? ""}
+                      />
+                    </div>
+                  )}
+
+                  <Button
+                    type="submit"
+                    disabled={!statusForm.status || updateStatusMutation.isPending}
+                    className="gap-2 w-full"
+                    size="lg"
+                  >
+                    <Mail className="h-4 w-4" />
+                    {updateStatusMutation.isPending
+                      ? "Saving & sending..."
+                      : statusForm.status
+                      ? `Save & email ${order.customer?.fullName?.split(" ")[0] ?? "customer"}`
+                      : "Save & send email"}
+                  </Button>
+                </form>
+              )}
             </CardContent>
           </Card>
 
@@ -279,117 +448,148 @@ export default function OrderDetailPage() {
               {!order.trackingEvents?.length ? (
                 <p className="text-sm text-muted-foreground">No tracking events yet.</p>
               ) : (
-                <div className="relative pl-12">
-                  {/* Vertical line */}
-                  <div className="absolute left-5 top-6 bottom-6 w-px bg-border" />
+                // Clean two-column layout: fixed icon rail (40px) + content.
+                // The vertical connector lives inside the icon column and is
+                // drawn between rows (not under the bubble), so nothing
+                // overlaps and every bubble sits centered on the line.
+                <ol className="space-y-0">
+                  {order.trackingEvents.map((event, idx) => {
+                    const cfg = getStatusConfig(event.status);
+                    const Icon = cfg.icon;
+                    const isLatest = idx === 0;
+                    const isLast = idx === order.trackingEvents!.length - 1;
+                    const isDelivered = event.status === "Delivered";
 
-                  <div className="space-y-6">
-                    {order.trackingEvents.map((event, idx) => {
-                      const cfg = getStatusConfig(event.status);
-                      const Icon = cfg.icon;
-                      const isLatest = idx === 0;
-                      const isDelivered = event.status === "Delivered";
-
-                      return (
-                        <div key={event.id} className="relative">
-                          {/* Icon bubble */}
+                    return (
+                      <li key={event.id} className="flex gap-4">
+                        {/* Icon rail — fixed width keeps every row aligned. */}
+                        <div className="flex flex-col items-center w-10 flex-shrink-0">
                           <div
-                            className={`
-                              absolute -left-7 flex items-center justify-center border-2 transition-all
-                              ${isDelivered ? "h-11 w-11 -left-8" : "h-9 w-9"}
-                              ${isLatest ? `${cfg.bg} ${cfg.border}` : "bg-background border-border"}
-                            `}
+                            className={`h-9 w-9 flex items-center justify-center border-2 ${
+                              isLatest
+                                ? `${cfg.bg} ${cfg.border}`
+                                : "bg-background border-border"
+                            }`}
                           >
                             <Icon
-                              className={`
-                                ${isDelivered ? "h-5 w-5" : "h-4 w-4"}
-                                ${isLatest ? cfg.iconColor : "text-muted-foreground/40"}
-                              `}
+                              className={`h-4 w-4 ${
+                                isLatest ? cfg.iconColor : "text-muted-foreground/50"
+                              }`}
                             />
                           </div>
-
-                          {/* Content */}
-                          <div className={`min-w-0 pt-1.5 ${isDelivered && isLatest ? "pl-2" : ""}`}>
-                            {/* Delivered special banner */}
-                            {isDelivered && isLatest && (
-                              <div className="flex items-center gap-2 mb-2 px-3 py-1.5 bg-green-50 border border-green-200 w-fit">
-                                <House className="h-3.5 w-3.5 text-green-600" />
-                                <span className="text-xs font-semibold text-green-700 tracking-wide uppercase">
-                                  Package received by customer
-                                </span>
-                              </div>
-                            )}
-
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className={`text-sm font-semibold ${isLatest ? "" : "text-muted-foreground"}`}>
-                                {cfg.label}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {format(new Date(event.createdAt), "MMM d, yyyy · HH:mm")}
-                              </span>
-                              {isLatest && (
-                                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground border px-1.5 py-0.5">
-                                  Latest
-                                </span>
-                              )}
-                            </div>
-
-                            {event.message && (
-                              <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                                {event.message}
-                              </p>
-                            )}
-                            {event.location && (
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                                <MapPin className="h-3 w-3" /> {event.location}
-                              </div>
-                            )}
-                          </div>
+                          {/* Connector line — only between rows, never below
+                              the last one, so the rail doesn't dangle. */}
+                          {!isLast && <div className="w-px flex-1 bg-border min-h-[1.5rem]" />}
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
+
+                        {/* Content — bottom padding only when more rows follow. */}
+                        <div className={`min-w-0 flex-1 pt-1 ${isLast ? "" : "pb-6"}`}>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span
+                              className={`text-sm font-semibold ${
+                                isLatest ? "" : "text-muted-foreground"
+                              }`}
+                            >
+                              {cfg.label}
+                            </span>
+                            {isLatest && (
+                              <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground border px-1.5 py-0.5">
+                                Latest
+                              </span>
+                            )}
+                            <span className="text-xs text-muted-foreground ml-auto">
+                              {format(new Date(event.createdAt), "MMM d, yyyy · HH:mm")}
+                            </span>
+                          </div>
+
+                          {/* Delivered confirmation chip — inline, no longer
+                              overlaps the icon column. */}
+                          {isDelivered && isLatest && (
+                            <div className="mt-2 inline-flex items-center gap-2 px-2.5 py-1 bg-green-50 border border-green-200 w-fit">
+                              <House className="h-3.5 w-3.5 text-green-600" />
+                              <span className="text-[11px] font-semibold text-green-700 tracking-wide uppercase">
+                                Package received by customer
+                              </span>
+                            </div>
+                          )}
+
+                          {event.message && (
+                            <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                              {event.message}
+                            </p>
+                          )}
+                          {event.location && (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1.5">
+                              <MapPin className="h-3 w-3" /> {event.location}
+                            </div>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
               )}
             </CardContent>
           </Card>
 
-          {/* Email history */}
+          {/* Email history — collapsed by default so it doesn't compete with
+              the main status-update flow above. Operators rarely need it;
+              when they do, the count makes it discoverable and one click
+              opens it. */}
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Email History</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {!order.emailNotifications?.length ? (
-                <p className="text-sm text-muted-foreground">No emails sent yet.</p>
-              ) : (
-                order.emailNotifications.map((notif) => (
-                  <div
-                    key={notif.id}
-                    className="flex items-start justify-between gap-3 p-3 border bg-muted/20"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{notif.subject}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">To: {notif.customerEmail}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(notif.createdAt), "MMM d, yyyy · HH:mm")}
-                      </p>
-                    </div>
-                    <span
-                      className={`text-xs font-semibold px-2 py-0.5 flex-shrink-0 border ${
-                        notif.status === "sent"
-                          ? "text-green-700 border-green-200 bg-green-50"
-                          : notif.status === "failed"
-                          ? "text-red-700 border-red-200 bg-red-50"
-                          : "text-muted-foreground border-border bg-muted"
-                      }`}
-                    >
-                      {notif.status}
+            <Collapsible>
+              <CollapsibleTrigger asChild>
+                <button
+                  type="button"
+                  className="group w-full flex items-center justify-between gap-3 px-6 py-4 text-left hover:bg-muted/30 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  aria-label="Toggle email history"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="text-base font-semibold">Email History</span>
+                    <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 border border-border">
+                      {order.emailNotifications?.length ?? 0}
                     </span>
                   </div>
-                ))
-              )}
-            </CardContent>
+                  <ChevronDown
+                    className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180"
+                  />
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <CardContent className="space-y-2 pt-0">
+                  {!order.emailNotifications?.length ? (
+                    <p className="text-sm text-muted-foreground">No emails sent yet.</p>
+                  ) : (
+                    order.emailNotifications.map((notif) => (
+                      <div
+                        key={notif.id}
+                        className="flex items-start justify-between gap-3 p-3 border bg-muted/20"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{notif.subject}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">To: {notif.customerEmail}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(notif.createdAt), "MMM d, yyyy · HH:mm")}
+                          </p>
+                        </div>
+                        <span
+                          className={`text-xs font-semibold px-2 py-0.5 flex-shrink-0 border ${
+                            notif.status === "sent"
+                              ? "text-green-700 border-green-200 bg-green-50"
+                              : notif.status === "failed"
+                              ? "text-red-700 border-red-200 bg-red-50"
+                              : "text-muted-foreground border-border bg-muted"
+                          }`}
+                        >
+                          {notif.status}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </CollapsibleContent>
+            </Collapsible>
           </Card>
         </div>
 

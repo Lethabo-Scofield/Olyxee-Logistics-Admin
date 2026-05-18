@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
 import {
-  LayoutDashboard, Users, Package, FileText,
+  LayoutDashboard, Users, Package,
   Menu, Moon, Sun, Settings, LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,30 +12,42 @@ import { useAuth } from "@/contexts/auth-context";
 
 function UserRow() {
   const { user, signOut } = useAuth();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
 
-  const meta = (user?.user_metadata ?? {}) as Record<string, unknown>;
-  const fullName =
-    (typeof meta.full_name === "string" && meta.full_name) ||
-    (typeof meta.name === "string" && meta.name) ||
-    user?.email ||
-    "User";
+  // AuthUser exposes `name` + `email` directly (set by the auth context from
+  // /auth/me). The previous `user_metadata` shape was a leftover from an
+  // earlier Supabase implementation and never existed on this type.
+  const fullName = user?.name || user?.email || "User";
   const email = user?.email ?? "";
   const initial = (fullName || "U").charAt(0).toUpperCase();
+  const isOnProfile = location === "/profile";
 
   return (
     <div className="flex items-center gap-2.5 px-4 py-3">
-      <Avatar className="h-7 w-7 flex-shrink-0">
-        <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground text-xs">
-          {initial}
-        </AvatarFallback>
-      </Avatar>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium truncate">{fullName}</p>
-        {email ? (
-          <p className="text-xs text-sidebar-foreground/50 truncate">{email}</p>
-        ) : null}
-      </div>
+      {/* Avatar + name double as the link to the profile page so the user
+          can click their name in the sidebar to manage their account. */}
+      <Link
+        href="/profile"
+        className={`flex items-center gap-2.5 flex-1 min-w-0 -mx-1 px-1 py-1 transition-colors ${
+          isOnProfile
+            ? "bg-sidebar-accent text-sidebar-accent-foreground"
+            : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+        }`}
+        title="Edit your profile"
+        data-testid="link-profile"
+      >
+        <Avatar className="h-7 w-7 flex-shrink-0">
+          <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground text-xs">
+            {initial}
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-medium truncate">{fullName}</p>
+          {email ? (
+            <p className="text-xs text-sidebar-foreground/50 truncate">{email}</p>
+          ) : null}
+        </div>
+      </Link>
       <button
         type="button"
         onClick={async () => {
@@ -57,7 +69,6 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/customers", label: "Customers", icon: Users },
   { href: "/orders", label: "Orders", icon: Package },
-  { href: "/audit-logs", label: "Audit Logs", icon: FileText },
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -66,20 +77,25 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-sidebar text-sidebar-foreground">
-      {/* Logo / Brand */}
-      <div className="flex items-center gap-3 px-5 h-14 border-b border-sidebar-border flex-shrink-0">
+      {/* Logo / Brand — logo (or initial fallback) + company name, always side
+          by side so the brand is named even when a logo is uploaded. */}
+      <div className="flex items-center gap-2.5 px-5 h-14 border-b border-sidebar-border flex-shrink-0 min-w-0">
         {logoUrl ? (
-          <img src={logoUrl} alt={businessName} className="h-7 w-auto object-contain max-w-[120px]" />
+          <img
+            src={logoUrl}
+            alt={businessName}
+            className="h-7 w-auto object-contain max-w-[80px] flex-shrink-0"
+          />
         ) : (
-          <>
-            <div className="h-7 w-7 bg-primary flex items-center justify-center flex-shrink-0">
-              <span className="text-white text-xs font-bold leading-none">
-                {businessName.charAt(0).toUpperCase()}
-              </span>
-            </div>
-            <span className="font-semibold text-sm tracking-tight truncate">{businessName}</span>
-          </>
+          <div className="h-7 w-7 bg-primary flex items-center justify-center flex-shrink-0">
+            <span className="text-white text-xs font-bold leading-none">
+              {businessName.charAt(0).toUpperCase()}
+            </span>
+          </div>
         )}
+        <span className="font-semibold text-sm tracking-tight truncate min-w-0">
+          {businessName}
+        </span>
       </div>
 
       {/* Nav */}
@@ -164,10 +180,17 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <span className="text-sm font-semibold text-sidebar-foreground">{businessName}</span>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content.
+          The outer <div> owns the scroll. The inner wrapper centers content
+          and caps width at 1536px so tables and cards have breathing room on
+          ultra-wide monitors instead of sprawling edge-to-edge — but tables
+          can still use the full container width on a 27" screen.
+          Padding scales: tight on mobile, generous on desktop. */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden md:mt-0 mt-12">
-        <div className="flex-1 overflow-auto p-6 md:p-8">
-          {children}
+        <div className="flex-1 overflow-auto">
+          <div className="mx-auto w-full max-w-screen-2xl px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 xl:px-10">
+            {children}
+          </div>
         </div>
       </main>
     </div>

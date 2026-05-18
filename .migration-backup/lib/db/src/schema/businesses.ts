@@ -12,6 +12,15 @@ export const businessesTable = pgTable("businesses", {
   employeeCount: text("employee_count"),
   location: text("location"),
   phone: text("phone"),
+  // Customer email customization. All nullable; the email template applies
+  // sensible defaults when these are blank so existing businesses keep
+  // working unchanged.
+  //   emailGreeting    — opening line, supports {name} placeholder.
+  //   emailSignature   — sign-off block; multi-line, supports {businessName}.
+  //   emailFooterNote  — free text shown above the support email in footer.
+  emailGreeting: text("email_greeting"),
+  emailSignature: text("email_signature"),
+  emailFooterNote: text("email_footer_note"),
   onboardingCompleted: boolean("onboarding_completed").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

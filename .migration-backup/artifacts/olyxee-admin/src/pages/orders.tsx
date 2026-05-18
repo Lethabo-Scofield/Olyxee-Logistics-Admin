@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useListOrders, useListCustomers, useCreateOrder, useUpdateOrderStatus } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -13,15 +13,48 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { StatusBadge } from "@/components/status-badge";
 import { Plus, Search, ArrowRight, Package, Pencil, Mail } from "lucide-react";
+import { EmptyState } from "@/components/page-loader";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ORDER_STATUSES, statusChoices, isTerminal } from "@/lib/order-statuses";
+import { ORDER_STATUSES, statusChoices, isTerminal, suggestedMessages } from "@/lib/order-statuses";
+import { Sparkles } from "lucide-react";
+
+function generateOrderReference(): string {
+  const d = new Date();
+  const yy = String(d.getFullYear()).slice(-2);
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  // 4-char alphanumeric suffix, no ambiguous chars (no 0/O/1/I)
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let suffix = "";
+  for (let i = 0; i < 4; i++) {
+    suffix += alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
+  return `REF-${yy}${mm}${dd}-${suffix}`;
+}
 
 function CreateOrderDialog({ onSuccess }: { onSuccess: () => void }) {
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ customerId: "", orderReference: "", description: "", estimatedDeliveryDate: "" });
+  const [form, setForm] = useState(() => ({
+    customerId: "",
+    orderReference: generateOrderReference(),
+    description: "",
+    estimatedDeliveryDate: "",
+  }));
   const createMutation = useCreateOrder();
   const { data: customers } = useListCustomers({ limit: 100 });
+
+  // Refresh the auto-generated reference each time the dialog opens.
+  React.useEffect(() => {
+    if (open) {
+      setForm({
+        customerId: "",
+        orderReference: generateOrderReference(),
+        description: "",
+        estimatedDeliveryDate: "",
+      });
+    }
+  }, [open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +64,6 @@ function CreateOrderDialog({ onSuccess }: { onSuccess: () => void }) {
         onSuccess: () => {
           toast.success("Order created — tracking ID auto-generated");
           setOpen(false);
-          setForm({ customerId: "", orderReference: "", description: "", estimatedDeliveryDate: "" });
           onSuccess();
         },
         onError: () => toast.error("Failed to create order"),
@@ -62,8 +94,23 @@ function CreateOrderDialog({ onSuccess }: { onSuccess: () => void }) {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Order Reference</Label>
-              <Input value={form.orderReference} onChange={e => setForm(f => ({ ...f, orderReference: e.target.value }))} placeholder="e.g. REF-001" />
+              <div className="flex items-center justify-between">
+                <Label>Order Reference</Label>
+                <button
+                  type="button"
+                  onClick={() => setForm(f => ({ ...f, orderReference: generateOrderReference() }))}
+                  className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                  title="Generate a new reference"
+                >
+                  Regenerate
+                </button>
+              </div>
+              <Input
+                value={form.orderReference}
+                onChange={e => setForm(f => ({ ...f, orderReference: e.target.value }))}
+                placeholder="REF-250517-AB12"
+                className="font-mono text-sm"
+              />
             </div>
             <div className="space-y-2">
               <Label>Est. Delivery Date</Label>
@@ -194,6 +241,24 @@ function QuickUpdateSheet({ order, onSuccess }: QuickUpdateSheetProps) {
               placeholder="e.g. Your parcel has left our Johannesburg warehouse."
               rows={3}
             />
+            {form.status && suggestedMessages(form.status).length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
+                  <Sparkles className="h-3 w-3" /> Suggested:
+                </span>
+                {suggestedMessages(form.status).map((msg, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setForm(f => ({ ...f, message: msg }))}
+                    className="text-[11px] px-2 py-1 border border-border bg-muted/40 hover:bg-muted transition-colors text-foreground/80 hover:text-foreground"
+                    title={msg}
+                  >
+                    {msg.length > 40 ? msg.slice(0, 40) + "…" : msg}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -246,7 +311,7 @@ export default function OrdersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Orders</h1>
           <p className="text-muted-foreground text-sm mt-0.5">{data?.total ?? 0} total orders</p>
@@ -265,7 +330,7 @@ export default function OrdersPage() {
               <Button type="submit" variant="secondary">Search</Button>
             </form>
             <Select value={statusFilter} onValueChange={v => { setStatusFilter(v); setPage(1); }}>
-              <SelectTrigger className="w-[200px]"><SelectValue placeholder="All statuses" /></SelectTrigger>
+              <SelectTrigger className="w-full sm:w-[200px]"><SelectValue placeholder="All statuses" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All statuses</SelectItem>
                 {ORDER_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -278,11 +343,11 @@ export default function OrdersPage() {
           {isLoading ? (
             <div className="p-6 space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
           ) : !data?.data.length ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <Package className="h-12 w-12 text-muted-foreground/30 mb-4" />
-              <p className="text-muted-foreground font-medium">No orders found</p>
-              <p className="text-muted-foreground/60 text-sm mt-1">Create your first order to get started</p>
-            </div>
+            <EmptyState
+              icon={<Package className="h-12 w-12" />}
+              title="No orders found"
+              description="Create your first order to get started."
+            />
           ) : (
             <>
               <Table>

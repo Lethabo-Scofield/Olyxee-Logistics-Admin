@@ -3,6 +3,7 @@ import slide1 from "@assets/image_1778124608952.png";
 import slide2 from "@assets/image_1778124623027.png";
 import slide3 from "@assets/image_1778124632624.png";
 import bgImage from "@assets/image_1778124687840.png";
+import olyxeeLogo from "@assets/Olyxee_Black_-removebg-preview_-_Copy_1778978524027.png";
 
 type Slide = {
   src: string;
@@ -20,13 +21,13 @@ const SLIDES: Slide[] = [
   },
   {
     src: slide2,
-    alt: "Driver behind the wheel of a delivery truck",
+    alt: "Delivery truck on the open road",
     title: "Move faster with Olyxee",
     body: "Real-time visibility from dispatch to delivery, with audit trails your operations team can trust.",
   },
   {
     src: slide3,
-    alt: "Truck driver smiling from the cab",
+    alt: "Logistics fleet ready for dispatch",
     title: "Built for the road ahead",
     body: "Olyxee gives logistics businesses the tooling they need to scale — without the spreadsheets.",
   },
@@ -72,11 +73,7 @@ export function AuthLayout({ children }: { children: ReactNode }) {
           </div>
         ))}
 
-        <div className="relative z-10 flex h-full flex-col justify-between p-10 text-white">
-          <div className="text-[11px] font-medium tracking-[0.2em] uppercase opacity-80">
-            Olyxee
-          </div>
-
+        <div className="relative z-10 flex h-full flex-col justify-end p-10 text-white">
           <div className="max-w-md">
             <div className="relative h-[140px]">
               {SLIDES.map((slide, i) => (
@@ -120,7 +117,13 @@ export function AuthLayout({ children }: { children: ReactNode }) {
       </div>
 
       {/* Right: form pane */}
-      <div className="flex items-center justify-center px-4 py-10">
+      <div className="relative flex items-center justify-center px-4 py-10">
+        <img
+          src={olyxeeLogo}
+          alt="Olyxee"
+          className="absolute top-6 left-6 h-10 w-auto"
+          draggable={false}
+        />
         <div className="w-full max-w-[420px]">{children}</div>
       </div>
     </div>

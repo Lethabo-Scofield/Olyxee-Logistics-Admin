@@ -7,7 +7,6 @@ import { customersTable } from "./customers";
 export const ORDER_STATUSES = [
   "Order received",
   "Processing",
-  "Driver assigned",
   "In transit",
   "Delayed",
   "Out for delivery",

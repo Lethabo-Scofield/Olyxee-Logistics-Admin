@@ -30,7 +30,6 @@ router.get("/dashboard/summary", requireAuth, async (req, res) => {
     const activeStatuses = [
       "Order received",
       "Processing",
-      "Driver assigned",
       "In transit",
       "Out for delivery",
     ];

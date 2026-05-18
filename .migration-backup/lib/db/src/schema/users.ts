@@ -8,9 +8,10 @@ export const usersTable = pgTable("users", {
   businessId: text("business_id")
     .notNull()
     .references(() => businessesTable.id),
-  authUserId: text("auth_user_id").notNull().unique(),
+  authUserId: text("auth_user_id").unique(),
+  passwordHash: text("password_hash"),
   name: text("name").notNull(),
-  email: text("email").notNull(),
+  email: text("email").notNull().unique(),
   role: text("role", { enum: ["owner", "admin", "staff"] })
     .notNull()
     .default("staff"),

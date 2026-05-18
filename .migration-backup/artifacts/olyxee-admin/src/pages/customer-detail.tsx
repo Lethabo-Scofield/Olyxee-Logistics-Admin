@@ -9,7 +9,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/status-badge";
-import { ArrowLeft, Edit, Package, Mail, Phone, Building, MapPin } from "lucide-react";
+import { ArrowLeft, Edit, Package, Mail, Phone, Building, MapPin, UserX } from "lucide-react";
+import { EmptyState } from "@/components/page-loader";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -58,7 +59,20 @@ export default function CustomerDetailPage() {
   }
 
   if (!customer) {
-    return <div className="text-center py-16 text-muted-foreground">Customer not found</div>;
+    return (
+      <EmptyState
+        icon={<UserX className="h-12 w-12" />}
+        title="Customer not found"
+        description="This customer may have been deleted or the link is incorrect."
+        action={
+          <Link href="/customers">
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <ArrowLeft className="h-4 w-4" /> Back to customers
+            </Button>
+          </Link>
+        }
+      />
+    );
   }
 
   return (

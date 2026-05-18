@@ -38,25 +38,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 
-  /auth/check-email:
-    post:
-      operationId: checkEmailExists
-      tags: [auth]
-      summary: Check whether a Supabase user exists for the given email
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CheckEmailBody"
-      responses:
-        "200":
-          description: Email lookup result
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CheckEmailResult"
-
   /business:
     get:
       operationId: getBusiness
@@ -156,6 +137,23 @@ paths:
           in: query
           schema:
             type: string
+        - name: hasCompany
+          in: query
+          description: Filter to customers with (true) or without (false) a company name.
+          schema:
+            type: boolean
+        - name: hasPhone
+          in: query
+          description: Filter to customers with (true) or without (false) a phone number.
+          schema:
+            type: boolean
+        - name: sort
+          in: query
+          description: Sort order for the results.
+          schema:
+            type: string
+            enum: [newest, oldest, name]
+            default: newest
         - name: page
           in: query
           schema:
@@ -511,6 +509,15 @@ components:
         phone:
           type: string
           nullable: true
+        emailGreeting:
+          type: string
+          nullable: true
+        emailSignature:
+          type: string
+          nullable: true
+        emailFooterNote:
+          type: string
+          nullable: true
         onboardingCompleted:
           type: boolean
         createdAt:
@@ -541,26 +548,17 @@ components:
           type: string
         supportEmail:
           type: string
+        emailGreeting:
+          type: string
+          nullable: true
+        emailSignature:
+          type: string
+          nullable: true
+        emailFooterNote:
+          type: string
+          nullable: true
         onboardingCompleted:
           type: boolean
-
-    CheckEmailBody:
-      type: object
-      properties:
-        email:
-          type: string
-      required:
-        - email
-
-    CheckEmailResult:
-      type: object
-      properties:
-        exists:
-          type: boolean
-        fallback:
-          type: boolean
-      required:
-        - exists
 
     DashboardSummary:
       type: object
@@ -801,7 +799,6 @@ components:
           enum:
             - Order received
             - Processing
-            - Driver assigned
             - In transit
             - Delayed
             - Out for delivery

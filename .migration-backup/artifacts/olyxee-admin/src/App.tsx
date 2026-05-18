@@ -6,6 +6,7 @@ import { AppLayout } from "@/components/layout";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { useGetBusiness } from "@workspace/api-client-react";
+import { Spinner } from "@/components/ui/spinner";
 
 import LoginPage from "@/pages/login";
 import OnboardingPage from "@/pages/onboarding";
@@ -14,8 +15,8 @@ import CustomersPage from "@/pages/customers";
 import CustomerDetailPage from "@/pages/customer-detail";
 import OrdersPage from "@/pages/orders";
 import OrderDetailPage from "@/pages/order-detail";
-import AuditLogsPage from "@/pages/audit-logs";
 import SettingsPage from "@/pages/settings";
+import ProfilePage from "@/pages/profile";
 import NotFound from "@/pages/not-found";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -38,12 +39,11 @@ function Protected({
     query: { enabled: status === "authenticated" } as never,
   });
 
+  // Pre-auth check is usually instant (cookie/session resolves on first tick).
+  // Render nothing instead of a full white viewport so a quick check doesn't
+  // flash a "page crashed" looking blank screen at the user.
   if (status === "loading") {
-    return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-background">
-        <div className="text-sm text-muted-foreground">Loading…</div>
-      </div>
-    );
+    return null;
   }
   if (status === "unauthenticated") {
     return <Redirect to="/login" />;
@@ -51,10 +51,19 @@ function Protected({
 
   if (!skipOnboardingGuard) {
     if (businessQuery.isLoading) {
+      // We're already authenticated here — render the real app chrome with a
+      // small inline spinner in the content area so the sidebar stays put
+      // and the page feels like it's loading data, not crashing.
       return (
-        <div className="flex min-h-[100dvh] items-center justify-center bg-background">
-          <div className="text-sm text-muted-foreground">Loading…</div>
-        </div>
+        <AppLayout>
+          <div
+            className="flex min-h-[40vh] items-center justify-center"
+            role="status"
+            aria-label="Loading"
+          >
+            <Spinner className="size-6 text-primary" />
+          </div>
+        </AppLayout>
       );
     }
     if (businessQuery.data && !businessQuery.data.onboardingCompleted) {
@@ -72,12 +81,10 @@ function Protected({
 
 function PublicOnly({ component: Component }: { component: React.ComponentType }) {
   const { status } = useAuth();
+  // Same reasoning as Protected: auth check is fast, render nothing rather
+  // than flashing a blank white screen that looks broken.
   if (status === "loading") {
-    return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-background">
-        <div className="text-sm text-muted-foreground">Loading…</div>
-      </div>
-    );
+    return null;
   }
   if (status === "authenticated") {
     return <Redirect to="/dashboard" />;
@@ -102,8 +109,17 @@ function AppRoutes() {
       <Route path="/customers/:id" component={() => <Protected component={CustomerDetailPage} />} />
       <Route path="/orders" component={() => <Protected component={OrdersPage} />} />
       <Route path="/orders/:id" component={() => <Protected component={OrderDetailPage} />} />
-      <Route path="/audit-logs" component={() => <Protected component={AuditLogsPage} />} />
+      {/* Legacy /audit-logs URL — bounce to the new Settings → Activity tab. */}
+      <Route path="/audit-logs">
+        {() => {
+          if (typeof window !== "undefined") {
+            window.location.replace(`${basePath}/settings#activity`);
+          }
+          return null;
+        }}
+      </Route>
       <Route path="/settings" component={() => <Protected component={SettingsPage} />} />
+      <Route path="/profile" component={() => <Protected component={ProfilePage} />} />
       <Route component={NotFound} />
     </Switch>
   );
