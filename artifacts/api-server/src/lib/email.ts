@@ -259,6 +259,76 @@ export function buildEmailBody(params: SendStatusEmailParams): { subject: string
   };
 }
 
+export interface SendPasswordResetEmailParams {
+  to: string;
+  name: string;
+  resetLink: string;
+  expiresInMinutes: number;
+}
+
+export async function sendPasswordResetEmail(
+  p: SendPasswordResetEmailParams,
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const resend = getResend();
+  if (!resend) {
+    logger.warn("Resend API key not configured — password reset email not sent");
+    return { success: false, error: "Email provider not configured" };
+  }
+  const fromAddress = process.env.EMAIL_FROM_ADDRESS;
+  if (!fromAddress) {
+    logger.warn("EMAIL_FROM_ADDRESS not configured — password reset email not sent");
+    return { success: false, error: "Email sender not configured" };
+  }
+  const from = `Olyxee <${fromAddress}>`;
+  const safeLink = safeTrackingLink(p.resetLink);
+  if (!safeLink) {
+    return { success: false, error: "Invalid reset link" };
+  }
+  const subject = "Reset your Olyxee password";
+  const text = [
+    `Hi ${p.name || "there"},`,
+    "",
+    "We received a request to reset your Olyxee password.",
+    `This link expires in ${p.expiresInMinutes} minutes:`,
+    safeLink,
+    "",
+    "If you didn't request this, you can safely ignore this email.",
+    "",
+    "— Olyxee",
+  ].join("\n");
+  const safeName = escapeHtml(p.name || "there");
+  const safeUrl = escapeHtml(safeLink);
+  const html = `<!doctype html><html><body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#18181b;line-height:1.5;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 16px;"><tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border:1px solid #e4e4e7;">
+<tr><td style="padding:32px;">
+<h1 style="margin:0 0 16px;font-size:22px;font-weight:700;">Reset your password</h1>
+<p style="margin:0 0 16px;font-size:15px;color:#27272a;">Hi ${safeName},</p>
+<p style="margin:0 0 16px;font-size:15px;color:#52525b;">We received a request to reset your Olyxee password. Click the button below to choose a new one. This link expires in ${p.expiresInMinutes} minutes.</p>
+<p style="margin:0 0 16px;"><a href="${safeUrl}" style="display:inline-block;padding:12px 24px;background:#18181b;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;">Reset password</a></p>
+<p style="margin:0 0 16px;font-size:12px;color:#a1a1aa;word-break:break-all;">Or open: <a href="${safeUrl}" style="color:#52525b;text-decoration:underline;">${safeUrl}</a></p>
+<p style="margin:24px 0 0;font-size:13px;color:#71717a;">If you didn't request this, you can safely ignore this email — your password won't change.</p>
+</td></tr></table></td></tr></table></body></html>`;
+  try {
+    const result = await resend.emails.send({
+      from,
+      to: [p.to],
+      subject,
+      text,
+      html,
+    });
+    if (result.error) {
+      console.error("[email] resend error (reset):", result.error);
+      return { success: false, error: result.error.message };
+    }
+    return { success: true, messageId: result.data?.id };
+  } catch (err) {
+    const e = err as { message?: string; name?: string };
+    console.error("[email] exception (reset):", e?.name, e?.message);
+    return { success: false, error: "Failed to send email" };
+  }
+}
+
 export async function sendStatusEmail(params: SendStatusEmailParams): Promise<{
   success: boolean;
   messageId?: string;

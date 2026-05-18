@@ -1,8 +1,14 @@
+import crypto from "node:crypto";
 import { Router } from "express";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
-import { eq } from "drizzle-orm";
-import { db, usersTable, businessesTable } from "@workspace/db";
+import { and, eq, gt, isNull } from "drizzle-orm";
+import {
+  db,
+  usersTable,
+  businessesTable,
+  passwordResetTokensTable,
+} from "@workspace/db";
 import { generateId } from "../lib/id";
 import {
   SESSION_COOKIE,
@@ -10,6 +16,26 @@ import {
   sessionCookieOptions,
   verifySession,
 } from "../lib/session";
+import { sendPasswordResetEmail } from "../lib/email";
+
+const RESET_TOKEN_TTL_MINUTES = 30;
+
+function hashResetToken(token: string): string {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+function buildResetLink(req: import("express").Request, token: string): string {
+  // Prefer the first configured ALLOWED_ORIGINS entry (the production app
+  // origin); fall back to the request's host so it still works in dev.
+  const origins = (process.env.ALLOWED_ORIGINS ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const base =
+    origins[0] ??
+    `${req.protocol}://${req.get("host") ?? "localhost"}`;
+  return `${base.replace(/\/+$/, "")}/reset-password?token=${encodeURIComponent(token)}`;
+}
 
 const router = Router();
 
@@ -127,6 +153,106 @@ router.post("/auth/login", async (req, res) => {
     console.error("[login] failed:", e?.code, e?.message, e?.detail);
     req.log?.error({ err }, "login failed");
     res.status(500).json({ error: "Login failed" });
+  }
+});
+
+const ForgotBody = z.object({
+  email: z.string().trim().toLowerCase().email(),
+});
+
+router.post("/auth/forgot-password", async (req, res) => {
+  const parsed = ForgotBody.safeParse(req.body);
+  // Always return 200 to avoid leaking which emails exist (account enumeration).
+  if (!parsed.success) {
+    res.json({ ok: true });
+    return;
+  }
+  const { email } = parsed.data;
+  try {
+    const user = await db.query.usersTable.findFirst({
+      where: eq(usersTable.email, email),
+    });
+    if (user) {
+      const token = crypto.randomBytes(32).toString("base64url");
+      const tokenHash = hashResetToken(token);
+      const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MINUTES * 60 * 1000);
+      await db.insert(passwordResetTokensTable).values({
+        id: generateId(),
+        userId: user.id,
+        tokenHash,
+        expiresAt,
+      });
+      const link = buildResetLink(req, token);
+      const result = await sendPasswordResetEmail({
+        to: user.email,
+        name: user.name,
+        resetLink: link,
+        expiresInMinutes: RESET_TOKEN_TTL_MINUTES,
+      });
+      if (!result.success) {
+        req.log?.warn(
+          { err: result.error },
+          "password reset email send failed (token still issued)",
+        );
+      }
+    }
+  } catch (err) {
+    const e = err as { message?: string; code?: string };
+    console.error("[forgot_password] failed:", e?.code, e?.message);
+    req.log?.error({ err }, "forgot_password failed");
+    // Still respond ok so the response shape is identical to the
+    // happy path (no information leak based on errors).
+  }
+  res.json({ ok: true });
+});
+
+const ResetBody = z.object({
+  token: z.string().min(10).max(200),
+  password: z.string().min(8).max(200),
+});
+
+router.post("/auth/reset-password", async (req, res) => {
+  const parsed = ResetBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid token or password" });
+    return;
+  }
+  const { token, password } = parsed.data;
+  const tokenHash = hashResetToken(token);
+  try {
+    const passwordHash = await bcrypt.hash(password, 10);
+    // Atomic single-use: only one concurrent reset wins the race because
+    // the UPDATE is guarded by `used_at IS NULL AND expires_at > now()`.
+    // Whoever loses gets 0 rows back and we treat it as invalid.
+    const claimed = await db
+      .update(passwordResetTokensTable)
+      .set({ usedAt: new Date() })
+      .where(
+        and(
+          eq(passwordResetTokensTable.tokenHash, tokenHash),
+          isNull(passwordResetTokensTable.usedAt),
+          gt(passwordResetTokensTable.expiresAt, new Date()),
+        ),
+      )
+      .returning({
+        id: passwordResetTokensTable.id,
+        userId: passwordResetTokensTable.userId,
+      });
+    const row = claimed[0];
+    if (!row) {
+      res.status(400).json({ error: "This reset link is invalid or has expired." });
+      return;
+    }
+    await db
+      .update(usersTable)
+      .set({ passwordHash })
+      .where(eq(usersTable.id, row.userId));
+    res.json({ ok: true });
+  } catch (err) {
+    const e = err as { message?: string; code?: string };
+    console.error("[reset_password] failed:", e?.code, e?.message);
+    req.log?.error({ err }, "reset_password failed");
+    res.status(500).json({ error: "Could not reset password" });
   }
 });
 

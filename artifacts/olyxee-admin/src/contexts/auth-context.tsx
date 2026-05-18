@@ -37,6 +37,11 @@ interface AuthContextValue {
     currentPassword?: string;
     newPassword?: string;
   }) => Promise<{ error: string | null }>;
+  requestPasswordReset: (email: string) => Promise<{ error: string | null }>;
+  resetPassword: (args: {
+    token: string;
+    password: string;
+  }) => Promise<{ error: string | null }>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -134,6 +139,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await sendJson("/auth/logout");
         setUser(null);
         setStatus("unauthenticated");
+      },
+      requestPasswordReset: async (email) => {
+        const result = await sendJson<{ ok: true }>("/auth/forgot-password", { email });
+        if (!result.ok) return { error: result.error };
+        return { error: null };
+      },
+      resetPassword: async ({ token, password }) => {
+        const result = await sendJson<{ ok: true }>("/auth/reset-password", {
+          token,
+          password,
+        });
+        if (!result.ok) return { error: result.error };
+        return { error: null };
       },
       updateProfile: async (args) => {
         const result = await sendJson<{ user: AuthUser }>("/auth/me", args, "PUT");

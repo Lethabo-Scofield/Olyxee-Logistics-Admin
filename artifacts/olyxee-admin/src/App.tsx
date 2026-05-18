@@ -9,6 +9,7 @@ import { useGetBusiness } from "@workspace/api-client-react";
 import { Spinner } from "@/components/ui/spinner";
 
 import LoginPage from "@/pages/login";
+import ResetPasswordPage from "@/pages/reset-password";
 import OnboardingPage from "@/pages/onboarding";
 import DashboardPage from "@/pages/dashboard";
 import CustomersPage from "@/pages/customers";
@@ -97,6 +98,7 @@ function AppRoutes() {
     <Switch>
       <Route path="/"><Redirect to="/dashboard" /></Route>
       <Route path="/login" component={() => <PublicOnly component={LoginPage} />} />
+      <Route path="/reset-password" component={ResetPasswordPage} />
       <Route path="/signup"><Redirect to="/login" /></Route>
       <Route
         path="/onboarding"
