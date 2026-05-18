@@ -1,0 +1,78 @@
+Time
+Status
+Host
+Request
+Messages
+May 17 03:22:59.54
+POST
+500
+logistics.olyxee.com
+/api/auth/login
+Error: Missing required environment variables: - ALLOWED_ORIGINS: Comma-separated list of origins allowed to call the API (e.g. https://admin.example.com). at validateEnv (file:///var/task/api/_bundle/app.mjs:76068:13) at file:///var/task/api/_bundle/app.mjs:76102:1 at ModuleJobSync.runSync (node:internal/modules/esm/module_job:534:37) at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:388:47) at loadESMFromCJS (node:internal/modules/cjs/loader:1629:24) at Module.<anonymous> (node:internal/modules/cjs/loader:1794:5) at O.l._compile (/opt/rust/bytecode.js:2:4007) at Object..js (node:internal/modules/cjs/loader:1943:10) at Module.load (node:internal/modules/cjs/loader:1533:32) at Module.<anonymous> (node:internal/modules/cjs/loader:1335:12) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+May 17 03:22:52.38
+GET
+500
+logistics.olyxee.com
+/api/auth/me
+Error: Missing required environment variables: - ALLOWED_ORIGINS: Comma-separated list of origins allowed to call the API (e.g. https://admin.example.com). at validateEnv (file:///var/task/api/_bundle/app.mjs:76068:13) at file:///var/task/api/_bundle/app.mjs:76102:1 at ModuleJobSync.runSync (node:internal/modules/esm/module_job:534:37) at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:388:47) at loadESMFromCJS (node:internal/modules/cjs/loader:1629:24) at Module.<anonymous> (node:internal/modules/cjs/loader:1794:5) at O.l._compile (/opt/rust/bytecode.js:2:4007) at Object..js (node:internal/modules/cjs/loader:1943:10) at Module.load (node:internal/modules/cjs/loader:1533:32) at Module.<anonymous> (node:internal/modules/cjs/loader:1335:12) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+May 17 03:22:40.14
+GET
+500
+olyxee-logistics-admin-r2sgfe8m4-olyxee.vercel.app
+/api/auth/me
+Error: Missing required environment variables: - ALLOWED_ORIGINS: Comma-separated list of origins allowed to call the API (e.g. https://admin.example.com). at validateEnv (file:///var/task/api/_bundle/app.mjs:76068:13) at file:///var/task/api/_bundle/app.mjs:76102:1 at ModuleJobSync.runSync (node:internal/modules/esm/module_job:534:37) at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:388:47) at loadESMFromCJS (node:internal/modules/cjs/loader:1629:24) at Module.<anonymous> (node:internal/modules/cjs/loader:1794:5) at O.l._compile (/opt/rust/bytecode.js:2:4007) at Object..js (node:internal/modules/cjs/loader:1943:10) at Module.load (node:internal/modules/cjs/loader:1533:32) at Module.<anonymous> (node:internal/modules/cjs/loader:1335:12) Node.js process exited with exit status: 1. The logs above can help with debugging the issue. Error: Missing required environment variables: - ALLOWED_ORIGINS: Comma-separated list of origins allowed to call the API (e.g. https://admin.example.com). at validateEnv (file:///var/task/api/_bundle/app.mjs:76068:13) at file:///var/task/api/_bundle/app.mjs:76102:1 at ModuleJobSync.runSync (node:internal/modules/esm/module_job:534:37) at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:388:47) at loadESMFromCJS (node:internal/modules/cjs/loader:1629:24) at Module.<anonymous> (node:internal/modules/cjs/loader:1794:5) at O.l._compile (/opt/rust/bytecode.js:2:4007) at Object..js (node:internal/modules/cjs/loader:1943:10) at Module.load (node:internal/modules/cjs/loader:1533:32) at Module.<anonymous> (node:internal/modules/cjs/loader:1335:12) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+May 17 03:22:39.95
+GET
+500
+olyxee-logistics-admin-r2sgfe8m4-olyxee.vercel.app
+/api/auth/me
+Error: Missing required environment variables: - ALLOWED_ORIGINS: Comma-separated list of origins allowed to call the API (e.g. https://admin.example.com). at validateEnv (file:///var/task/api/_bundle/app.mjs:76068:13) at file:///var/task/api/_bundle/app.mjs:76102:1 at ModuleJobSync.runSync (node:internal/modules/esm/module_job:534:37) at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:388:47) at loadESMFromCJS (node:internal/modules/cjs/loader:1629:24) at Module.<anonymous> (node:internal/modules/cjs/loader:1794:5) at O.l._compile (/opt/rust/bytecode.js:2:4007) at Object..js (node:internal/modules/cjs/loader:1943:10) at Module.load (node:internal/modules/cjs/loader:1533:32) at Module.<anonymous> (node:internal/modules/cjs/loader:1335:12) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+May 17 03:19:06.80
+POST
+500
+logistics.olyxee.com
+/api/auth/login
+Error: Missing required environment variables: - ALLOWED_ORIGINS: Comma-separated list of origins allowed to call the API (e.g. https://admin.example.com). - SESSION_SECRET: Long random string (>=16 chars) used to sign session cookies. at validateEnv (file:///var/task/api/_bundle/app.mjs:76068:13) at file:///var/task/api/_bundle/app.mjs:76102:1 at ModuleJobSync.runSync (node:internal/modules/esm/module_job:534:37) at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:388:47) at loadESMFromCJS (node:internal/modules/cjs/loader:1629:24) at Module.<anonymous> (node:internal/modules/cjs/loader:1794:5) at O.l._compile (/opt/rust/bytecode.js:2:4007) at Object..js (node:internal/modules/cjs/loader:1943:10) at Module.load (node:internal/modules/cjs/loader:1533:32) at Module.<anonymous> (node:internal/modules/cjs/loader:1335:12) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+May 17 03:19:02.78
+GET
+500
+logistics.olyxee.com
+/api/auth/me
+Error: Missing required environment variables: - ALLOWED_ORIGINS: Comma-separated list of origins allowed to call the API (e.g. https://admin.example.com). - SESSION_SECRET: Long random string (>=16 chars) used to sign session cookies. at validateEnv (file:///var/task/api/_bundle/app.mjs:76068:13) at file:///var/task/api/_bundle/app.mjs:76102:1 at ModuleJobSync.runSync (node:internal/modules/esm/module_job:534:37) at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:388:47) at loadESMFromCJS (node:internal/modules/cjs/loader:1629:24) at Module.<anonymous> (node:internal/modules/cjs/loader:1794:5) at O.l._compile (/opt/rust/bytecode.js:2:4007) at Object..js (node:internal/modules/cjs/loader:1943:10) at Module.load (node:internal/modules/cjs/loader:1533:32) at Module.<anonymous> (node:internal/modules/cjs/loader:1335:12) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+May 17 03:19:01.90
+GET
+500
+olyxee-logistics-admin-co795evwt-olyxee.vercel.app
+/api/auth/me
+Error: Missing required environment variables: - ALLOWED_ORIGINS: Comma-separated list of origins allowed to call the API (e.g. https://admin.example.com). - SESSION_SECRET: Long random string (>=16 chars) used to sign session cookies. at validateEnv (file:///var/task/api/_bundle/app.mjs:76068:13) at file:///var/task/api/_bundle/app.mjs:76102:1 at ModuleJobSync.runSync (node:internal/modules/esm/module_job:534:37) at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:388:47) at loadESMFromCJS (node:internal/modules/cjs/loader:1629:24) at Module.<anonymous> (node:internal/modules/cjs/loader:1794:5) at O.l._compile (/opt/rust/bytecode.js:2:4007) at Object..js (node:internal/modules/cjs/loader:1943:10) at Module.load (node:internal/modules/cjs/loader:1533:32) at Module.<anonymous> (node:internal/modules/cjs/loader:1335:12) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+May 17 03:19:00.40
+GET
+500
+olyxee-logistics-admin-co795evwt-olyxee.vercel.app
+/api/auth/me
+Error: Missing required environment variables: - ALLOWED_ORIGINS: Comma-separated list of origins allowed to call the API (e.g. https://admin.example.com). - SESSION_SECRET: Long random string (>=16 chars) used to sign session cookies. at validateEnv (file:///var/task/api/_bundle/app.mjs:76068:13) at file:///var/task/api/_bundle/app.mjs:76102:1 at ModuleJobSync.runSync (node:internal/modules/esm/module_job:534:37) at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:388:47) at loadESMFromCJS (node:internal/modules/cjs/loader:1629:24) at Module.<anonymous> (node:internal/modules/cjs/loader:1794:5) at O.l._compile (/opt/rust/bytecode.js:2:4007) at Object..js (node:internal/modules/cjs/loader:1943:10) at Module.load (node:internal/modules/cjs/loader:1533:32) at Module.<anonymous> (node:internal/modules/cjs/loader:1335:12) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+May 17 03:13:13.63
+POST
+500
+olyxee-logistics-admin-git-main-olyxee.vercel.app
+/api/auth/login
+Error: Missing required environment variables: - ALLOWED_ORIGINS: Comma-separated list of origins allowed to call the API (e.g. https://admin.example.com). - SESSION_SECRET: Long random string (>=16 chars) used to sign session cookies. at validateEnv (/var/task/artifacts/api-server/src/lib/env.ts:57:13) at <anonymous> (/var/task/artifacts/api-server/src/app.ts:11:1) at ModuleJobSync.runSync (node:internal/modules/esm/module_job:534:37) at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:388:47) at loadESMFromCJS (node:internal/modules/cjs/loader:1629:24) at Module.<anonymous> (node:internal/modules/cjs/loader:1794:5) at O.l._compile (/opt/rust/bytecode.js:2:4007) at Object..js (node:internal/modules/cjs/loader:1943:10) at Module.load (node:internal/modules/cjs/loader:1533:32) at Module.<anonymous> (node:internal/modules/cjs/loader:1335:12) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+May 17 03:12:59.98
+GET
+500
+olyxee-logistics-admin-git-main-olyxee.vercel.app
+/api/auth/me
+Error: Missing required environment variables: - ALLOWED_ORIGINS: Comma-separated list of origins allowed to call the API (e.g. https://admin.example.com). - SESSION_SECRET: Long random string (>=16 chars) used to sign session cookies. at validateEnv (/var/task/artifacts/api-server/src/lib/env.ts:57:13) at <anonymous> (/var/task/artifacts/api-server/src/app.ts:11:1) at ModuleJobSync.runSync (node:internal/modules/esm/module_job:534:37) at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:388:47) at loadESMFromCJS (node:internal/modules/cjs/loader:1629:24) at Module.<anonymous> (node:internal/modules/cjs/loader:1794:5) at O.l._compile (/opt/rust/bytecode.js:2:4007) at Object..js (node:internal/modules/cjs/loader:1943:10) at Module.load (node:internal/modules/cjs/loader:1533:32) at Module.<anonymous> (node:internal/modules/cjs/loader:1335:12) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+May 17 03:12:29.36
+GET
+500
+olyxee-logistics-admin-q7o0lkiez-olyxee.vercel.app
+/api/auth/me
+Error: Missing required environment variables: - ALLOWED_ORIGINS: Comma-separated list of origins allowed to call the API (e.g. https://admin.example.com). - SESSION_SECRET: Long random string (>=16 chars) used to sign session cookies. at validateEnv (/var/task/artifacts/api-server/src/lib/env.ts:57:13) at <anonymous> (/var/task/artifacts/api-server/src/app.ts:11:1) at ModuleJobSync.runSync (node:internal/modules/esm/module_job:534:37) at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:388:47) at loadESMFromCJS (node:internal/modules/cjs/loader:1629:24) at Module.<anonymous> (node:internal/modules/cjs/loader:1794:5) at O.l._compile (/opt/rust/bytecode.js:2:4007) at Object..js (node:internal/modules/cjs/loader:1943:10) at Module.load (node:internal/modules/cjs/loader:1533:32) at Module.<anonymous> (node:internal/modules/cjs/loader:1335:12) Node.js process exited with exit status: 1. The logs above can help with debugging the issue. Error: Missing required environment variables: - ALLOWED_ORIGINS: Comma-separated list of origins allowed to call the API (e.g. https://admin.example.com). - SESSION_SECRET: Long random string (>=16 chars) used to sign session cookies. at validateEnv (/var/task/artifacts/api-server/src/lib/env.ts:57:13) at <anonymous> (/var/task/artifacts/api-server/src/app.ts:11:1) at ModuleJobSync.runSync (node:internal/modules/esm/module_job:534:37) at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:388:47) at loadESMFromCJS (node:internal/modules/cjs/loader:1629:24) at Module.<anonymous> (node:internal/modules/cjs/loader:1794:5) at O.l._compile (/opt/rust/bytecode.js:2:4007) at Object..js (node:internal/modules/cjs/loader:1943:10) at Module.load (node:internal/modules/cjs/loader:1533:32) at Module.<anonymous> (node:internal/modules/cjs/loader:1335:12) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+May 17 03:12:29.08
+GET
+500
+olyxee-logistics-admin-q7o0lkiez-olyxee.vercel.app
+/api/auth/me
+Error: Missing required environment variables: - ALLOWED_ORIGINS: Comma-separated list of origins allowed to call the API (e.g. https://admin.example.com). - SESSION_SECRET: Long random string (>=16 chars) used to sign session cookies. at validateEnv (/var/task/artifacts/api-server/src/lib/env.ts:57:13) at <anonymous> (/var/task/artifacts/api-server/src/app.ts:11:1) at ModuleJobSync.runSync (node:internal/modules/esm/module_job:534:37) at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:388:47) at loadESMFromCJS (node:internal/modules/cjs/loader:1629:24) at Module.<anonymous> (node:internal/modules/cjs/loader:1794:5) at O.l._compile (/opt/rust/bytecode.js:2:4007) at Object..js (node:internal/modules/cjs/loader:1943:10) at Module.load (node:internal/modules/cjs/loader:1533:32) at Module.<anonymous> (node:internal/modules/cjs/loader:1335:12) Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+No more logs to show within selected timeline

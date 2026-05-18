@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <title>Olyxee Admin · Logistics Operations Console</title>
+    <meta name="description" content="Olyxee Admin is the private operations console for logistics teams: manage orders, update delivery status, and email customers from one place." />
+    <meta name="theme-color" content="#0f172a" />
+    <!--
+      This is a private admin panel sitting behind authentication. There is no
+      SEO benefit to indexing it (no public content, all routes redirect to
+      login), and indexing would leak surface area to crawlers. Tell every
+      well-behaved crawler to skip it entirely.
+    -->
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
+    <meta name="googlebot" content="noindex, nofollow" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+
+    <!-- Open Graph / link-preview metadata for when an admin shares an
+         internal link in chat. Not for public discovery. -->
+    <meta property="og:title" content="Olyxee Admin" />
+    <meta property="og:description" content="Logistics operations console — staff only." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/favicon.png" />
+    <meta name="twitter:card" content="summary" />
+
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
