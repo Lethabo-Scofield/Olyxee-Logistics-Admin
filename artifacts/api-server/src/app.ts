@@ -10,6 +10,7 @@ import { logger } from "./lib/logger";
 import {
   getAllowedOrigins,
   getBusinessAllowedOrigins,
+  ensureBusinessAllowedOrigins,
   validateEnv,
   warmBusinessAllowedOrigins,
 } from "./lib/env";
@@ -81,8 +82,14 @@ const publicCors = cors({
     if (!origin) return cb(null, true);
     if (allowedOrigins === true) return cb(null, true);
     if (allowedOrigins.includes(origin)) return cb(null, true);
-    if (getBusinessAllowedOrigins().has(origin)) return cb(null, true);
-    return cb(new Error(`Origin ${origin} not allowed by CORS`));
+    // Await on a cold-start cache so the first preflight on a fresh Vercel
+    // serverless instance doesn't 403 before the per-business origins load.
+    ensureBusinessAllowedOrigins()
+      .then((origins) => {
+        if (origins.has(origin)) return cb(null, true);
+        return cb(new Error(`Origin ${origin} not allowed by CORS`));
+      })
+      .catch((err) => cb(err));
   },
 });
 

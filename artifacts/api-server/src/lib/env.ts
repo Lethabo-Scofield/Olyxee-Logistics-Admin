@@ -149,6 +149,35 @@ export function getBusinessAllowedOrigins(): Set<string> {
   return businessOriginCache;
 }
 
+// Same as getBusinessAllowedOrigins, but on a serverless cold start (cache
+// never warmed yet) we AWAIT the first refresh instead of returning an empty
+// set and triggering a background fetch. Without this, the very first
+// cross-origin preflight on each cold Vercel function instance always 403s
+// because the cache hasn't been populated — every customer who happens to
+// hit a fresh instance sees "Tracking is temporarily unavailable".
+export async function ensureBusinessAllowedOrigins(): Promise<Set<string>> {
+  if (businessOriginCacheExpiresAt === 0) {
+    // First call ever on this instance — populate synchronously.
+    if (!businessOriginRefresh) {
+      businessOriginRefresh = refreshBusinessOrigins()
+        .catch((err) => {
+          logger.warn(
+            { err },
+            "Failed to refresh per-business allowed origins (cold start)",
+          );
+          businessOriginCacheExpiresAt = Date.now() + 10_000;
+          return businessOriginCache;
+        })
+        .finally(() => {
+          businessOriginRefresh = null;
+        });
+    }
+    return businessOriginRefresh;
+  }
+  // Cache is warm — fall back to the existing stale-while-revalidate behavior.
+  return getBusinessAllowedOrigins();
+}
+
 // Eagerly warm the cache at boot so the first cross-origin request from a
 // tenant's website doesn't pay the refresh latency.
 export function warmBusinessAllowedOrigins(): void {
