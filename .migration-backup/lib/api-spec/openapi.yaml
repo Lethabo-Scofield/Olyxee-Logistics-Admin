@@ -1,0 +1,964 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Olyxee Enterprise Logistics Admin API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication helpers
+  - name: businesses
+    description: Business management
+  - name: customers
+    description: Customer management
+  - name: orders
+    description: Order management
+  - name: tracking
+    description: Tracking event management
+  - name: dashboard
+    description: Dashboard summary data
+  - name: audit
+    description: Audit log
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /business:
+    get:
+      operationId: getBusiness
+      tags: [businesses]
+      summary: Get current user's business
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Business details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+        "404":
+          description: Business not found
+    put:
+      operationId: updateBusiness
+      tags: [businesses]
+      summary: Update the current user's business (used by onboarding)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessUpdate"
+      responses:
+        "200":
+          description: Business updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+        "404":
+          description: Business not found
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary metrics
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/recent-orders:
+    get:
+      operationId: getRecentOrders
+      tags: [dashboard]
+      summary: Get recent orders for dashboard feed
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Recent orders list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrderWithCustomer"
+
+  /dashboard/status-breakdown:
+    get:
+      operationId: getStatusBreakdown
+      tags: [dashboard]
+      summary: Get order count breakdown by status
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Status breakdown
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StatusCount"
+
+  /customers:
+    get:
+      operationId: listCustomers
+      tags: [customers]
+      summary: List customers for the current business
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: hasCompany
+          in: query
+          description: Filter to customers with (true) or without (false) a company name.
+          schema:
+            type: boolean
+        - name: hasPhone
+          in: query
+          description: Filter to customers with (true) or without (false) a phone number.
+          schema:
+            type: boolean
+        - name: sort
+          in: query
+          description: Sort order for the results.
+          schema:
+            type: string
+            enum: [newest, oldest, name]
+            default: newest
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Paginated customers list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedCustomers"
+    post:
+      operationId: createCustomer
+      tags: [customers]
+      summary: Create a new customer
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerInput"
+      responses:
+        "201":
+          description: Customer created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+
+  /customers/{customerId}:
+    get:
+      operationId: getCustomer
+      tags: [customers]
+      summary: Get a customer by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Customer details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+        "404":
+          description: Customer not found
+    put:
+      operationId: updateCustomer
+      tags: [customers]
+      summary: Update a customer
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerUpdate"
+      responses:
+        "200":
+          description: Customer updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+
+  /customers/{customerId}/orders:
+    get:
+      operationId: getCustomerOrders
+      tags: [customers]
+      summary: Get orders for a specific customer
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Customer's orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+
+  /orders:
+    get:
+      operationId: listOrders
+      tags: [orders]
+      summary: List orders for the current business
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: customerId
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Paginated orders list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedOrders"
+    post:
+      operationId: createOrder
+      tags: [orders]
+      summary: Create a new order
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderInput"
+      responses:
+        "201":
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+
+  /orders/{orderId}:
+    get:
+      operationId: getOrder
+      tags: [orders]
+      summary: Get an order with full detail
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Order detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderDetail"
+        "404":
+          description: Order not found
+
+  /orders/{orderId}/status:
+    post:
+      operationId: updateOrderStatus
+      tags: [orders]
+      summary: Update order status and trigger email notification
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderStatusUpdate"
+      responses:
+        "200":
+          description: Status updated and email sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusUpdateResult"
+
+  /orders/{orderId}/resend-email:
+    post:
+      operationId: resendOrderEmail
+      tags: [orders]
+      summary: Manually resend the last status email
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Email resent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailResendResult"
+
+  /orders/{orderId}/tracking-events:
+    get:
+      operationId: getTrackingEvents
+      tags: [tracking]
+      summary: Get tracking event timeline for an order
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Tracking events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrackingEvent"
+
+  /orders/{orderId}/email-notifications:
+    get:
+      operationId: getEmailNotifications
+      tags: [orders]
+      summary: Get email notification history for an order
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Email notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EmailNotification"
+
+  /audit-logs:
+    get:
+      operationId: listAuditLogs
+      tags: [audit]
+      summary: Get audit logs for the current business
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: entityType
+          in: query
+          schema:
+            type: string
+        - name: entityId
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 30
+      responses:
+        "200":
+          description: Audit logs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedAuditLogs"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    Business:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        websiteUrl:
+          type: string
+        supportEmail:
+          type: string
+        industry:
+          type: string
+          nullable: true
+        employeeCount:
+          type: string
+          nullable: true
+        location:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        emailGreeting:
+          type: string
+          nullable: true
+        emailSignature:
+          type: string
+          nullable: true
+        emailFooterNote:
+          type: string
+          nullable: true
+        onboardingCompleted:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - slug
+        - websiteUrl
+        - supportEmail
+        - onboardingCompleted
+        - createdAt
+
+    BusinessUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        industry:
+          type: string
+        employeeCount:
+          type: string
+        location:
+          type: string
+        phone:
+          type: string
+        websiteUrl:
+          type: string
+        supportEmail:
+          type: string
+        emailGreeting:
+          type: string
+          nullable: true
+        emailSignature:
+          type: string
+          nullable: true
+        emailFooterNote:
+          type: string
+          nullable: true
+        onboardingCompleted:
+          type: boolean
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalOrders:
+          type: integer
+        activeDeliveries:
+          type: integer
+        delayedOrders:
+          type: integer
+        deliveredOrders:
+          type: integer
+        cancelledOrders:
+          type: integer
+        emailsSentToday:
+          type: integer
+      required:
+        - totalOrders
+        - activeDeliveries
+        - delayedOrders
+        - deliveredOrders
+        - cancelledOrders
+        - emailsSentToday
+
+    StatusCount:
+      type: object
+      properties:
+        status:
+          type: string
+        count:
+          type: integer
+      required:
+        - status
+        - count
+
+    Customer:
+      type: object
+      properties:
+        id:
+          type: string
+        businessId:
+          type: string
+        fullName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        companyName:
+          type: string
+        address:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - businessId
+        - fullName
+        - email
+        - createdAt
+
+    CustomerInput:
+      type: object
+      properties:
+        fullName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        companyName:
+          type: string
+        address:
+          type: string
+      required:
+        - fullName
+        - email
+
+    CustomerUpdate:
+      type: object
+      properties:
+        fullName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        companyName:
+          type: string
+        address:
+          type: string
+
+    PaginatedCustomers:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Customer"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+        businessId:
+          type: string
+        customerId:
+          type: string
+        trackingId:
+          type: string
+        orderReference:
+          type: string
+        description:
+          type: string
+        currentStatus:
+          type: string
+        estimatedDeliveryDate:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - businessId
+        - customerId
+        - trackingId
+        - currentStatus
+        - createdAt
+        - updatedAt
+
+    OrderWithCustomer:
+      type: object
+      properties:
+        id:
+          type: string
+        trackingId:
+          type: string
+        orderReference:
+          type: string
+        currentStatus:
+          type: string
+        estimatedDeliveryDate:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        customer:
+          $ref: "#/components/schemas/Customer"
+      required:
+        - id
+        - trackingId
+        - currentStatus
+        - createdAt
+        - updatedAt
+        - customer
+
+    OrderDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        businessId:
+          type: string
+        customerId:
+          type: string
+        trackingId:
+          type: string
+        orderReference:
+          type: string
+        description:
+          type: string
+        currentStatus:
+          type: string
+        estimatedDeliveryDate:
+          type: string
+        trackingLink:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        customer:
+          $ref: "#/components/schemas/Customer"
+        trackingEvents:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrackingEvent"
+        emailNotifications:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmailNotification"
+      required:
+        - id
+        - businessId
+        - customerId
+        - trackingId
+        - currentStatus
+        - trackingLink
+        - createdAt
+        - updatedAt
+        - customer
+        - trackingEvents
+        - emailNotifications
+
+    OrderInput:
+      type: object
+      properties:
+        customerId:
+          type: string
+        orderReference:
+          type: string
+        description:
+          type: string
+        estimatedDeliveryDate:
+          type: string
+      required:
+        - customerId
+
+    OrderStatusUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - Order received
+            - Processing
+            - In transit
+            - Delayed
+            - Out for delivery
+            - Delivered
+            - Failed delivery
+            - Cancelled
+        message:
+          type: string
+        location:
+          type: string
+      required:
+        - status
+
+    StatusUpdateResult:
+      type: object
+      properties:
+        order:
+          $ref: "#/components/schemas/Order"
+        trackingEvent:
+          $ref: "#/components/schemas/TrackingEvent"
+        emailStatus:
+          type: string
+          enum:
+            - sent
+            - failed
+            - skipped
+        emailNotificationId:
+          type: string
+      required:
+        - order
+        - trackingEvent
+        - emailStatus
+
+    EmailResendResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        emailNotificationId:
+          type: string
+        message:
+          type: string
+      required:
+        - success
+        - message
+
+    TrackingEvent:
+      type: object
+      properties:
+        id:
+          type: string
+        orderId:
+          type: string
+        status:
+          type: string
+        message:
+          type: string
+        location:
+          type: string
+        createdBy:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - orderId
+        - status
+        - createdAt
+
+    EmailNotification:
+      type: object
+      properties:
+        id:
+          type: string
+        orderId:
+          type: string
+        customerEmail:
+          type: string
+        subject:
+          type: string
+        body:
+          type: string
+        status:
+          type: string
+          enum:
+            - sent
+            - failed
+            - pending
+        providerMessageId:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - orderId
+        - customerEmail
+        - subject
+        - status
+        - createdAt
+
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: string
+        businessId:
+          type: string
+        userId:
+          type: string
+        action:
+          type: string
+        entityType:
+          type: string
+        entityId:
+          type: string
+        metadata:
+          type: object
+        createdAt:
+          type: string
+      required:
+        - id
+        - businessId
+        - action
+        - entityType
+        - createdAt
+
+    PaginatedOrders:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderWithCustomer"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit
+
+    PaginatedAuditLogs:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditLog"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit
