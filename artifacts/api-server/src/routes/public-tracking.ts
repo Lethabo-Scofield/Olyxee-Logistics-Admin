@@ -1,11 +1,6 @@
 import { Router } from "express";
-import {
-  db,
-  ordersTable,
-  businessesTable,
-  trackingEventsTable,
-} from "@workspace/db";
-import { eq, asc } from "drizzle-orm";
+import { db, ordersTable, trackingEventsTable } from "@workspace/db";
+import { eq, desc } from "drizzle-orm";
 
 const router = Router();
 
@@ -15,7 +10,10 @@ const router = Router();
 const STATUS_LABEL_MAP: Record<string, string> = {
   "Created": "pending",
   "Order received": "pending",
-  "Processing": "processing",
+  // "Processing" isn't in the brief's allowed enum; collapse to "pending"
+  // so the customer page (which keys a colour/tone map by status) doesn't
+  // crash on an unknown value.
+  "Processing": "pending",
   "Picked up": "picked_up",
   "In transit": "in_transit",
   "Out for delivery": "out_for_delivery",
@@ -25,6 +23,22 @@ const STATUS_LABEL_MAP: Record<string, string> = {
   "Failed delivery": "failed_delivery",
   "Customs": "customs",
   "Returned": "returned",
+};
+
+// Human-friendly label for each public status enum value. Used when the
+// event row stores a free-form label we can't map, so we always send back
+// something readable for `events[].label` / top-level statusLabel.
+const STATUS_DISPLAY: Record<string, string> = {
+  pending: "Pending",
+  picked_up: "Picked up",
+  in_transit: "In transit",
+  customs: "Customs",
+  out_for_delivery: "Out for delivery",
+  delivered: "Delivered",
+  delayed: "Delayed",
+  failed_delivery: "Failed delivery",
+  returned: "Returned",
+  cancelled: "Cancelled",
 };
 
 function publicStatusFor(internal: string | null | undefined): string {
@@ -55,40 +69,60 @@ router.get("/public/track/:trackingId", async (req, res) => {
       return;
     }
 
-    const [business, events] = await Promise.all([
-      db.query.businessesTable.findFirst({
-        where: eq(businessesTable.id, order.businessId),
-      }),
-      db
-        .select()
-        .from(trackingEventsTable)
-        .where(eq(trackingEventsTable.orderId, order.id))
-        .orderBy(asc(trackingEventsTable.createdAt)),
-    ]);
+    // No business lookup here — the brief explicitly forbids leaking the
+    // owning business's name on the public payload.
+    const events = await db
+      .select()
+      .from(trackingEventsTable)
+      .where(eq(trackingEventsTable.orderId, order.id))
+      // Brief specifies events MUST be newest first.
+      .orderBy(desc(trackingEventsTable.createdAt));
 
     // 30-second cache: matches the brief's "≈ once per page load" polling
     // expectation and keeps the public endpoint cheap under sudden load
     // (e.g. an email blast). Public so CDNs can cache too.
     res.setHeader("Cache-Control", "public, max-age=30");
 
+    const currentStatus = publicStatusFor(order.currentStatus);
+    const currentStatusLabel =
+      order.currentStatus && order.currentStatus.trim().length > 0
+        ? order.currentStatus
+        : STATUS_DISPLAY[currentStatus] ?? "Pending";
+
+    // Response shape matches the customer-integration brief exactly
+    // (`currentStatus`, `reference`, `events[].at`, `events[].label`, …).
+    // Legacy field names (`status`, `orderReference`, `events[].timestamp`,
+    // `events[].statusLabel`, `events[].notes`) are kept alongside so any
+    // older integrators don't break while migrating. `businessName` is
+    // intentionally omitted per the brief — public payloads must not leak
+    // the owning business across tenants.
     res.json({
       trackingId: order.trackingId,
+      reference: order.orderReference ?? null,
       orderReference: order.orderReference ?? null,
-      status: publicStatusFor(order.currentStatus),
-      statusLabel: order.currentStatus ?? "Pending",
+      currentStatus,
+      status: currentStatus,
+      statusLabel: currentStatusLabel,
       estimatedDeliveryDate: order.estimatedDeliveryDate ?? null,
       lastUpdated: order.updatedAt.toISOString(),
-      businessName: business?.name ?? "",
-      events: events.map((e) => ({
-        status: publicStatusFor(e.status),
-        statusLabel: e.status,
-        location: e.location ?? null,
-        // tracking_events stores the free-text update as `message`; expose
-        // it on the public payload as `notes` so the customer-facing field
-        // name reads naturally on the tracking page.
-        notes: e.message ?? null,
-        timestamp: e.createdAt.toISOString(),
-      })),
+      events: events.map((e) => {
+        const status = publicStatusFor(e.status);
+        const label =
+          e.status && e.status.trim().length > 0
+            ? e.status
+            : STATUS_DISPLAY[status] ?? status;
+        const at = e.createdAt.toISOString();
+        return {
+          at,
+          timestamp: at,
+          status,
+          label,
+          statusLabel: label,
+          message: e.message ?? null,
+          notes: e.message ?? null,
+          location: e.location ?? null,
+        };
+      }),
     });
   } catch (err) {
     req.log.error({ err }, "Public tracking lookup failed");
