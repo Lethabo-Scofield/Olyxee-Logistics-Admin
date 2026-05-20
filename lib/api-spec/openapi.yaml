@@ -76,6 +76,31 @@ paths:
         "404":
           description: Business not found
 
+  /public/track/{trackingId}:
+    get:
+      operationId: getPublicTracking
+      tags: [tracking]
+      summary: Public, unauthenticated parcel tracking lookup
+      description: |
+        Returns the customer-facing status of an order by its tracking ID.
+        No authentication required. Intended to be called from each tenant's
+        customer-facing website (origin must be whitelisted on the business).
+      parameters:
+        - in: path
+          name: trackingId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Tracking details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicTracking"
+        "404":
+          description: Tracking ID not found
+
   /dashboard/summary:
     get:
       operationId: getDashboardSummary
@@ -518,6 +543,12 @@ components:
         emailFooterNote:
           type: string
           nullable: true
+        trackingIdPrefix:
+          type: string
+          nullable: true
+        allowedOrigins:
+          type: string
+          nullable: true
         onboardingCompleted:
           type: boolean
         createdAt:
@@ -557,6 +588,12 @@ components:
         emailFooterNote:
           type: string
           nullable: true
+        trackingIdPrefix:
+          type: string
+          nullable: true
+        allowedOrigins:
+          type: string
+          nullable: true
         onboardingCompleted:
           type: boolean
 
@@ -582,6 +619,57 @@ components:
         - deliveredOrders
         - cancelledOrders
         - emailsSentToday
+
+    PublicTrackingEvent:
+      type: object
+      properties:
+        status:
+          type: string
+        statusLabel:
+          type: string
+        location:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        timestamp:
+          type: string
+      required:
+        - status
+        - statusLabel
+        - timestamp
+
+    PublicTracking:
+      type: object
+      properties:
+        trackingId:
+          type: string
+        orderReference:
+          type: string
+          nullable: true
+        status:
+          type: string
+        statusLabel:
+          type: string
+        estimatedDeliveryDate:
+          type: string
+          nullable: true
+        lastUpdated:
+          type: string
+        businessName:
+          type: string
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicTrackingEvent"
+      required:
+        - trackingId
+        - status
+        - statusLabel
+        - lastUpdated
+        - businessName
+        - events
 
     StatusCount:
       type: object

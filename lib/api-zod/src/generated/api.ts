@@ -32,6 +32,8 @@ export const GetBusinessResponse = zod.object({
   "emailGreeting": zod.string().nullish(),
   "emailSignature": zod.string().nullish(),
   "emailFooterNote": zod.string().nullish(),
+  "trackingIdPrefix": zod.string().nullish(),
+  "allowedOrigins": zod.string().nullish(),
   "onboardingCompleted": zod.boolean(),
   "createdAt": zod.string()
 })
@@ -51,6 +53,8 @@ export const UpdateBusinessBody = zod.object({
   "emailGreeting": zod.string().nullish(),
   "emailSignature": zod.string().nullish(),
   "emailFooterNote": zod.string().nullish(),
+  "trackingIdPrefix": zod.string().nullish(),
+  "allowedOrigins": zod.string().nullish(),
   "onboardingCompleted": zod.boolean().optional()
 })
 
@@ -67,8 +71,39 @@ export const UpdateBusinessResponse = zod.object({
   "emailGreeting": zod.string().nullish(),
   "emailSignature": zod.string().nullish(),
   "emailFooterNote": zod.string().nullish(),
+  "trackingIdPrefix": zod.string().nullish(),
+  "allowedOrigins": zod.string().nullish(),
   "onboardingCompleted": zod.boolean(),
   "createdAt": zod.string()
+})
+
+
+/**
+ * Returns the customer-facing status of an order by its tracking ID.
+No authentication required. Intended to be called from each tenant's
+customer-facing website (origin must be whitelisted on the business).
+
+ * @summary Public, unauthenticated parcel tracking lookup
+ */
+export const GetPublicTrackingParams = zod.object({
+  "trackingId": zod.coerce.string()
+})
+
+export const GetPublicTrackingResponse = zod.object({
+  "trackingId": zod.string(),
+  "orderReference": zod.string().nullish(),
+  "status": zod.string(),
+  "statusLabel": zod.string(),
+  "estimatedDeliveryDate": zod.string().nullish(),
+  "lastUpdated": zod.string(),
+  "businessName": zod.string(),
+  "events": zod.array(zod.object({
+  "status": zod.string(),
+  "statusLabel": zod.string(),
+  "location": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "timestamp": zod.string()
+}))
 })
 
 

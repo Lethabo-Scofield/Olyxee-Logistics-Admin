@@ -19,6 +19,8 @@ export interface Business {
   emailGreeting?: string | null;
   emailSignature?: string | null;
   emailFooterNote?: string | null;
+  trackingIdPrefix?: string | null;
+  allowedOrigins?: string | null;
   onboardingCompleted: boolean;
   createdAt: string;
 }

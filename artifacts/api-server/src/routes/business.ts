@@ -21,6 +21,8 @@ function serialize(business: typeof businessesTable.$inferSelect) {
     emailGreeting: business.emailGreeting,
     emailSignature: business.emailSignature,
     emailFooterNote: business.emailFooterNote,
+    trackingIdPrefix: business.trackingIdPrefix,
+    allowedOrigins: business.allowedOrigins,
     onboardingCompleted: business.onboardingCompleted,
     createdAt: business.createdAt.toISOString(),
   };
@@ -78,6 +80,34 @@ router.put("/business", requireAuth, async (req, res) => {
           ? parse.data.emailSignature ?? null : existing.emailSignature,
         emailFooterNote: "emailFooterNote" in parse.data
           ? parse.data.emailFooterNote ?? null : existing.emailFooterNote,
+        // Tracking prefix: normalize to A–Z and clamp to 3–5 chars before
+        // persisting so the DB never holds malformed values regardless of
+        // what the client sends. Empty/invalid input clears the column,
+        // which makes order creation fall back to the "OLY" default.
+        trackingIdPrefix: "trackingIdPrefix" in parse.data
+          ? (() => {
+              const raw = parse.data.trackingIdPrefix ?? "";
+              const cleaned = raw.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 5);
+              return cleaned.length >= 3 ? cleaned : null;
+            })()
+          : existing.trackingIdPrefix,
+        allowedOrigins: "allowedOrigins" in parse.data
+          ? (() => {
+              const raw = parse.data.allowedOrigins ?? "";
+              // Trim, drop trailing slashes, drop empties, dedupe — same
+              // shape the admin UI normalizes to, applied server-side as a
+              // defense in depth.
+              const list = Array.from(
+                new Set(
+                  raw
+                    .split(",")
+                    .map((s) => s.trim().replace(/\/+$/, ""))
+                    .filter(Boolean),
+                ),
+              );
+              return list.length > 0 ? list.join(",") : null;
+            })()
+          : existing.allowedOrigins,
         onboardingCompleted:
           parse.data.onboardingCompleted ?? existing.onboardingCompleted,
       };

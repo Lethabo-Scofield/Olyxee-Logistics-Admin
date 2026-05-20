@@ -40,6 +40,7 @@ import type {
   PaginatedAuditLogs,
   PaginatedCustomers,
   PaginatedOrders,
+  PublicTracking,
   StatusCount,
   StatusUpdateResult,
   TrackingEvent
@@ -281,6 +282,87 @@ export const useUpdateBusiness = <TError = ErrorType<void>,
       > => {
       return useMutation(getUpdateBusinessMutationOptions(options));
     }
+
+export const getGetPublicTrackingUrl = (trackingId: string,) => {
+
+
+
+
+  return `/api/public/track/${trackingId}`
+}
+
+/**
+ * Returns the customer-facing status of an order by its tracking ID.
+No authentication required. Intended to be called from each tenant's
+customer-facing website (origin must be whitelisted on the business).
+
+ * @summary Public, unauthenticated parcel tracking lookup
+ */
+export const getPublicTracking = async (trackingId: string, options?: RequestInit): Promise<PublicTracking> => {
+
+  return customFetch<PublicTracking>(getGetPublicTrackingUrl(trackingId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicTrackingQueryKey = (trackingId: string,) => {
+    return [
+    `/api/public/track/${trackingId}`
+    ] as const;
+    }
+
+
+export const getGetPublicTrackingQueryOptions = <TData = Awaited<ReturnType<typeof getPublicTracking>>, TError = ErrorType<void>>(trackingId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicTracking>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicTrackingQueryKey(trackingId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicTracking>>> = ({ signal }) => getPublicTracking(trackingId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(trackingId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicTracking>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPublicTrackingQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicTracking>>>
+export type GetPublicTrackingQueryError = ErrorType<void>
+
+
+/**
+ * @summary Public, unauthenticated parcel tracking lookup
+ */
+
+export function useGetPublicTracking<TData = Awaited<ReturnType<typeof getPublicTracking>>, TError = ErrorType<void>>(
+ trackingId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicTracking>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPublicTrackingQueryOptions(trackingId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getGetDashboardSummaryUrl = () => {
 

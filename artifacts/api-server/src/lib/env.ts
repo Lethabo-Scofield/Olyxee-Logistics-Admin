@@ -1,4 +1,6 @@
 import { logger } from "./logger";
+import { db, businessesTable } from "@workspace/db";
+import { isNotNull } from "drizzle-orm";
 
 type EnvCheck = {
   name: string;
@@ -100,3 +102,58 @@ export function getAllowedOrigins(): string[] | true {
   }
   return [];
 }
+
+// In-memory cache of per-business allowed origins. We refresh it lazily on the
+// next request after the TTL expires so the CORS callback never blocks on a
+// DB call in the hot path of a healthy cache, and stale entries are bounded
+// to TTL_MS. A second concurrent miss reuses the in-flight promise.
+const BUSINESS_ORIGIN_TTL_MS = 60_000;
+let businessOriginCache: Set<string> = new Set();
+let businessOriginCacheExpiresAt = 0;
+let businessOriginRefresh: Promise<Set<string>> | null = null;
+
+async function refreshBusinessOrigins(): Promise<Set<string>> {
+  const rows = await db
+    .select({ allowedOrigins: businessesTable.allowedOrigins })
+    .from(businessesTable)
+    .where(isNotNull(businessesTable.allowedOrigins));
+  const next = new Set<string>();
+  for (const row of rows) {
+    if (!row.allowedOrigins) continue;
+    for (const origin of row.allowedOrigins.split(",")) {
+      const trimmed = origin.trim();
+      if (trimmed) next.add(trimmed);
+    }
+  }
+  businessOriginCache = next;
+  businessOriginCacheExpiresAt = Date.now() + BUSINESS_ORIGIN_TTL_MS;
+  return next;
+}
+
+// Returns the union of currently-known per-business allowed origins. Triggers
+// (but does NOT await) a background refresh when the cache is stale so CORS
+// preflight stays synchronous and fast.
+export function getBusinessAllowedOrigins(): Set<string> {
+  if (Date.now() > businessOriginCacheExpiresAt && !businessOriginRefresh) {
+    businessOriginRefresh = refreshBusinessOrigins()
+      .catch((err) => {
+        logger.warn({ err }, "Failed to refresh per-business allowed origins");
+        // Push the next attempt out so we don't hammer the DB on a flap.
+        businessOriginCacheExpiresAt = Date.now() + 10_000;
+        return businessOriginCache;
+      })
+      .finally(() => {
+        businessOriginRefresh = null;
+      });
+  }
+  return businessOriginCache;
+}
+
+// Eagerly warm the cache at boot so the first cross-origin request from a
+// tenant's website doesn't pay the refresh latency.
+export function warmBusinessAllowedOrigins(): void {
+  refreshBusinessOrigins().catch((err) =>
+    logger.warn({ err }, "Initial per-business origin cache warm failed"),
+  );
+}
+

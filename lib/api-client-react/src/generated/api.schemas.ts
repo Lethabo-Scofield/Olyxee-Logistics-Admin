@@ -22,6 +22,8 @@ export interface Business {
   emailGreeting?: string | null;
   emailSignature?: string | null;
   emailFooterNote?: string | null;
+  trackingIdPrefix?: string | null;
+  allowedOrigins?: string | null;
   onboardingCompleted: boolean;
   createdAt: string;
 }
@@ -37,6 +39,8 @@ export interface BusinessUpdate {
   emailGreeting?: string | null;
   emailSignature?: string | null;
   emailFooterNote?: string | null;
+  trackingIdPrefix?: string | null;
+  allowedOrigins?: string | null;
   onboardingCompleted?: boolean;
 }
 
@@ -47,6 +51,25 @@ export interface DashboardSummary {
   deliveredOrders: number;
   cancelledOrders: number;
   emailsSentToday: number;
+}
+
+export interface PublicTrackingEvent {
+  status: string;
+  statusLabel: string;
+  location?: string | null;
+  notes?: string | null;
+  timestamp: string;
+}
+
+export interface PublicTracking {
+  trackingId: string;
+  orderReference?: string | null;
+  status: string;
+  statusLabel: string;
+  estimatedDeliveryDate?: string | null;
+  lastUpdated: string;
+  businessName: string;
+  events: PublicTrackingEvent[];
 }
 
 export interface StatusCount {

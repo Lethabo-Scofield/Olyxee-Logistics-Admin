@@ -21,6 +21,15 @@ export const businessesTable = pgTable("businesses", {
   emailGreeting: text("email_greeting"),
   emailSignature: text("email_signature"),
   emailFooterNote: text("email_footer_note"),
+  // Customer-facing tracking ID prefix (3–5 A–Z), unique across all
+  // businesses. Used when generating per-business tracking IDs in the form
+  // {PREFIX}-{3 alnums}-{4 alnums}. Nullable so existing businesses don't
+  // break on migration — order creation falls back to "OLY" until set.
+  trackingIdPrefix: text("tracking_id_prefix").unique(),
+  // Comma-separated list of website origins allowed to call this business's
+  // public endpoints (currently /api/public/track/:id) cross-origin. Lets each
+  // tenant whitelist their own customer site without redeploying the API.
+  allowedOrigins: text("allowed_origins"),
   onboardingCompleted: boolean("onboarding_completed").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

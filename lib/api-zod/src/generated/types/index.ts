@@ -31,6 +31,8 @@ export * from './orderWithCustomer';
 export * from './paginatedAuditLogs';
 export * from './paginatedCustomers';
 export * from './paginatedOrders';
+export * from './publicTracking';
+export * from './publicTrackingEvent';
 export * from './statusCount';
 export * from './statusUpdateResult';
 export * from './statusUpdateResultEmailStatus';

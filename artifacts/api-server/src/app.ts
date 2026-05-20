@@ -5,10 +5,17 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import pinoHttp from "pino-http";
 import router from "./routes";
+import publicTrackingRouter from "./routes/public-tracking";
 import { logger } from "./lib/logger";
-import { getAllowedOrigins, validateEnv } from "./lib/env";
+import {
+  getAllowedOrigins,
+  getBusinessAllowedOrigins,
+  validateEnv,
+  warmBusinessAllowedOrigins,
+} from "./lib/env";
 
 validateEnv();
+warmBusinessAllowedOrigins();
 
 const app: Express = express();
 
@@ -45,21 +52,42 @@ app.use(
   }),
 );
 
-// Strict CORS: explicit allowlist from ALLOWED_ORIGINS. Same-origin requests
-// (no Origin header) are always allowed so server-to-server calls and the
-// SPA-on-same-domain deploy keep working.
+// Strict CORS for the authenticated/admin API surface: explicit allowlist
+// from ALLOWED_ORIGINS only. Same-origin requests (no Origin header) are
+// always allowed so server-to-server calls and the SPA-on-same-domain deploy
+// keep working. Per-business customer origins are intentionally NOT honored
+// here — they only apply to the public tracking surface below, otherwise a
+// tenant's website would gain CORS access to authenticated endpoints (cookies
+// stripped by browser but still a wider surface than needed).
 const allowedOrigins = getAllowedOrigins();
-app.use(
-  cors({
-    credentials: true,
-    origin(origin, cb) {
-      if (!origin) return cb(null, true);
-      if (allowedOrigins === true) return cb(null, true);
-      if (allowedOrigins.includes(origin)) return cb(null, true);
-      return cb(new Error(`Origin ${origin} not allowed by CORS`));
-    },
-  }),
-);
+const adminCors = cors({
+  credentials: true,
+  origin(origin, cb) {
+    if (!origin) return cb(null, true);
+    if (allowedOrigins === true) return cb(null, true);
+    if (allowedOrigins.includes(origin)) return cb(null, true);
+    return cb(new Error(`Origin ${origin} not allowed by CORS`));
+  },
+});
+
+// Public tracking CORS: env allowlist UNION every business's whitelisted
+// customer-site origins. No credentials — the public endpoint never reads
+// cookies, so allowing arbitrary tenant origins is bounded to read-only
+// tracking data. Scoped to /api/public/* below so it cannot widen access
+// on authenticated routes.
+const publicCors = cors({
+  credentials: false,
+  origin(origin, cb) {
+    if (!origin) return cb(null, true);
+    if (allowedOrigins === true) return cb(null, true);
+    if (allowedOrigins.includes(origin)) return cb(null, true);
+    if (getBusinessAllowedOrigins().has(origin)) return cb(null, true);
+    return cb(new Error(`Origin ${origin} not allowed by CORS`));
+  },
+});
+
+app.use("/api/public", publicCors);
+app.use(adminCors);
 
 app.use(cookieParser());
 app.use(express.json({ limit: "100kb" }));
@@ -85,7 +113,12 @@ const writeLimiter = rateLimit({
   message: { error: "Too many write requests, please slow down." },
 });
 
+// Public tracking is mounted BEFORE the write-mutation limiter and the
+// authenticated router so it stays unauthenticated and read-only. It still
+// inherits the per-IP apiLimiter (300 req/min) which comfortably covers the
+// brief's ~60 req/min/IP target.
 app.use("/api", apiLimiter);
+app.use("/api", publicTrackingRouter);
 app.use("/api", (req: Request, res: Response, next: NextFunction) => {
   if (
     req.method === "POST" ||

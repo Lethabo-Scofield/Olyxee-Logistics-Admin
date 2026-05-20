@@ -131,33 +131,52 @@ router.post("/orders", requireAuth, async (req, res) => {
       where: eq(businessesTable.id, businessId),
     });
 
-    // Generate unique tracking ID
-    let trackingId: string;
-    let attempts = 0;
-    do {
-      trackingId = generateTrackingId(business?.slug ?? "OLY");
-      const existing = await db.query.ordersTable.findFirst({
-        where: eq(ordersTable.trackingId, trackingId),
-      });
-      if (!existing) break;
-      attempts++;
-    } while (attempts < 10);
-
-    const order = await db
-      .insert(ordersTable)
-      .values({
-        id: generateId(),
-        businessId,
-        customerId: parse.data.customerId,
-        trackingId: trackingId!,
-        orderReference: parse.data.orderReference ?? null,
-        description: parse.data.description ?? null,
-        currentStatus: "Created",
-        estimatedDeliveryDate: parse.data.estimatedDeliveryDate ?? null,
-      })
-      .returning();
-
-    const o = order[0];
+    // Generate a unique tracking ID. We let the DB enforce uniqueness via
+    // the trackingId unique constraint and retry on a 23505 (unique_violation)
+    // — this is the only race-free pattern. Concurrent inserts under a
+    // pre-check-only loop can both pass the SELECT then collide on INSERT,
+    // surfacing as a 500. ~26 bits of entropy per ID per business make
+    // collisions vanishingly rare, but a bounded retry keeps things safe.
+    const prefix = business?.trackingIdPrefix ?? "OLY";
+    const MAX_TRACKING_ATTEMPTS = 8;
+    let inserted: typeof ordersTable.$inferSelect | undefined;
+    let lastErr: unknown;
+    for (let attempt = 0; attempt < MAX_TRACKING_ATTEMPTS; attempt++) {
+      const candidate = generateTrackingId(prefix);
+      try {
+        const rows = await db
+          .insert(ordersTable)
+          .values({
+            id: generateId(),
+            businessId,
+            customerId: parse.data.customerId,
+            trackingId: candidate,
+            orderReference: parse.data.orderReference ?? null,
+            description: parse.data.description ?? null,
+            currentStatus: "Created",
+            estimatedDeliveryDate: parse.data.estimatedDeliveryDate ?? null,
+          })
+          .returning();
+        inserted = rows[0];
+        break;
+      } catch (err) {
+        lastErr = err;
+        // Postgres unique_violation. Any other error is real and should bubble.
+        const code = (err as { code?: string } | undefined)?.code;
+        if (code !== "23505") throw err;
+        req.log.warn(
+          { attempt, candidate },
+          "Tracking ID collision on insert, retrying",
+        );
+      }
+    }
+    if (!inserted) {
+      req.log.error({ err: lastErr }, "Exhausted tracking ID attempts");
+      res.status(500).json({ error: "Could not allocate tracking ID" });
+      return;
+    }
+    const o = inserted;
+    const trackingId = o.trackingId;
 
     // Create initial tracking event — the order enters the FSM at "Created".
     await db.insert(trackingEventsTable).values({

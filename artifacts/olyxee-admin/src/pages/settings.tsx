@@ -789,6 +789,14 @@ export default function SettingsPage() {
               />
             </SectionRow>
           </SectionShell>
+
+          {/* Tracking section lives in the Identity tab because the prefix
+              and customer-facing origin list are part of how the business
+              presents itself to its customers. It persists server-side
+              (separate from the theme form's save bar). */}
+          <div className="mt-8">
+            <TrackingCustomizationSection />
+          </div>
         </TabsContent>
 
         {/* ─── Brand ────────────────────────────────────────────────── */}
@@ -1154,6 +1162,190 @@ function EmailCustomizationSection({
                 <Check className="h-4 w-4" />
               )}
               Save email wording
+            </Button>
+          </div>
+        </>
+      )}
+    </SectionShell>
+  );
+}
+
+// ─── Tracking customization ───────────────────────────────────────────────────
+// Two server-side fields on the Business record that govern the public
+// customer experience:
+//   trackingIdPrefix — 3–5 uppercase letters, used as the leading segment
+//     of every new tracking ID we generate (e.g. "FSL" → "FSL-K7M-9X2A").
+//   allowedOrigins   — comma-separated list of customer-site origins allowed
+//     to call the public tracking endpoint cross-origin.
+// Self-contained like EmailCustomizationSection so it persists independently
+// of the theme save bar at the top of the page.
+function TrackingCustomizationSection() {
+  const { data: business, isLoading, refetch } = useGetBusiness();
+  const updateMutation = useUpdateBusiness();
+
+  const [form, setForm] = useState({
+    trackingIdPrefix: "",
+    allowedOrigins: "",
+  });
+  const [loaded, setLoaded] = useState(false);
+  // Local validation: prefix must be 3–5 A–Z when present. Empty is allowed
+  // (server falls back to "OLY") so users can clear it.
+  const prefixValid =
+    form.trackingIdPrefix === "" || /^[A-Z]{3,5}$/.test(form.trackingIdPrefix);
+
+  useEffect(() => {
+    if (business && !loaded) {
+      setForm({
+        trackingIdPrefix: business.trackingIdPrefix ?? "",
+        allowedOrigins: business.allowedOrigins ?? "",
+      });
+      setLoaded(true);
+    }
+  }, [business, loaded]);
+
+  const dirty =
+    loaded &&
+    (form.trackingIdPrefix !== (business?.trackingIdPrefix ?? "") ||
+      form.allowedOrigins !== (business?.allowedOrigins ?? ""));
+
+  const handleSave = () => {
+    if (!prefixValid) {
+      toast.error("Tracking prefix must be 3–5 letters (A–Z).");
+      return;
+    }
+    // Normalize origins: trim each, drop trailing slashes, drop empties, dedupe.
+    const normalizedOrigins = Array.from(
+      new Set(
+        form.allowedOrigins
+          .split(",")
+          .map((s) => s.trim().replace(/\/+$/, ""))
+          .filter(Boolean),
+      ),
+    ).join(",");
+    updateMutation.mutate(
+      {
+        data: {
+          trackingIdPrefix: form.trackingIdPrefix
+            ? form.trackingIdPrefix
+            : null,
+          allowedOrigins: normalizedOrigins ? normalizedOrigins : null,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success("Tracking settings saved");
+          setForm((f) => ({ ...f, allowedOrigins: normalizedOrigins }));
+          refetch();
+        },
+        onError: () => toast.error("Could not save tracking settings"),
+      },
+    );
+  };
+
+  const handleReset = () => {
+    setForm({
+      trackingIdPrefix: business?.trackingIdPrefix ?? "",
+      allowedOrigins: business?.allowedOrigins ?? "",
+    });
+  };
+
+  return (
+    <SectionShell
+      id="tracking"
+      icon={Building2}
+      title="Tracking"
+      description="The prefix on every customer tracking ID, plus the websites allowed to look orders up."
+      action={dirty ? <RestoreButton onClick={handleReset} /> : undefined}
+    >
+      {isLoading && !loaded ? (
+        <div
+          className="px-4 py-8 flex items-center justify-center"
+          role="status"
+          aria-label="Loading tracking settings"
+        >
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      ) : (
+        <>
+          <SectionRow
+            label="Tracking ID prefix"
+            hint="3–5 letters. Shown at the start of every new tracking number, e.g. FSL-K7M-9X2A."
+            htmlFor="trackingIdPrefix"
+          >
+            <Input
+              id="trackingIdPrefix"
+              value={form.trackingIdPrefix}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  // Uppercase as the user types, strip everything that isn't
+                  // a letter, clamp to 5 chars — produces a valid prefix
+                  // without forcing the user to think about the rules.
+                  trackingIdPrefix: e.target.value
+                    .toUpperCase()
+                    .replace(/[^A-Z]/g, "")
+                    .slice(0, 5),
+                }))
+              }
+              placeholder="OLY"
+              maxLength={5}
+              className={cn(
+                "h-11 font-mono uppercase tracking-widest",
+                !prefixValid &&
+                  "border-destructive focus-visible:ring-destructive",
+              )}
+              aria-invalid={!prefixValid}
+            />
+            {form.trackingIdPrefix && prefixValid && (
+              <p className="text-xs text-muted-foreground">
+                Example: <span className="font-mono">{form.trackingIdPrefix}-K7M-9X2A</span>
+              </p>
+            )}
+            {!prefixValid && (
+              <p className="text-xs text-destructive">
+                Use 3–5 letters only (A–Z).
+              </p>
+            )}
+          </SectionRow>
+
+          <SectionRow
+            label="Allowed website origins"
+            hint="Comma-separated list of sites allowed to load tracking from your customer page. Include both apex and www variants if you use both."
+            htmlFor="allowedOrigins"
+          >
+            <Textarea
+              id="allowedOrigins"
+              value={form.allowedOrigins}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, allowedOrigins: e.target.value }))
+              }
+              placeholder="https://example.com, https://www.example.com"
+              rows={3}
+              spellCheck={false}
+              className="font-mono text-xs"
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Leave empty to disable cross-origin browser access. Changes take
+              effect within ~1 minute.
+            </p>
+          </SectionRow>
+
+          <div className="px-4 py-3 flex items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground">
+              Saves immediately — separate from the page-level Save.
+            </p>
+            <Button
+              size="sm"
+              onClick={handleSave}
+              disabled={!dirty || !prefixValid || updateMutation.isPending}
+              className="gap-1.5"
+            >
+              {updateMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Check className="h-4 w-4" />
+              )}
+              Save tracking settings
             </Button>
           </div>
         </>
