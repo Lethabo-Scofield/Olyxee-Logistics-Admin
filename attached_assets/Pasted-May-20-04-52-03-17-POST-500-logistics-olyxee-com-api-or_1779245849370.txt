@@ -1,0 +1,287 @@
+May 20 04:52:03.17
+POST
+500
+logistics.olyxee.com
+/api/orders
+2
+{"level":30,"time":1779245523578,"pid":4,"hostname":"169.254.75.155","req":{"id":8,"method":"POST","url":"/api/orders"},"res":{"statusCode":500},"err":{"type":"Error","message":"failed with status code 500","stack":"Error: failed with status code 500\n at onResFinished (file:///var/task/api/_bundle/app.mjs:30353:45)\n at ServerResponse.onResponseComplete (file:///var/task/api/_bundle/app.mjs:30403:18)\n at ServerResponse.emit (node:events:520:35)\n at /opt/rust/nodejs.js:17:5080\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at /opt/rust/nodejs.js:17:5068\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at e.emit (/opt/rust/nodejs.js:17:5056)\n at onFinish (node:_http_outgoing:1026:10)\n at callback (node:internal/streams/writable:764:21)"},"responseTime":245,"msg":"request errored"}
+May 20 04:51:54.11
+GET
+304
+logistics.olyxee.com
+/api/orders
+{"level":30,"time":1779245514430,"pid":4,"hostname":"169.254.15.63","req":{"id":8,"method":"GET","url":"/api/orders"},"res":{"statusCode":200},"responseTime":164,"msg":"request completed"}
+May 20 04:51:54.11
+GET
+304
+logistics.olyxee.com
+/api/customers
+{"level":30,"time":1779245515346,"pid":4,"hostname":"169.254.75.155","req":{"id":7,"method":"GET","url":"/api/customers"},"res":{"statusCode":200},"responseTime":1104,"msg":"request completed"}
+May 20 04:51:53.62
+GET
+500
+logistics.olyxee.com
+/api/business
+2
+{"level":30,"time":1779245513946,"pid":4,"hostname":"169.254.75.155","req":{"id":6,"method":"GET","url":"/api/business"},"res":{"statusCode":500},"err":{"type":"Error","message":"failed with status code 500","stack":"Error: failed with status code 500\n at onResFinished (file:///var/task/api/_bundle/app.mjs:30353:45)\n at ServerResponse.onResponseComplete (file:///var/task/api/_bundle/app.mjs:30403:18)\n at ServerResponse.emit (node:events:520:35)\n at /opt/rust/nodejs.js:17:5080\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at /opt/rust/nodejs.js:17:5068\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at e.emit (/opt/rust/nodejs.js:17:5056)\n at onFinish (node:_http_outgoing:1026:10)\n at callback (node:internal/streams/writable:764:21)"},"responseTime":157,"msg":"request errored"}
+May 20 04:51:52.12
+GET
+500
+logistics.olyxee.com
+/api/business
+2
+{"level":30,"time":1779245512434,"pid":4,"hostname":"169.254.75.155","req":{"id":5,"method":"GET","url":"/api/business"},"res":{"statusCode":500},"err":{"type":"Error","message":"failed with status code 500","stack":"Error: failed with status code 500\n at onResFinished (file:///var/task/api/_bundle/app.mjs:30353:45)\n at ServerResponse.onResponseComplete (file:///var/task/api/_bundle/app.mjs:30403:18)\n at ServerResponse.emit (node:events:520:35)\n at /opt/rust/nodejs.js:17:5080\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at /opt/rust/nodejs.js:17:5068\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at e.emit (/opt/rust/nodejs.js:17:5056)\n at onFinish (node:_http_outgoing:1026:10)\n at callback (node:internal/streams/writable:764:21)"},"responseTime":161,"msg":"request errored"}
+May 20 04:51:47.79
+GET
+200
+logistics.olyxee.com
+/api/customers
+{"level":30,"time":1779245509014,"pid":4,"hostname":"169.254.75.155","req":{"id":4,"method":"GET","url":"/api/customers"},"res":{"statusCode":200},"responseTime":1092,"msg":"request completed"}
+May 20 04:51:47.32
+GET
+500
+logistics.olyxee.com
+/api/business
+2
+{"level":30,"time":1779245507615,"pid":4,"hostname":"169.254.75.155","req":{"id":3,"method":"GET","url":"/api/business"},"res":{"statusCode":500},"err":{"type":"Error","message":"failed with status code 500","stack":"Error: failed with status code 500\n at onResFinished (file:///var/task/api/_bundle/app.mjs:30353:45)\n at ServerResponse.onResponseComplete (file:///var/task/api/_bundle/app.mjs:30403:18)\n at ServerResponse.emit (node:events:520:35)\n at /opt/rust/nodejs.js:17:5080\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at /opt/rust/nodejs.js:17:5068\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at e.emit (/opt/rust/nodejs.js:17:5056)\n at onFinish (node:_http_outgoing:1026:10)\n at callback (node:internal/streams/writable:764:21)"},"responseTime":159,"msg":"request errored"}
+May 20 04:51:45.40
+GET
+500
+logistics.olyxee.com
+/api/business
+2
+{"level":30,"time":1779245506147,"pid":4,"hostname":"169.254.75.155","req":{"id":2,"method":"GET","url":"/api/business"},"res":{"statusCode":500},"err":{"type":"Error","message":"failed with status code 500","stack":"Error: failed with status code 500\n at onResFinished (file:///var/task/api/_bundle/app.mjs:30353:45)\n at ServerResponse.onResponseComplete (file:///var/task/api/_bundle/app.mjs:30403:18)\n at ServerResponse.emit (node:events:520:35)\n at /opt/rust/nodejs.js:17:5080\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at /opt/rust/nodejs.js:17:5068\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at e.emit (/opt/rust/nodejs.js:17:5056)\n at onFinish (node:_http_outgoing:1026:10)\n at callback (node:internal/streams/writable:764:21)"},"responseTime":620,"msg":"request errored"}
+May 20 04:51:44.02
+GET
+200
+logistics.olyxee.com
+/api/orders
+{"level":30,"time":1779245505272,"pid":4,"hostname":"169.254.15.63","req":{"id":7,"method":"GET","url":"/api/orders"},"res":{"statusCode":200},"responseTime":1116,"msg":"request completed"}
+May 20 04:51:44.01
+GET
+200
+logistics.olyxee.com
+/api/dashboard/recent-orders
+2
+{"level":30,"time":1779245505564,"pid":4,"hostname":"169.254.75.155","req":{"id":1,"method":"GET","url":"/api/dashboard/recent-orders"},"res":{"statusCode":200},"responseTime":645,"msg":"request completed"}
+May 20 04:51:44.01
+GET
+200
+logistics.olyxee.com
+/api/dashboard/status-breakdown
+{"level":30,"time":1779245504777,"pid":4,"hostname":"169.254.24.89","req":{"id":6,"method":"GET","url":"/api/dashboard/status-breakdown"},"res":{"statusCode":200},"responseTime":629,"msg":"request completed"}
+May 20 04:51:44.01
+GET
+200
+logistics.olyxee.com
+/api/dashboard/summary
+{"level":30,"time":1779245505231,"pid":4,"hostname":"169.254.52.101","req":{"id":20,"method":"GET","url":"/api/dashboard/summary"},"res":{"statusCode":200},"responseTime":1080,"msg":"request completed"}
+May 20 04:51:43.08
+GET
+500
+logistics.olyxee.com
+/api/business
+2
+{"level":30,"time":1779245503848,"pid":4,"hostname":"169.254.24.89","req":{"id":5,"method":"GET","url":"/api/business"},"res":{"statusCode":500},"err":{"type":"Error","message":"failed with status code 500","stack":"Error: failed with status code 500\n at onResFinished (file:///var/task/api/_bundle/app.mjs:30353:45)\n at ServerResponse.onResponseComplete (file:///var/task/api/_bundle/app.mjs:30403:18)\n at ServerResponse.emit (node:events:520:35)\n at /opt/rust/nodejs.js:17:5080\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at /opt/rust/nodejs.js:17:5068\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at e.emit (/opt/rust/nodejs.js:17:5056)\n at onFinish (node:_http_outgoing:1026:10)\n at callback (node:internal/streams/writable:764:21)"},"responseTime":628,"msg":"request errored"}
+May 20 04:51:41.62
+GET
+500
+logistics.olyxee.com
+/api/business
+2
+{"level":30,"time":1779245501913,"pid":4,"hostname":"169.254.24.89","req":{"id":4,"method":"GET","url":"/api/business"},"res":{"statusCode":500},"err":{"type":"Error","message":"failed with status code 500","stack":"Error: failed with status code 500\n at onResFinished (file:///var/task/api/_bundle/app.mjs:30353:45)\n at ServerResponse.onResponseComplete (file:///var/task/api/_bundle/app.mjs:30403:18)\n at ServerResponse.emit (node:events:520:35)\n at /opt/rust/nodejs.js:17:5080\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at /opt/rust/nodejs.js:17:5068\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at e.emit (/opt/rust/nodejs.js:17:5056)\n at onFinish (node:_http_outgoing:1026:10)\n at callback (node:internal/streams/writable:764:21)"},"responseTime":160,"msg":"request errored"}
+May 20 04:51:40.63
+POST
+200
+logistics.olyxee.com
+/api/auth/login
+{"level":30,"time":1779245501428,"pid":4,"hostname":"169.254.24.89","req":{"id":3,"method":"POST","url":"/api/auth/login"},"res":{"statusCode":200},"responseTime":640,"msg":"request completed"}
+May 20 04:51:17.96
+POST
+500
+logistics.olyxee.com
+/api/auth/signup
+3
+[signup] failed: undefined Failed query: insert into "businesses" ("id", "name", "slug", "website_url", "support_email", "industry", "employee_count", "location", "phone", "email_greeting", "email_signature", "email_footer_note", "tracking_id_prefix", "allowed_origins", "onboarding_completed", "created_at") values ($1, $2, $3, $4, $5, default, default, default, default, default, default, default, default, default, default, default) params: 3d6a5843874c309ff3096b3fa362189b,Olyxee,olyxee-3d6a58,,lethabo.scofield@gmail.com undefined
+May 20 04:50:51.69
+GET
+304
+logistics.olyxee.com
+/api/orders
+{"level":30,"time":1779245452708,"pid":4,"hostname":"169.254.52.101","req":{"id":19,"method":"GET","url":"/api/orders"},"res":{"statusCode":200},"responseTime":633,"msg":"request completed"}
+May 20 04:50:51.69
+GET
+304
+logistics.olyxee.com
+/api/dashboard/status-breakdown
+{"level":30,"time":1779245452489,"pid":4,"hostname":"169.254.15.63","req":{"id":6,"method":"GET","url":"/api/dashboard/status-breakdown"},"res":{"statusCode":200},"responseTime":630,"msg":"request completed"}
+May 20 04:50:51.69
+GET
+304
+logistics.olyxee.com
+/api/dashboard/recent-orders
+2
+{"level":30,"time":1779245453284,"pid":4,"hostname":"169.254.24.89","req":{"id":1,"method":"GET","url":"/api/dashboard/recent-orders"},"res":{"statusCode":200},"responseTime":645,"msg":"request completed"}
+May 20 04:50:51.69
+GET
+304
+logistics.olyxee.com
+/api/dashboard/summary
+{"level":30,"time":1779245452921,"pid":4,"hostname":"169.254.52.101","req":{"id":18,"method":"GET","url":"/api/dashboard/summary"},"res":{"statusCode":200},"responseTime":1105,"msg":"request completed"}
+May 20 04:50:51.44
+POST
+200
+logistics.olyxee.com
+/api/auth/logout
+{"level":30,"time":1779245451604,"pid":4,"hostname":"169.254.52.101","req":{"id":17,"method":"POST","url":"/api/auth/logout"},"res":{"statusCode":200},"responseTime":0,"msg":"request completed"}
+May 20 04:50:50.75
+GET
+500
+logistics.olyxee.com
+/api/business
+2
+{"level":30,"time":1779245451526,"pid":4,"hostname":"169.254.52.101","req":{"id":16,"method":"GET","url":"/api/business"},"res":{"statusCode":500},"err":{"type":"Error","message":"failed with status code 500","stack":"Error: failed with status code 500\n at onResFinished (file:///var/task/api/_bundle/app.mjs:30353:45)\n at ServerResponse.onResponseComplete (file:///var/task/api/_bundle/app.mjs:30403:18)\n at ServerResponse.emit (node:events:520:35)\n at /opt/rust/nodejs.js:17:5080\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at /opt/rust/nodejs.js:17:5068\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at e.emit (/opt/rust/nodejs.js:17:5056)\n at onFinish (node:_http_outgoing:1026:10)\n at callback (node:internal/streams/writable:764:21)"},"responseTime":638,"msg":"request errored"}
+May 20 04:50:49.30
+GET
+500
+logistics.olyxee.com
+/api/business
+2
+{"level":30,"time":1779245449587,"pid":4,"hostname":"169.254.52.101","req":{"id":15,"method":"GET","url":"/api/business"},"res":{"statusCode":500},"err":{"type":"Error","message":"failed with status code 500","stack":"Error: failed with status code 500\n at onResFinished (file:///var/task/api/_bundle/app.mjs:30353:45)\n at ServerResponse.onResponseComplete (file:///var/task/api/_bundle/app.mjs:30403:18)\n at ServerResponse.emit (node:events:520:35)\n at /opt/rust/nodejs.js:17:5080\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at /opt/rust/nodejs.js:17:5068\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at e.emit (/opt/rust/nodejs.js:17:5056)\n at onFinish (node:_http_outgoing:1026:10)\n at callback (node:internal/streams/writable:764:21)"},"responseTime":156,"msg":"request errored"}
+May 20 04:50:48.77
+POST
+200
+logistics.olyxee.com
+/api/auth/login
+{"level":30,"time":1779245449094,"pid":4,"hostname":"169.254.52.101","req":{"id":14,"method":"POST","url":"/api/auth/login"},"res":{"statusCode":200},"responseTime":172,"msg":"request completed"}
+May 20 04:50:39.19
+POST
+500
+logistics.olyxee.com
+/api/auth/signup
+3
+[signup] failed: undefined Failed query: insert into "businesses" ("id", "name", "slug", "website_url", "support_email", "industry", "employee_count", "location", "phone", "email_greeting", "email_signature", "email_footer_note", "tracking_id_prefix", "allowed_origins", "onboarding_completed", "created_at") values ($1, $2, $3, $4, $5, default, default, default, default, default, default, default, default, default, default, default) params: 7c624d50ad7f5c376a93bb64d3a33aa7,Olyxee,olyxee-7c624d,,scofieldx911@gmail.com undefined
+May 20 04:50:25.94
+POST
+200
+logistics.olyxee.com
+/api/auth/logout
+{"level":30,"time":1779245426086,"pid":4,"hostname":"169.254.52.101","req":{"id":12,"method":"POST","url":"/api/auth/logout"},"res":{"statusCode":200},"responseTime":2,"msg":"request completed"}
+May 20 04:50:11.72
+GET
+304
+logistics.olyxee.com
+/api/orders
+{"level":30,"time":1779245412042,"pid":4,"hostname":"169.254.15.63","req":{"id":5,"method":"GET","url":"/api/orders"},"res":{"statusCode":200},"responseTime":171,"msg":"request completed"}
+May 20 04:50:11.72
+GET
+304
+logistics.olyxee.com
+/api/customers
+{"level":30,"time":1779245412935,"pid":4,"hostname":"169.254.52.101","req":{"id":11,"method":"GET","url":"/api/customers"},"res":{"statusCode":200},"responseTime":1083,"msg":"request completed"}
+May 20 04:50:10.80
+GET
+500
+logistics.olyxee.com
+/api/business
+2
+{"level":30,"time":1779245411562,"pid":4,"hostname":"169.254.52.101","req":{"id":10,"method":"GET","url":"/api/business"},"res":{"statusCode":500},"err":{"type":"Error","message":"failed with status code 500","stack":"Error: failed with status code 500\n at onResFinished (file:///var/task/api/_bundle/app.mjs:30353:45)\n at ServerResponse.onResponseComplete (file:///var/task/api/_bundle/app.mjs:30403:18)\n at ServerResponse.emit (node:events:520:35)\n at /opt/rust/nodejs.js:17:5080\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at /opt/rust/nodejs.js:17:5068\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at e.emit (/opt/rust/nodejs.js:17:5056)\n at onFinish (node:_http_outgoing:1026:10)\n at callback (node:internal/streams/writable:764:21)"},"responseTime":626,"msg":"request errored"}
+May 20 04:50:09.34
+GET
+500
+logistics.olyxee.com
+/api/business
+2
+{"level":30,"time":1779245409636,"pid":4,"hostname":"169.254.52.101","req":{"id":9,"method":"GET","url":"/api/business"},"res":{"statusCode":500},"err":{"type":"Error","message":"failed with status code 500","stack":"Error: failed with status code 500\n at onResFinished (file:///var/task/api/_bundle/app.mjs:30353:45)\n at ServerResponse.onResponseComplete (file:///var/task/api/_bundle/app.mjs:30403:18)\n at ServerResponse.emit (node:events:520:35)\n at /opt/rust/nodejs.js:17:5080\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at /opt/rust/nodejs.js:17:5068\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at e.emit (/opt/rust/nodejs.js:17:5056)\n at onFinish (node:_http_outgoing:1026:10)\n at callback (node:internal/streams/writable:764:21)"},"responseTime":159,"msg":"request errored"}
+May 20 04:50:08.57
+GET
+500
+logistics.olyxee.com
+/api/business
+2
+{"level":30,"time":1779245408869,"pid":4,"hostname":"169.254.52.101","req":{"id":8,"method":"GET","url":"/api/business"},"res":{"statusCode":500},"err":{"type":"Error","message":"failed with status code 500","stack":"Error: failed with status code 500\n at onResFinished (file:///var/task/api/_bundle/app.mjs:30353:45)\n at ServerResponse.onResponseComplete (file:///var/task/api/_bundle/app.mjs:30403:18)\n at ServerResponse.emit (node:events:520:35)\n at /opt/rust/nodejs.js:17:5080\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at /opt/rust/nodejs.js:17:5068\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at e.emit (/opt/rust/nodejs.js:17:5056)\n at onFinish (node:_http_outgoing:1026:10)\n at callback (node:internal/streams/writable:764:21)"},"responseTime":159,"msg":"request errored"}
+May 20 04:50:05.46
+GET
+200
+logistics.olyxee.com
+/api/customers
+{"level":30,"time":1779245406710,"pid":4,"hostname":"169.254.15.63","req":{"id":4,"method":"GET","url":"/api/customers"},"res":{"statusCode":200},"responseTime":1108,"msg":"request completed"}
+May 20 04:50:05.46
+GET
+200
+logistics.olyxee.com
+/api/orders
+{"level":30,"time":1779245406737,"pid":4,"hostname":"169.254.52.101","req":{"id":7,"method":"GET","url":"/api/orders"},"res":{"statusCode":200},"responseTime":1105,"msg":"request completed"}
+May 20 04:50:04.98
+GET
+500
+logistics.olyxee.com
+/api/business
+2
+{"level":30,"time":1779245405291,"pid":4,"hostname":"169.254.15.63","req":{"id":3,"method":"GET","url":"/api/business"},"res":{"statusCode":500},"err":{"type":"Error","message":"failed with status code 500","stack":"Error: failed with status code 500\n at onResFinished (file:///var/task/api/_bundle/app.mjs:30353:45)\n at ServerResponse.onResponseComplete (file:///var/task/api/_bundle/app.mjs:30403:18)\n at ServerResponse.emit (node:events:520:35)\n at /opt/rust/nodejs.js:17:5080\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at /opt/rust/nodejs.js:17:5068\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at e.emit (/opt/rust/nodejs.js:17:5056)\n at onFinish (node:_http_outgoing:1026:10)\n at callback (node:internal/streams/writable:764:21)"},"responseTime":163,"msg":"request errored"}
+May 20 04:50:03.31
+GET
+500
+logistics.olyxee.com
+/api/business
+2
+{"level":30,"time":1779245403638,"pid":4,"hostname":"169.254.15.63","req":{"id":2,"method":"GET","url":"/api/business"},"res":{"statusCode":500},"err":{"type":"Error","message":"failed with status code 500","stack":"Error: failed with status code 500\n at onResFinished (file:///var/task/api/_bundle/app.mjs:30353:45)\n at ServerResponse.onResponseComplete (file:///var/task/api/_bundle/app.mjs:30403:18)\n at ServerResponse.emit (node:events:520:35)\n at /opt/rust/nodejs.js:17:5080\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at /opt/rust/nodejs.js:17:5068\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at e.emit (/opt/rust/nodejs.js:17:5056)\n at onFinish (node:_http_outgoing:1026:10)\n at callback (node:internal/streams/writable:764:21)"},"responseTime":170,"msg":"request errored"}
+May 20 04:49:53.61
+GET
+200
+logistics.olyxee.com
+/api/orders
+{"level":30,"time":1779245394840,"pid":4,"hostname":"169.254.52.101","req":{"id":4,"method":"GET","url":"/api/orders"},"res":{"statusCode":200},"responseTime":1093,"msg":"request completed"}
+May 20 04:49:53.61
+GET
+304
+logistics.olyxee.com
+/api/dashboard/summary
+2
+{"level":30,"time":1779245395643,"pid":4,"hostname":"169.254.15.63","req":{"id":1,"method":"GET","url":"/api/dashboard/summary"},"res":{"statusCode":200},"responseTime":1134,"msg":"request completed"}
+May 20 04:49:53.61
+GET
+304
+logistics.olyxee.com
+/api/dashboard/status-breakdown
+{"level":30,"time":1779245394634,"pid":4,"hostname":"169.254.52.101","req":{"id":6,"method":"GET","url":"/api/dashboard/status-breakdown"},"res":{"statusCode":200},"responseTime":618,"msg":"request completed"}
+May 20 04:49:53.61
+GET
+304
+logistics.olyxee.com
+/api/dashboard/recent-orders
+{"level":30,"time":1779245394625,"pid":4,"hostname":"169.254.52.101","req":{"id":5,"method":"GET","url":"/api/dashboard/recent-orders"},"res":{"statusCode":200},"responseTime":627,"msg":"request completed"}
+May 20 04:49:52.68
+GET
+500
+logistics.olyxee.com
+/api/business
+2
+{"level":30,"time":1779245393445,"pid":4,"hostname":"169.254.52.101","req":{"id":3,"method":"GET","url":"/api/business"},"res":{"statusCode":500},"err":{"type":"Error","message":"failed with status code 500","stack":"Error: failed with status code 500\n at onResFinished (file:///var/task/api/_bundle/app.mjs:30353:45)\n at ServerResponse.onResponseComplete (file:///var/task/api/_bundle/app.mjs:30403:18)\n at ServerResponse.emit (node:events:520:35)\n at /opt/rust/nodejs.js:17:5080\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at /opt/rust/nodejs.js:17:5068\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at e.emit (/opt/rust/nodejs.js:17:5056)\n at onFinish (node:_http_outgoing:1026:10)\n at callback (node:internal/streams/writable:764:21)"},"responseTime":624,"msg":"request errored"}
+May 20 04:49:51.21
+GET
+500
+logistics.olyxee.com
+/api/business
+2
+{"level":30,"time":1779245391514,"pid":4,"hostname":"169.254.52.101","req":{"id":2,"method":"GET","url":"/api/business"},"res":{"statusCode":500},"err":{"type":"Error","message":"failed with status code 500","stack":"Error: failed with status code 500\n at onResFinished (file:///var/task/api/_bundle/app.mjs:30353:45)\n at ServerResponse.onResponseComplete (file:///var/task/api/_bundle/app.mjs:30403:18)\n at ServerResponse.emit (node:events:520:35)\n at /opt/rust/nodejs.js:17:5080\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at /opt/rust/nodejs.js:17:5068\n at AsyncLocalStorage.run (node:internal/async_local_storage/async_context_frame:59:14)\n at e.emit (/opt/rust/nodejs.js:17:5056)\n at onFinish (node:_http_outgoing:1026:10)\n at callback (node:internal/streams/writable:764:21)"},"responseTime":159,"msg":"request errored"}
+May 20 04:49:49.01
+GET
+304
+logistics.olyxee.com
+/api/auth/me
+2
+{"level":30,"time":1779245391022,"pid":4,"hostname":"169.254.52.101","req":{"id":1,"method":"GET","url":"/api/auth/me"},"res":{"statusCode":200},"responseTime":560,"msg":"request completed"}
+May 20 04:38:40.12
+GET
+401
+olyxee-logistics-admin-5id7dn4yl-olyxee.vercel.app
+/api/auth/me
+{"level":30,"time":1779244720333,"pid":4,"hostname":"169.254.63.245","req":{"id":1,"method":"GET","url":"/api/auth/me"},"res":{"statusCode":401},"responseTime":12,"msg":"request completed"}
+May 20 04:38:40.04
+GET
+401
+olyxee-logistics-admin-5id7dn4yl-olyxee.vercel.app
+/api/auth/me
+{"level":30,"time":1779244720352,"pid":4,"hostname":"169.254.63.245","req":{"id":2,"method":"GET","url":"/api/auth/me"},"res":{"statusCode":401},"responseTime":2,"msg":"request completed"}
+No more logs to show within selected timeline
